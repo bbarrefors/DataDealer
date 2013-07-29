@@ -30,6 +30,7 @@ def update():
         cur.execute('DELETE FROM FileToSet WHERE Expiration<?', [datetime.datetime.now()])
         minCount = 1
         cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
+        cur.execute('DELETE FROM UnknownSet WHERE Expiration<?', [datetime.datetime.now()])
     con.close()
     return 1
 
@@ -115,7 +116,6 @@ def data_handler(d):
             cur.execute('UPDATE SetCount SET Count=Count+1 WHERE DataSet=?', [dataset])
             cur.execute('UPDATE FileToSet SET Expiration=? WHERE File=?', (lfn, expiration))
             cur.execute('UPDATE AccessTimestamp SET Expiration=? WHERE DataSet=?', (expiration, dataset))
-            cur.execute('INSERT INTO Log VALUES(?,?,?)', (lfn, dataset, timestamp))
         else:
             phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?file=" + lfn
             response = urllib2.urlopen(phedex_call)
@@ -127,7 +127,6 @@ def data_handler(d):
                 expiration = timestamp + delta
                 cur.execute('INSERT INTO AccessTimestamp VALUES(?,?)', (dataset, expiration))
                 cur.execute('INSERT INTO FileToSet VALUES(?,?,?)', (lfn, dataset, expiration))
-                cur.execute('INSERT INTO Log VALUES(?,?,?)', (lfn, dataset, timestamp))
                 cur.execute("SELECT EXISTS(SELECT * FROM SetCount WHERE DataSet=?)", [dataset])
                 test = cur.fetchone()[0]
                 if int(test) == int(1):
@@ -136,9 +135,11 @@ def data_handler(d):
                     in_count = 1
                     cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
             else:
+                # Unknown log is kept for 1 week
+                delta = datetime.timedelta(hours=168)
                 timestamp = datetime.datetime.now()
                 dataset = "UNKNOWN"
-                cur.execute('INSERT INTO Log VALUES(?,?,?)', (lfn, dataset, timestamp))
+                cur.execute('INSERT INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
     con.close()
     return 1
 
@@ -169,6 +170,7 @@ if __name__ == '__main__':
         cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (DataSet TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS SetCount (DataSet TEXT, Count INTEGER)')
         cur.execute('CREATE TABLE IF NOT EXISTS Log (File TEXT, DataSet TEXT, Timestamp TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, DataSet TEXT, Timestamp TIMESTAMP)')
     
     # Spawn worker processes that will parse data and insert into database
     pool = Pool(processes=4)
