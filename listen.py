@@ -169,8 +169,7 @@ if __name__ == '__main__':
         cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, DataSet TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (DataSet TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS SetCount (DataSet TEXT, Count INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS Log (File TEXT, DataSet TEXT, Timestamp TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, DataSet TEXT, Timestamp TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, DataSet TEXT, Expiration TIMESTAMP)')
     
     # Spawn worker processes that will parse data and insert into database
     pool = Pool(processes=4)
