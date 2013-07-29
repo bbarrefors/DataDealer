@@ -54,13 +54,13 @@ def printer():
 def subscriptions():
     # Decide which subscriptions to make
     # Current rule: 
-    # Ratio setAcces / filesCount <= 10
+    # Ratio setAcces / filesCount <= 100
     # Total setAccess >= 100
     fs = open('Subscriptions', 'a')
     con = lite.connect("dataset_cache.db")
     with con:
         cur = con.cursor()
-        min_count = 100
+        min_count = 200
         cur.execute('SELECT * FROM SetCount WHERE Count>=?', [min_count])
         while True:
             row = cur.fetchone()
@@ -76,7 +76,7 @@ def subscriptions():
                     break
                 filesCount += 1
             if filesCount > 0:
-                if (setAccess/filesCount) <= 10:
+                if (setAccess/filesCount) <= 100:
                     fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
     con.close()
     fs.close()
