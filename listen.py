@@ -32,9 +32,17 @@ def report(l):
             minCount = 1
             cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
             # Check if should make subscriptions
-            f = open('output', 'a')
-            min_count = 20
+            fc = open('Setcount', 'a')
+            cur.execute('SELECT * FROM SetCount')
+            while True:
+                row = cur.fetchone()
+                if row == None:
+                    break
+                fc.write(str(datetime.datetime.now()) + " " + str(row[0]) + " " + str(row[1]) + "\n")
+            fc.close()
+            min_count = 100
             cur.execute('SELECT * FROM SetCount WHERE Count>=?', [min_count])
+            fs = open('Subscriptions', 'a')
             while True:
                 row = cur.fetchone()
                 if row == None:
@@ -49,9 +57,9 @@ def report(l):
                         break
                     filesCount += 1
                 if filesCount > 0:
-                    if (setAccess/filesCount) <= 5:
-                        f.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
-            f.close()
+                    if (setAccess/filesCount) <= 10:
+                        fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
+            fs.close()
         con.close()
 
 def data_handler(d, l):
