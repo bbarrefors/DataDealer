@@ -10,59 +10,90 @@ import datetime
 import sqlite3 as lite
 from multiprocessing import Manager, Process, Pool
 
-def report(l):
-    # Prints out the database every hour
+def update():
+    # Delete entries where the expiration timestamp is older than current time
+    # Update SetCount to reflect database after deletions
+    # Delete sets from SetCount if count is 0 or less
+    con = lite.connect("dataset_cache.db")
+    with con:
+        cur = con.cursor()
+        cur.execute('SELECT DataSet FROM SetCount')
+        while True:
+            dataSet = cur.fetchone()
+            if dataSet == None:
+                break
+            del_count = 0;
+            cur.execute('DELETE FROM AccessTimestamp WHERE Expiration<? AND DataSet=?', (datetime.datetime.now(),dataSet[0]))
+            del_count = cur.rowcount
+            cur.execute('UPDATE SetCount SET Count=Count-? WHERE DataSet=?',(del_count, dataSet[0]))
+            
+        cur.execute('DELETE FROM FileToSet WHERE Expiration<?', [datetime.datetime.now()])
+        minCount = 1
+        cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
+    con.close()
+    return 1
+
+def printer():
+    # Print anything that might be of interest
+    # Currently print out the SetCount database table
+    fc = open('Setcount', 'w')
+    con = lite.connect("dataset_cache.db")
+    with con:
+        cur = con.cursor()
+        cur.execute('SELECT * FROM SetCount')
+        while True:
+            row = cur.fetchone()
+            if row == None:
+                break
+            fc.write(str(datetime.datetime.now()) + " " + str(row[0]) + " " + str(row[1]) + "\n")
+    con.close()
+    fc.close()
+    return 1
+
+def subscriptions():
+    # Decide which subscriptions to make
+    # Current rule: 
+    # Ratio setAcces / filesCount <= 10
+    # Total setAccess >= 100
+    fs = open('Subscriptions', 'a')
+    con = lite.connect("dataset_cache.db")
+    with con:
+        cur = con.cursor()
+        min_count = 100
+        cur.execute('SELECT * FROM SetCount WHERE Count>=?', [min_count])
+        while True:
+            row = cur.fetchone()
+            if row == None:
+                break
+            dataset = row[0]
+            setAccess = row[1]
+            filesCount = 0;
+            cur.execute('SELECT * FROM AccessTimestamp WHERE DataSet=?', [dataset])
+            while True:
+                access = cur.fetchone()
+                if access == None:
+                    break
+                filesCount += 1
+            if filesCount > 0:
+                if (setAccess/filesCount) <= 10:
+                    fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
+    con.close()
+    fs.close()
+    return 1
+
+def report():
+    # Run every hour
     while True:
         time.sleep(3600)
-        con = lite.connect("dataset_cache.db")
-        with con:
-            cur = con.cursor()
-            # Update database, delete entries older than 12h
-            cur.execute('SELECT DataSet FROM SetCount')
-            while True:
-                dataSet = cur.fetchone()
-                if dataSet == None:
-                    break
-                del_count = 0;
-                cur.execute('DELETE FROM AccessTimestamp WHERE Expiration<? AND DataSet=?', (datetime.datetime.now(),dataSet[0]))
-                del_count = cur.rowcount
-                cur.execute('UPDATE SetCount SET Count=Count-? WHERE DataSet=?',(del_count, dataSet[0]))
-                
-            cur.execute('DELETE FROM FileToSet WHERE Expiration<?', [datetime.datetime.now()])
-            minCount = 1
-            cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
-            # Check if should make subscriptions
-            fc = open('Setcount', 'a')
-            cur.execute('SELECT * FROM SetCount')
-            while True:
-                row = cur.fetchone()
-                if row == None:
-                    break
-                fc.write(str(datetime.datetime.now()) + " " + str(row[0]) + " " + str(row[1]) + "\n")
-            fc.close()
-            min_count = 100
-            cur.execute('SELECT * FROM SetCount WHERE Count>=?', [min_count])
-            fs = open('Subscriptions', 'a')
-            while True:
-                row = cur.fetchone()
-                if row == None:
-                    break
-                dataset = row[0]
-                setAccess = row[1]
-                filesCount = 0;
-                cur.execute('SELECT * FROM AccessTimestamp WHERE DataSet=?', [dataset])
-                while True:
-                    access = cur.fetchone()
-                    if access == None:
-                        break
-                    filesCount += 1
-                if filesCount > 0:
-                    if (setAccess/filesCount) <= 10:
-                        fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
-            fs.close()
-        con.close()
+        # Update database, delete entries older than 12h
+        update()
+        # Print out stuff
+        printer()
+        # Check if should make subscriptions
+        subscriptions()
+    return 1
 
-def data_handler(d, l):
+def data_handler(d):
     # Extract file name from data
     # If it is in cache fetch from db
     # Else fetch from PhEDEx
@@ -111,10 +142,10 @@ def data_handler(d, l):
     con.close()
     return 1
 
-def work(q, l):
+def work(q):
     while True:
         d = q.get()
-        data_handler(d, l)
+        data_handler(d)
 
 def data_parser(data):
     # Extract data and insert into dictionary
@@ -143,14 +174,13 @@ if __name__ == '__main__':
     pool = Pool(processes=4)
     manager = Manager()
     queue = manager.Queue()
-    lock = manager.Lock()
     # process will clean out database and make reports every 1h
-    process = Process(target=report, args=(lock,))
+    process = Process(target=report, args=())
     process.start()
-    workers = pool.apply_async(work, (queue, lock))
+    workers = pool.apply_async(work, (queue,))
     # UDP packets containing information about file access
     UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    listen_addr = ("0.0.0.0",9345)
+    listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
     try:
@@ -160,7 +190,6 @@ if __name__ == '__main__':
             queue.put(dictionary)
     finally:
         UDPSock.close()
-        #queue.close()
         pool.close()
         pool.join()
         process.join()
