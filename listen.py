@@ -10,6 +10,46 @@ import datetime
 import sqlite3 as lite
 from multiprocessing import Manager, Process, Pool
 
+def checkDataset(dataset):
+    # Accumulate all block sizes and calculate total dataset size
+    # Size returned in GB
+    phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + dataset
+    try:
+        response = urllib2.urlopen(phedex_call)
+    except:
+        return 0
+    json_data = json.load(response)
+    dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
+    size_dataset = 0
+    for block in dataset:
+        size_dataset += block.get('bytes')
+
+    size_dataset = size_dataset / 10**9
+    return size_dataset
+
+def checkPhedex():
+    avail_space_util = 0
+    
+    return avail_space_util
+
+def checkSize(dataset):
+    # Check available space at phedex.unl.edu
+    # See if dataset size is small enough to be moved
+    fs2 = open('Sizes', 'a')
+    size_dataset = checkDataset(dataset)
+    if (size_dataset == 0):
+        # dataset request didn't succeed, exit out maybe?
+        return 0
+    else:
+        # Everything went well, do our thing instead
+        # Find available space in phedex
+        phedex_avail_util = checkPhedex()
+        fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + dataset + " | PhEDEx available space to utilize: " + phedex_avail_util)
+        if (phedex_avail_util >= size_dataset):
+            return 1
+        else:
+            return 0
+
 def update():
     # Delete entries where the expiration timestamp is older than current time
     # Update SetCount to reflect database after deletions
@@ -77,6 +117,7 @@ def subscriptions():
                 filesCount += 1
             if filesCount > 0:
                 if (setAccess/filesCount) <= 100:
+                    if (checkSize(str(dataset)) == 1):
                     fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
     con.close()
     fs.close()
@@ -118,7 +159,10 @@ def data_handler(d):
             cur.execute('UPDATE AccessTimestamp SET Expiration=? WHERE DataSet=?', (expiration, dataset))
         else:
             phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?file=" + lfn
-            response = urllib2.urlopen(phedex_call)
+            try:
+                response = urllib2.urlopen(phedex_call)
+            except:
+                return 0
             json_data = json.load(response)
             if json_data.get('phedex').get('dbs'):
                 dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('name')
