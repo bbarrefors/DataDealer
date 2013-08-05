@@ -133,7 +133,7 @@ def subscriptions():
                     size = checkSize(str(dataset))
                     if (tot_size + size > 50000):
                         break
-                    if (size not 0):
+                    if (not (size == 0)):
                         fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
                         cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
                         timestamp = datetime.datetime.now()
