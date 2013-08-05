@@ -25,12 +25,12 @@ def checkDataset(dataset):
         size_dataset += block.get('bytes')
 
     size_dataset = size_dataset / 10**9
-    return size_dataset
+    return int(size_dataset)
 
 def checkPhedex():
     avail_space_util = 0
     
-    return avail_space_util
+    return int(avail_space_util)
 
 def checkSize(dataset):
     # Check available space at phedex.unl.edu
@@ -46,7 +46,7 @@ def checkSize(dataset):
         phedex_avail_util = checkPhedex()
         fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + dataset + " | PhEDEx available space to utilize: " + phedex_avail_util)
         if (phedex_avail_util >= size_dataset):
-            return 1
+            return size_dataset
         else:
             return 0
 
@@ -71,6 +71,7 @@ def update():
         minCount = 1
         cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
         cur.execute('DELETE FROM UnknownSet WHERE Expiration<?', [datetime.datetime.now()])
+        cur.execute('DELETE FROM Budget WHERE Expiration<?', [datetime.datetime.now()])
     con.close()
     return 1
 
@@ -94,8 +95,8 @@ def printer():
 def subscriptions():
     # Decide which subscriptions to make
     # Current rule: 
-    # Ratio setAcces / filesCount <= 100
-    # Total setAccess >= 100
+    # Ratio setAcces / filesCount <= 300
+    # Total setAccess >= 200
     fs = open('Subscriptions', 'a')
     con = lite.connect("dataset_cache.db")
     with con:
@@ -108,6 +109,18 @@ def subscriptions():
                 break
             dataset = row[0]
             setAccess = row[1]
+            cur.execute('SELECT * FROM DontMove WHERE DataSet=?', [dataset])
+            row = cur.fetchone()
+            if row:
+                break
+
+            tot_size = 0
+            cur.execute('SELECT * FROM Budget WHERE')
+            while True:
+                row = cur.fetchone()
+                if row == None:
+                    break
+                tot_size += row[1]
             filesCount = 0;
             cur.execute('SELECT * FROM AccessTimestamp WHERE DataSet=?', [dataset])
             while True:
@@ -116,9 +129,17 @@ def subscriptions():
                     break
                 filesCount += 1
             if filesCount > 0:
-                if (setAccess/filesCount) <= 100:
-                    if (checkSize(str(dataset)) == 1):
-                    fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
+                if (setAccess/filesCount) <= 300:
+                    size = checkSize(str(dataset))
+                    if (tot_size + size > 50000):
+                        break
+                    if (size not 0):
+                        fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
+                        cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
+                        timestamp = datetime.datetime.now()
+                        delta = datetime.timedelta(hours=24)
+                        expiration = timestamp + delta
+                        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
     con.close()
     fs.close()
     return 1
@@ -214,6 +235,12 @@ if __name__ == '__main__':
         cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (DataSet TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS SetCount (DataSet TEXT, Count INTEGER)')
         cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, DataSet TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS DontMove (DataSet TEXT)')
+        dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
+        cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
+        dataset = "/GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
+        cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
+        cur.execute('CREATE TABLE IF NOT EXISTS Budget (DataSet TEXT, Size INTEGER, Expiration TIMESTAMP)')
     
     # Spawn worker processes that will parse data and insert into database
     pool = Pool(processes=4)
