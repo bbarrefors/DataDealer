@@ -115,7 +115,7 @@ def subscriptions():
                 break
 
             tot_size = 0
-            cur.execute('SELECT * FROM Budget WHERE')
+            cur.execute('SELECT * FROM Budget')
             while True:
                 row = cur.fetchone()
                 if row == None:
