@@ -44,7 +44,8 @@ def checkSize(dataset):
         # Everything went well, do our thing instead
         # Find available space in phedex
         phedex_avail_util = checkPhedex()
-        fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + dataset + " | PhEDEx available space to utilize: " + phedex_avail_util)
+        fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + str(dataset) + " | PhEDEx available space to utilize: " + str(phedex_avail_util))
+        fs2 = close()
         if (phedex_avail_util >= size_dataset):
             return size_dataset
         else:
@@ -82,12 +83,12 @@ def printer():
     con = lite.connect("dataset_cache.db")
     with con:
         cur = con.cursor()
-        cur.execute('SELECT * FROM SetCount')
+        cur.execute('SELECT * FROM SetCount ORDER BY Count DESC')
         while True:
             row = cur.fetchone()
             if row == None:
                 break
-            fc.write(str(datetime.datetime.now()) + " " + str(row[0]) + " " + str(row[1]) + "\n")
+            fc.write(str(datetime.datetime.now()) + " " + str(row[0]) + "\t" + str(row[1]) + "\n")
     con.close()
     fc.close()
     return 1

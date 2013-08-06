@@ -1,0 +1,10 @@
+# Config file for listen.py
+# All available commands need to be entered for now.
+# In the future we would like to add defaults if none is entered.
+# The commands specifies values required to be met for a dataset to be suggested to be copied
+# set_file_ratio : Specifies the desired ratio between number of set accesses and unique number of files accessed from that set
+# set_access : Specifies the number of total accesses to one set
+# total_budget : Specifies in GB the maximum number of data the script can move in a 24h span
+set_file_ratio = 200
+set_access = 500
+total_budget = 50000
