@@ -10,10 +10,11 @@ import datetime
 import sqlite3 as lite
 from multiprocessing import Manager, Process, Pool
 
-set_file_ratio = 10
-set_access = 400
-total_budget = 40000
-time_frame = 72
+SET_FILE_RATIO = 10
+SET_ACCESS = 200
+TOTAL_BUDGET = 40000
+TIME_FRAME = 72
+BUDGET_TIME_FRAME = 24
 
 def checkDataset(dataset):
     # Accumulate all block sizes and calculate total dataset size
@@ -107,8 +108,7 @@ def subscriptions():
     con = lite.connect("dataset_cache.db")
     with con:
         cur = con.cursor()
-        min_count = 200
-        cur.execute('SELECT * FROM SetCount WHERE Count>=?', [min_count])
+        cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
         while True:
             row = cur.fetchone()
             if row == None:
@@ -135,15 +135,15 @@ def subscriptions():
                     break
                 filesCount += 1
             if filesCount > 0:
-                if (setAccess/filesCount) <= 300:
+                if (setAccess/filesCount) <= SET_FILE_RATIO:
                     size = checkSize(str(dataset))
-                    if (tot_size + size > 50000):
+                    if (tot_size + size > TOTAL_BUDGET):
                         break
                     if (not (size == 0)):
                         fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
                         cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
                         timestamp = datetime.datetime.now()
-                        delta = datetime.timedelta(hours=24)
+                        delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
                         expiration = timestamp + delta
                         cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
     con.close()
@@ -179,7 +179,7 @@ def data_handler(d):
             cur.execute('SELECT DataSet FROM FileToSet WHERE File=?', [lfn])
             dataset = cur.fetchone()[0]
             timestamp = datetime.datetime.now()
-            delta = datetime.timedelta(hours=72)
+            delta = datetime.timedelta(hours=TIME_FRAME)
             expiration = timestamp + delta
             cur.execute('UPDATE SetCount SET Count=Count+1 WHERE DataSet=?', [dataset])
             cur.execute('UPDATE FileToSet SET Expiration=? WHERE File=?', (lfn, expiration))
@@ -194,7 +194,7 @@ def data_handler(d):
             if json_data.get('phedex').get('dbs'):
                 dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('name')
                 timestamp = datetime.datetime.now()
-                delta = datetime.timedelta(hours=72)
+                delta = datetime.timedelta(hours=TIME_FRAME)
                 expiration = timestamp + delta
                 cur.execute('INSERT INTO AccessTimestamp VALUES(?,?)', (dataset, expiration))
                 cur.execute('INSERT INTO FileToSet VALUES(?,?,?)', (lfn, dataset, expiration))
@@ -206,8 +206,8 @@ def data_handler(d):
                     in_count = 1
                     cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
             else:
-                # Unknown log is kept for 1 week
-                delta = datetime.timedelta(hours=168)
+                # Unknown log
+                delta = datetime.timedelta(hours=TIME_FRAME)
                 timestamp = datetime.datetime.now()
                 dataset = "UNKNOWN"
                 cur.execute('INSERT INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
@@ -231,23 +231,28 @@ def data_parser(data):
 
 if __name__ == '__main__':
     # Set up parameters from config file
-    global set_file_ratio
-    global set_access
-    global total_budget
-    global time_frame
+    global SET_FILE_RATIO
+    global SET_ACCESS
+    global TOTAL_BUDGET
+    global TIME_FRAME
+    global BUDGET_TIME_FRAME
+    
     config_f = open('config', 'r')
     if re.match("set_file_ratio", line):
         value = re.split(" = ", line)
-        set_file_ratio = str(value[1].rstrip())
+        SET_FILE_RATIO = str(value[1].rstrip())
     elif re.match("set_access", line):
         value = re.split(" = ", line)
-        set_access = str(value[1].rstrip())
+        SET_ACCESS = str(value[1].rstrip())
     elif re.match("total_budget", line):
         value = re.split(" = ", line)
-        total_budget = str(value[1].rstrip())
+        TOTAL_BUDGET = str(value[1].rstrip())
     elif re.match("time_frame", line):
         value = re.split(" = ", line)
-        time_frame = str(value[1].rstrip())
+        TIME_FRAME = str(value[1].rstrip())
+    elif re.match("budget_time_frame", line):
+        value = re.split(" = ", line)
+        BUDGET_TIME_FRAME = str(value[1].rstrip())
         
     config_f.close()
 

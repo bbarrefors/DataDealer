@@ -14,7 +14,11 @@
 # time_frame : default = 72 
 # Specifies the time frame in hours at which algorithm considers when making decisions
 
+# budget_time_frame : default = 24 
+# Specifies the time frame in hours for which the script keeps track of amount of moved data
+
 set_file_ratio = 200
 set_access = 500
 total_budget = 40000
 time_frame = 70
+budget_time_frame = 20
