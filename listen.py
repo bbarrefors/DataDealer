@@ -10,6 +10,11 @@ import datetime
 import sqlite3 as lite
 from multiprocessing import Manager, Process, Pool
 
+set_file_ratio = 10
+set_access = 400
+total_budget = 40000
+time_frame = 72
+
 def checkDataset(dataset):
     # Accumulate all block sizes and calculate total dataset size
     # Size returned in GB
@@ -225,9 +230,27 @@ def data_parser(data):
     return d
 
 if __name__ == '__main__':
-    # Listen for UDP packets
-    # Spawn pool of processes to handle data
-    # Have a seperate process print out the collected dataset count every 1h
+    # Set up parameters from config file
+    global set_file_ratio
+    global set_access
+    global total_budget
+    global time_frame
+    config_f = open('config', 'r')
+    if re.match("set_file_ratio", line):
+        value = re.split(" = ", line)
+        set_file_ratio = str(value[1].rstrip())
+    elif re.match("set_access", line):
+        value = re.split(" = ", line)
+        set_access = str(value[1].rstrip())
+    elif re.match("total_budget", line):
+        value = re.split(" = ", line)
+        total_budget = str(value[1].rstrip())
+    elif re.match("time_frame", line):
+        value = re.split(" = ", line)
+        time_frame = str(value[1].rstrip())
+        
+    config_f.close()
+
     # Create database and tables if they don't already exist
     connection = lite.connect("dataset_cache.db")
     with connection:
@@ -247,20 +270,26 @@ if __name__ == '__main__':
     pool = Pool(processes=4)
     manager = Manager()
     queue = manager.Queue()
-    # process will clean out database and make reports every 1h
+
+    # Spawn process that to clean out database and make reports every 1h
     process = Process(target=report, args=())
     process.start()
     workers = pool.apply_async(work, (queue,))
+
     # UDP packets containing information about file access
     UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
+
+    # Listen for UDP packets
     try:
         while True:
             data,addr = UDPSock.recvfrom(buf)
             dictionary = data_parser(data)
             queue.put(dictionary)
+
+    #Close everything if program is interupted
     finally:
         UDPSock.close()
         pool.close()
