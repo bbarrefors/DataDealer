@@ -230,30 +230,24 @@ def data_parser(data):
     return d
 
 if __name__ == '__main__':
-    # Set up parameters from config file
-    global SET_FILE_RATIO
-    global SET_ACCESS
-    global TOTAL_BUDGET
-    global TIME_FRAME
-    global BUDGET_TIME_FRAME
-    
+    # Set up parameters from config file    
     config_f = open('config', 'r')
-    if re.match("set_file_ratio", line):
-        value = re.split(" = ", line)
-        SET_FILE_RATIO = str(value[1].rstrip())
-    elif re.match("set_access", line):
-        value = re.split(" = ", line)
-        SET_ACCESS = str(value[1].rstrip())
-    elif re.match("total_budget", line):
-        value = re.split(" = ", line)
-        TOTAL_BUDGET = str(value[1].rstrip())
-    elif re.match("time_frame", line):
-        value = re.split(" = ", line)
-        TIME_FRAME = str(value[1].rstrip())
-    elif re.match("budget_time_frame", line):
-        value = re.split(" = ", line)
-        BUDGET_TIME_FRAME = str(value[1].rstrip())
-        
+    for line in config_f:
+        if re.match("set_file_ratio", line):
+            value = re.split(" = ", line)
+            SET_FILE_RATIO = str(value[1].rstrip())
+        elif re.match("set_access", line):
+            value = re.split(" = ", line)
+            SET_ACCESS = str(value[1].rstrip())
+        elif re.match("total_budget", line):
+            value = re.split(" = ", line)
+            TOTAL_BUDGET = str(value[1].rstrip())
+        elif re.match("time_frame", line):
+            value = re.split(" = ", line)
+            TIME_FRAME = str(value[1].rstrip())
+        elif re.match("budget_time_frame", line):
+            value = re.split(" = ", line)
+            BUDGET_TIME_FRAME = str(value[1].rstrip())
     config_f.close()
 
     # Create database and tables if they don't already exist
