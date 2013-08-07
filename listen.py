@@ -64,15 +64,15 @@ def update():
     con = lite.connect("dataset_cache.db")
     with con:
         cur = con.cursor()
-        cur.execute('SELECT DataSet FROM SetCount')
+        cur.execute('SELECT Dataset FROM SetCount')
         while True:
             dataSet = cur.fetchone()
             if dataSet == None:
                 break
             del_count = 0;
-            cur.execute('DELETE FROM AccessTimestamp WHERE Expiration<? AND DataSet=?', (datetime.datetime.now(),dataSet[0]))
+            cur.execute('DELETE FROM AccessTimestamp WHERE Expiration<? AND Dataset=?', (datetime.datetime.now(),dataSet[0]))
             del_count = cur.rowcount
-            cur.execute('UPDATE SetCount SET Count=Count-? WHERE DataSet=?',(del_count, dataSet[0]))
+            cur.execute('UPDATE SetCount SET Count=Count-? WHERE Dataset=?',(del_count, dataSet[0]))
             
         cur.execute('DELETE FROM FileToSet WHERE Expiration<?', [datetime.datetime.now()])
         minCount = 1
@@ -115,7 +115,7 @@ def subscriptions():
                 break
             dataset = row[0]
             setAccess = row[1]
-            cur.execute('SELECT * FROM DontMove WHERE DataSet=?', [dataset])
+            cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
             row = cur.fetchone()
             if row:
                 break
@@ -128,7 +128,7 @@ def subscriptions():
                     break
                 tot_size += row[1]
             filesCount = 0;
-            cur.execute('SELECT * FROM AccessTimestamp WHERE DataSet=?', [dataset])
+            cur.execute('SELECT * FROM AccessTimestamp WHERE Dataset=?', [dataset])
             while True:
                 access = cur.fetchone()
                 if access == None:
@@ -176,14 +176,14 @@ def data_handler(d):
         cur.execute("SELECT EXISTS(SELECT * FROM FileToSet WHERE File=?)", [lfn])
         test = cur.fetchone()[0]
         if int(test) == int(1):
-            cur.execute('SELECT DataSet FROM FileToSet WHERE File=?', [lfn])
+            cur.execute('SELECT Dataset FROM FileToSet WHERE File=?', [lfn])
             dataset = cur.fetchone()[0]
             timestamp = datetime.datetime.now()
             delta = datetime.timedelta(hours=TIME_FRAME)
             expiration = timestamp + delta
-            cur.execute('UPDATE SetCount SET Count=Count+1 WHERE DataSet=?', [dataset])
+            cur.execute('UPDATE SetCount SET Count=Count+1 WHERE Dataset=?', [dataset])
             cur.execute('UPDATE FileToSet SET Expiration=? WHERE File=?', (lfn, expiration))
-            cur.execute('UPDATE AccessTimestamp SET Expiration=? WHERE DataSet=?', (expiration, dataset))
+            cur.execute('UPDATE AccessTimestamp SET Expiration=? WHERE Dataset=?', (expiration, dataset))
         else:
             phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?file=" + lfn
             try:
@@ -198,10 +198,10 @@ def data_handler(d):
                 expiration = timestamp + delta
                 cur.execute('INSERT INTO AccessTimestamp VALUES(?,?)', (dataset, expiration))
                 cur.execute('INSERT INTO FileToSet VALUES(?,?,?)', (lfn, dataset, expiration))
-                cur.execute("SELECT EXISTS(SELECT * FROM SetCount WHERE DataSet=?)", [dataset])
+                cur.execute("SELECT EXISTS(SELECT * FROM SetCount WHERE Dataset=?)", [dataset])
                 test = cur.fetchone()[0]
                 if int(test) == int(1):
-                    cur.execute('UPDATE SetCount SET Count=Count+1 WHERE DataSet=?', [dataset])
+                    cur.execute('UPDATE SetCount SET Count=Count+1 WHERE Dataset=?', [dataset])
                 else:
                     in_count = 1
                     cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
@@ -235,35 +235,35 @@ if __name__ == '__main__':
     for line in config_f:
         if re.match("set_file_ratio", line):
             value = re.split(" = ", line)
-            SET_FILE_RATIO = str(value[1].rstrip())
+            SET_FILE_RATIO = int(value[1].rstrip())
         elif re.match("set_access", line):
             value = re.split(" = ", line)
-            SET_ACCESS = str(value[1].rstrip())
+            SET_ACCESS = int(value[1].rstrip())
         elif re.match("total_budget", line):
             value = re.split(" = ", line)
-            TOTAL_BUDGET = str(value[1].rstrip())
+            TOTAL_BUDGET = int(value[1].rstrip())
         elif re.match("time_frame", line):
             value = re.split(" = ", line)
-            TIME_FRAME = str(value[1].rstrip())
+            TIME_FRAME = int(value[1].rstrip())
         elif re.match("budget_time_frame", line):
             value = re.split(" = ", line)
-            BUDGET_TIME_FRAME = str(value[1].rstrip())
+            BUDGET_TIME_FRAME = int(value[1].rstrip())
     config_f.close()
 
     # Create database and tables if they don't already exist
     connection = lite.connect("dataset_cache.db")
     with connection:
         cur = connection.cursor()
-        cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, DataSet TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (DataSet TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS SetCount (DataSet TEXT, Count INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, DataSet TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS DontMove (DataSet TEXT)')
+        cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (Dataset TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS SetCount (Dataset TEXT, Count INTEGER)')
+        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS Budget (Dataset TEXT, Size INTEGER, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS DontMove (Dataset TEXT)')
         dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
         cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
         dataset = "/GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
         cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
-        cur.execute('CREATE TABLE IF NOT EXISTS Budget (DataSet TEXT, Size INTEGER, Expiration TIMESTAMP)')
     
     # Spawn worker processes that will parse data and insert into database
     pool = Pool(processes=4)
