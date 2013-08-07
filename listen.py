@@ -141,7 +141,7 @@ def subscriptions():
                         break
                     if (not (size == 0)):
                         fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
-                        cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
+                        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
                         timestamp = datetime.datetime.now()
                         delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
                         expiration = timestamp + delta
@@ -210,7 +210,7 @@ def data_handler(d):
                 delta = datetime.timedelta(hours=TIME_FRAME)
                 timestamp = datetime.datetime.now()
                 dataset = "UNKNOWN"
-                cur.execute('INSERT INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
+                cur.execute('INSERT OR IGNORE INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
     con.close()
     return 1
 
@@ -261,9 +261,9 @@ if __name__ == '__main__':
         cur.execute('CREATE TABLE IF NOT EXISTS Budget (Dataset TEXT, Size INTEGER, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS DontMove (Dataset TEXT UNIQUE)')
         dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
-        cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
+        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
         dataset = "/GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
-        cur.execute('INSERT INTO DontMove VALUES(?)', [dataset])
+        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
     
     # Spawn worker processes that will parse data and insert into database
     pool = Pool(processes=4)
