@@ -254,10 +254,10 @@ if __name__ == '__main__':
     connection = lite.connect("dataset_cache.db")
     with connection:
         cur = connection.cursor()
-        cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT PRIMARY KEY, Dataset TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (Dataset TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS SetCount (Dataset TEXT PRIMARY KEY, Count INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS SetCount (Dataset TEXT, Count INTEGER)')
+        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT UNIQUE, Dataset TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS Budget (Dataset TEXT, Size INTEGER, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS DontMove (Dataset TEXT UNIQUE)')
         dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
