@@ -33,11 +33,11 @@ if __name__ == '__main__':
     data = urllib.urlencode(values)
     url = 'http://cmsweb.cern.ch/phedex/datasvc/xml/prod/subscription'
     request = urllib2.Request(url, data)
-    try:
-        sub_response = urllib2.urlopen(request)
-    except:
-        print "Failed subscription call"
-        sys.exit()
+#    try:
+    sub_response = urllib2.urlopen(request)
+    #except:
+    #    print "Failed subscription call"
+    #    sys.exit()
 
     sub_status = sub_response.read()
     print sub_status
