@@ -10,7 +10,7 @@ import datetime
 import sqlite3 as lite
 from multiprocessing import Manager, Process, Pool
 
-SET_FILE_RATIO = 10
+#SET_FILE_RATIO = 10
 SET_ACCESS = 200
 TOTAL_BUDGET = 40000
 TIME_FRAME = 72
@@ -127,25 +127,25 @@ def subscriptions():
                 if row == None:
                     break
                 tot_size += row[1]
-            filesCount = 0;
-            cur.execute('SELECT * FROM AccessTimestamp WHERE Dataset=?', [dataset])
-            while True:
-                access = cur.fetchone()
-                if access == None:
-                    break
-                filesCount += 1
-            if filesCount > 0:
-                if (setAccess/filesCount) <= SET_FILE_RATIO:
-                    size = checkSize(str(dataset))
-                    if (tot_size + size > TOTAL_BUDGET):
-                        break
-                    if (not (size == 0)):
-                        fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses to " + str(filesCount) + " different files.\n")
-                        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
-                        timestamp = datetime.datetime.now()
-                        delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
-                        expiration = timestamp + delta
-                        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
+            #filesCount = 0;
+            #cur.execute('SELECT * FROM AccessTimestamp WHERE Dataset=?', [dataset])
+            #while True:
+            #    access = cur.fetchone()
+            #    if access == None:
+            #        break
+            #    filesCount += 1
+            #if filesCount > 0:
+            #if (setAccess/filesCount) <= SET_FILE_RATIO:
+            size = checkSize(str(dataset))
+            if (tot_size + size > TOTAL_BUDGET):
+                break
+            if (not (size == 0)):
+                fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
+                cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
+                timestamp = datetime.datetime.now()
+                delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
+                expiration = timestamp + delta
+                cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
     con.close()
     fs.close()
     return 1
@@ -233,10 +233,10 @@ if __name__ == '__main__':
     # Set up parameters from config file    
     config_f = open('config', 'r')
     for line in config_f:
-        if re.match("set_file_ratio", line):
-            value = re.split(" = ", line)
-            SET_FILE_RATIO = int(value[1].rstrip())
-        elif re.match("set_access", line):
+        #if re.match("set_file_ratio", line):
+        #    value = re.split(" = ", line)
+        #    SET_FILE_RATIO = int(value[1].rstrip())
+        if re.match("set_access", line):
             value = re.split(" = ", line)
             SET_ACCESS = int(value[1].rstrip())
         elif re.match("total_budget", line):
