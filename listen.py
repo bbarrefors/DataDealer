@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import socket
 import ast
 import re
@@ -35,7 +36,11 @@ def checkDataset(dataset):
 
 def checkPhedex():
     avail_space_util = 0
-    
+    info = os.statvfs("/mnt/hadoop")
+    total = (info.f_blocks * info.f_bsize) / (1024**3)
+    min = total*(0.1)
+    free = (info.f_bfree * info.f_bsize) / (1024**3)
+    avail_space_util = free - min
     return int(avail_space_util)
 
 def checkSize(dataset):
