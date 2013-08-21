@@ -61,6 +61,7 @@ def checkSize(dataset):
             return int(size_dataset)
         else:
             return 0
+        return 0
 
 def update():
     # Delete entries where the expiration timestamp is older than current time
