@@ -2,6 +2,7 @@
 # If command is not specified the default value will be used
 # The commands specifies values required to be met for a dataset to be suggested to be copied
 
+# DON'T USE
 # set_file_ratio : default = 10 
 # Specifies the desired ratio between number of set accesses and unique number of files accessed from that set
 
@@ -17,7 +18,7 @@
 # budget_time_frame : default = 24 
 # Specifies the time frame in hours for which the script keeps track of amount of moved data
 
-#set_file_ratio = 200
+#set_file_ratio = 200 DON'T SET
 #set_access = 500
 #total_budget = 40000
 #time_frame = 70
