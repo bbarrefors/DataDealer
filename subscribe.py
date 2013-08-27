@@ -44,7 +44,7 @@ def subscribe(site, dataset):
     # node = UNL
     # data = some small set not at UNL
     # 
-    url = urllib.basejoin(PHEDEX_BASE, "xml/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
+    url = urllib.basejoin(PHEDEX_BASE, "json/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
     print "Querying url %s for data information" % url
     try:
         data_response = urllib2.urlopen(url)
@@ -53,39 +53,40 @@ def subscribe(site, dataset):
         sys.exit()
         #data_response = urllib2.urlopen(phedex_call)
     
-    xml_data = data_response.read()
-    dom = xml.dom.minidom.parseString(xml_data)
-    dbs_dom = dom.getElementsByTagName("dbs")[0] # TODO: error checking
-    doc = xml.dom.minidom.getDOMImplementation().createDocument(None, "data", None)
-    result = doc.createElement("data")
-    result.setAttribute("version", "2")
-    result.appendChild(dbs_dom)
-    xml_data = result.toxml()
-    print "Corresponding data:\n%s" % xml_data
+    json_data = json.load(data_response)
+    print json_data
+    #dom = xml.dom.minidom.parseString(xml_data)
+    #dbs_dom = dom.getElementsByTagName("dbs")[0] # TODO: error checking
+    #doc = xml.dom.minidom.getDOMImplementation().createDocument(None, "data", None)
+    #result = doc.createElement("data")
+    #result.setAttribute("version", "2")
+    #result.appendChild(dbs_dom)
+    #xml_data = result.toxml()
+    #print "Corresponding data:\n%s" % xml_data
     level = 'dataset'
     priority = 'low'
     move = 'n'
     static = 'n'
     custodial = 'n'
     request_only = 'n'
-    values = { 'node' : site, 'data' : xml_data, 'level' : level,
-               'priority' : priority, 'move' : move, 'static' : static,
-               'custodial' : custodial, 'request_only' : request_only,
-               'group': GROUP }
-    data = urllib.urlencode(values)
-    subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
-    print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
+    #values = { 'node' : site, 'data' : xml_data, 'level' : level,
+    #           'priority' : priority, 'move' : move, 'static' : static,
+    #           'custodial' : custodial, 'request_only' : request_only,
+    #           'group': GROUP }
+    #data = urllib.urlencode(values)
+    #subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
+    #print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
 
-    opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    request = urllib2.Request(subscription_url, data)
-    try:
-        sub_response = opener.open(request)
-    except urllib2.HTTPError, he:
-        print he.read()
-        raise
+    #opener = urllib2.build_opener(HTTPSGridAuthHandler())
+    #request = urllib2.Request(subscription_url, data)
+    #try:
+    #    sub_response = opener.open(request)
+    #except urllib2.HTTPError, he:
+    #    print he.read()
+    #    raise
 
-    sub_status = sub_response.read()
-    print sub_status
+    #sub_status = sub_response.read()
+    #print sub_status
 
     return 0
 

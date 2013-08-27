@@ -74,11 +74,11 @@ def subscriptions():
         cur = con.cursor()
         cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
         while True:
-            fs.write(str(datetime.datetime.now()) + " Suggested data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
             row = cur.fetchone()
             if row == None:
                 break
             dataset = row[0]
+            fs.write(str(datetime.datetime.now()) + " Suggested data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
             setAccess = row[1]
             cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
             row = cur.fetchone()
