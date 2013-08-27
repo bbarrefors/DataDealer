@@ -63,6 +63,59 @@ def checkSize(dataset):
             return 0
         return 0
 
+def subscriptions():
+    # Decide which subscriptions to make
+    # Current rule: 
+    # Ratio setAcces / filesCount <= 300
+    # Total setAccess >= 200
+    fs = open('Subscriptions', 'a')
+    con = lite.connect("dataset_cache.db")
+    with con:
+        cur = con.cursor()
+        cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
+        while True:
+            fs.write(str(datetime.datetime.now()) + " Suggested data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
+            row = cur.fetchone()
+            if row == None:
+                break
+            dataset = row[0]
+            setAccess = row[1]
+            cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
+            row = cur.fetchone()
+            if row:
+                break
+
+            tot_size = 0
+            cur.execute('SELECT * FROM Budget')
+            while True:
+                row = cur.fetchone()
+                if row == None:
+                    break
+                tot_size += row[1]
+            #filesCount = 0;
+            #cur.execute('SELECT * FROM AccessTimestamp WHERE Dataset=?', [dataset])
+            #while True:
+            #    access = cur.fetchone()
+            #    if access == None:
+            #        break
+            #    filesCount += 1
+            #if filesCount > 0:
+            #if (setAccess/filesCount) <= SET_FILE_RATIO:
+            size = checkSize(str(dataset))
+            fs.write(str(datetime.datetime.now()) + " Size of data set " + str(dataset) + " is " + str(size) + ".\n")
+            if (tot_size + size > TOTAL_BUDGET):
+                break
+            if (not (size == 0)):
+                fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
+                cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
+                timestamp = datetime.datetime.now()
+                delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
+                expiration = timestamp + delta
+                cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
+    con.close()
+    fs.close()
+    return 1
+
 def update():
     # Delete entries where the expiration timestamp is older than current time
     # Update SetCount to reflect database after deletions
@@ -105,56 +158,6 @@ def printer():
     fc.close()
     return 1
 
-def subscriptions():
-    # Decide which subscriptions to make
-    # Current rule: 
-    # Ratio setAcces / filesCount <= 300
-    # Total setAccess >= 200
-    fs = open('Subscriptions', 'a')
-    con = lite.connect("dataset_cache.db")
-    with con:
-        cur = con.cursor()
-        cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
-        while True:
-            row = cur.fetchone()
-            if row == None:
-                break
-            dataset = row[0]
-            setAccess = row[1]
-            cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
-            row = cur.fetchone()
-            if row:
-                break
-
-            tot_size = 0
-            cur.execute('SELECT * FROM Budget')
-            while True:
-                row = cur.fetchone()
-                if row == None:
-                    break
-                tot_size += row[1]
-            #filesCount = 0;
-            #cur.execute('SELECT * FROM AccessTimestamp WHERE Dataset=?', [dataset])
-            #while True:
-            #    access = cur.fetchone()
-            #    if access == None:
-            #        break
-            #    filesCount += 1
-            #if filesCount > 0:
-            #if (setAccess/filesCount) <= SET_FILE_RATIO:
-            size = checkSize(str(dataset))
-            if (tot_size + size > TOTAL_BUDGET):
-                break
-            if (not (size == 0)):
-                fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
-                cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
-                timestamp = datetime.datetime.now()
-                delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
-                expiration = timestamp + delta
-                cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
-    con.close()
-    fs.close()
-    return 1
 
 def report():
     # Run every hour
