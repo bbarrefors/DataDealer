@@ -40,23 +40,23 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
-    def dict_iteration(data, xml):
-        for k, v in data.iteritems():
-            k = k.replace("_", "-")
-            if type(v) is dict:
+def dictIteration(data, xml):
+    for k, v in data.iteritems():
+        k = k.replace("_", "-")
+        if type(v) is dict:
+            xml = xml + ">"
+            xml = xml + "<" + k
+            xml = dictIteration(v, xml)
+            xml = xml + "</" + k + ">"
+        elif type(v) is list:
+            for v1 in v:
                 xml = xml + ">"
                 xml = xml + "<" + k
-                xml = dict_iteration(v, xml)
+                xml = dictIteration(v1, xml)
                 xml = xml + "</" + k + ">"
-            elif type(v) is list:
-                for v1 in v:
-                    xml = xml + ">"
-                    xml = xml + "<" + k
-                    xml = dict_iteration(v1, xml)
-                    xml = xml + "</" + k + ">"
-            else:
-                xml = xml + " " + k + "=" + '"%s"' % v
-        return xml
+        else:
+            xml = xml + " " + k + "=" + '"%s"' % v
+    return xml
 
 def subscribe(site, dataset):
     url = urllib.basejoin(PHEDEX_BASE, "json/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
@@ -68,6 +68,7 @@ def subscribe(site, dataset):
         sys.exit()
     
     json_data = json.load(data_response)
+    json_data = json_data.get('phedex')
     #dom = xml.dom.minidom.parseString(xml_data)
     #dbs_dom = dom.getElementsByTagName("dbs")[0] # TODO: error checking
     #doc = xml.dom.minidom.getDOMImplementation().createDocument(None, "data", None)
@@ -80,9 +81,10 @@ def subscribe(site, dataset):
     for k, v in json_data.iteritems():
         if k == "dbs":
             xml = xml + "<" + k
-            xml = dict_iteration(v[0], xml)
+            xml = dictIteration(v[0], xml)
             xml = xml + "</" + k + ">"
     xml_data = xml
+    print xml_data
     level = 'dataset'
     priority = 'low'
     move = 'n'
