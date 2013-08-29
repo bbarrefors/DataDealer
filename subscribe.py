@@ -43,21 +43,19 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
 def dictIteration(data, xml):
     for k, v in data.iteritems():
         k = k.replace("_", "-")
-        if type(v) is dict:
+        if type(v) is list:
             xml = xml + ">"
-            xml = xml + "<" + k
-            xml = dictIteration(v, xml)
-            xml = xml + "</" + k + ">"
-        elif type(v) is list:
             for v1 in v:
-                xml = xml + ">"
                 xml = xml + "<" + k
                 xml = dictIteration(v1, xml)
-                xml = xml + "</" + k + ">"
+                if (k == "file"):
+                    xml = xml + "/>"
+                else:
+                    xml = xml + "</" + k + ">"
         else:
             xml = xml + " " + k + "=" + '"%s"' % v
     return xml
-
+                
 def subscribe(site, dataset):
     url = urllib.basejoin(PHEDEX_BASE, "json/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
     print "Querying url %s for data information" % url
@@ -69,14 +67,6 @@ def subscribe(site, dataset):
     
     json_data = json.load(data_response)
     json_data = json_data.get('phedex')
-    #dom = xml.dom.minidom.parseString(xml_data)
-    #dbs_dom = dom.getElementsByTagName("dbs")[0] # TODO: error checking
-    #doc = xml.dom.minidom.getDOMImplementation().createDocument(None, "data", None)
-    #result = doc.createElement("data")
-    #result.setAttribute("version", "2")
-    #result.appendChild(dbs_dom)
-    #xml_data = result.toxml()
-    #print "Corresponding data:\n%s" % xml_data
     xml = ""
     for k, v in json_data.iteritems():
         if k == "dbs":
