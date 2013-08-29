@@ -59,9 +59,6 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
         return xml
 
 def subscribe(site, dataset):
-    # node = UNL
-    # data = some small set not at UNL
-    # 
     url = urllib.basejoin(PHEDEX_BASE, "json/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
     print "Querying url %s for data information" % url
     try:
@@ -69,7 +66,6 @@ def subscribe(site, dataset):
     except:
         print "Failed phedex call"
         sys.exit()
-        #data_response = urllib2.urlopen(phedex_call)
     
     json_data = json.load(data_response)
     #dom = xml.dom.minidom.parseString(xml_data)
