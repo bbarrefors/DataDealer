@@ -76,6 +76,7 @@ def subscribe(site, dataset):
     #result.appendChild(dbs_dom)
     #xml_data = result.toxml()
     #print "Corresponding data:\n%s" % xml_data
+    xml = ""
     for k, v in json_data.iteritems():
         if k == "dbs":
             xml = xml + "<" + k

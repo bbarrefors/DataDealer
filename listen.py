@@ -55,7 +55,7 @@ def checkSize(dataset):
         # Everything went well, do our thing instead
         # Find available space in phedex
         phedex_avail_util = checkPhedex()
-        fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + str(dataset) + " | PhEDEx available space to utilize: " + str(phedex_avail_util))
+        fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + str(dataset) + " | PhEDEx available space to utilize: " + str(phedex_avail_util) + "\n")
         fs2 = close()
         if (phedex_avail_util >= size_dataset):
             return int(size_dataset)
@@ -102,7 +102,6 @@ def subscriptions():
             #if filesCount > 0:
             #if (setAccess/filesCount) <= SET_FILE_RATIO:
             size = checkSize(str(dataset))
-            fs.write(str(datetime.datetime.now()) + " Size of data set " + str(dataset) + " is " + str(size) + ".\n")
             if (tot_size + size > TOTAL_BUDGET):
                 break
             if (not (size == 0)):
