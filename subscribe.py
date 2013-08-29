@@ -40,6 +40,24 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
+    def dict_iteration(data, xml):
+        for k, v in data.iteritems():
+            k = k.replace("_", "-")
+            if type(v) is dict:
+                xml = xml + ">"
+                xml = xml + "<" + k
+                xml = dict_iteration(v, xml)
+                xml = xml + "</" + k + ">"
+            elif type(v) is list:
+                for v1 in v:
+                    xml = xml + ">"
+                    xml = xml + "<" + k
+                    xml = dict_iteration(v1, xml)
+                    xml = xml + "</" + k + ">"
+            else:
+                xml = xml + " " + k + "=" + '"%s"' % v
+        return xml
+
 def subscribe(site, dataset):
     # node = UNL
     # data = some small set not at UNL
@@ -54,7 +72,6 @@ def subscribe(site, dataset):
         #data_response = urllib2.urlopen(phedex_call)
     
     json_data = json.load(data_response)
-    print json_data
     #dom = xml.dom.minidom.parseString(xml_data)
     #dbs_dom = dom.getElementsByTagName("dbs")[0] # TODO: error checking
     #doc = xml.dom.minidom.getDOMImplementation().createDocument(None, "data", None)
@@ -63,30 +80,36 @@ def subscribe(site, dataset):
     #result.appendChild(dbs_dom)
     #xml_data = result.toxml()
     #print "Corresponding data:\n%s" % xml_data
+    for k, v in json_data.iteritems():
+        if k == "dbs":
+            xml = xml + "<" + k
+            xml = dict_iteration(v[0], xml)
+            xml = xml + "</" + k + ">"
+    xml_data = xml
     level = 'dataset'
     priority = 'low'
     move = 'n'
     static = 'n'
     custodial = 'n'
     request_only = 'n'
-    #values = { 'node' : site, 'data' : xml_data, 'level' : level,
-    #           'priority' : priority, 'move' : move, 'static' : static,
-    #           'custodial' : custodial, 'request_only' : request_only,
-    #           'group': GROUP }
-    #data = urllib.urlencode(values)
-    #subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
-    #print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
+    values = { 'node' : site, 'data' : xml_data, 'level' : level,
+               'priority' : priority, 'move' : move, 'static' : static,
+               'custodial' : custodial, 'request_only' : request_only,
+               'group': GROUP }
+    data = urllib.urlencode(values)
+    subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
+    print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
 
-    #opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    #request = urllib2.Request(subscription_url, data)
-    #try:
-    #    sub_response = opener.open(request)
-    #except urllib2.HTTPError, he:
-    #    print he.read()
-    #    raise
+    opener = urllib2.build_opener(HTTPSGridAuthHandler())
+    request = urllib2.Request(subscription_url, data)
+    try:
+        sub_response = opener.open(request)
+    except urllib2.HTTPError, he:
+        print he.read()
+        raise
 
-    #sub_status = sub_response.read()
-    #print sub_status
+    sub_status = sub_response.read()
+    print sub_status
 
     return 0
 
