@@ -53,6 +53,10 @@ def dictIteration(data, xml):
                 else:
                     xml = xml + "</" + k + ">"
         else:
+            if k == "lfn":
+                k = "name"
+            elif k == "size":
+                k = "bytes"
             xml = xml + " " + k + "=" + '"%s"' % v
     return xml
                 
@@ -67,13 +71,13 @@ def subscribe(site, dataset):
     
     json_data = json.load(data_response)
     json_data = json_data.get('phedex')
-    xml = ""
+    xml = '<data version="2">'
     for k, v in json_data.iteritems():
         if k == "dbs":
             xml = xml + "<" + k
             xml = dictIteration(v[0], xml)
             xml = xml + "</" + k + ">"
-    xml_data = xml
+    xml_data = xml + "</data>"
     print xml_data
     level = 'dataset'
     priority = 'low'
