@@ -19,7 +19,8 @@ PHEDEX_INSTANCE = "dev"
 SITE = "T2_US_Nebraska"
 #DATASET = "/Pyquen_WToMuNu_TuneZ2_5023GeV_pythia6/HiWinter13-pa_STARTHI53_V25-v2/GEN-SIM-RECO"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-GROUP = 'local'
+#GROUP = 'local'
+GROUP = 'Jupiter'
 
 class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
 
@@ -93,6 +94,8 @@ def subscribe(site, dataset):
     subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
     print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
 
+    #opener = urllib2.build_opener(HTTPSGridAuthHandler())
+    #request = urllib2.Request("https://cmsweb.cern.ch/auth/trouble/")
     opener = urllib2.build_opener(HTTPSGridAuthHandler())
     request = urllib2.Request(subscription_url, data)
     try:
