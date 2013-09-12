@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+"""
+_PhEDExUDPListener_
+
+
+"""
 
 import os
 import socket
@@ -17,10 +22,14 @@ TOTAL_BUDGET = 40000
 TIME_FRAME = 72
 BUDGET_TIME_FRAME = 24
 
-def checkDataset(dataset):
-    # Accumulate all block sizes and calculate total dataset size
-    # Size returned in GB
-    phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + dataset
+def datasetSize(dataset):
+    """
+    _datasetSize_
+    
+    Accumulate all block sizes and calculate total size of dataset in GB.
+    In case of error in PhEDEx call return 0.
+    """
+    phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + str(dataset)
     try:
         response = urllib2.urlopen(phedex_call)
     except:
@@ -34,40 +43,47 @@ def checkDataset(dataset):
     size_dataset = size_dataset / 10**9
     return int(size_dataset)
 
-def checkPhedex():
-    avail_space_util = 0
+def availableSpace():
+    """
+    _availableSpace_
+
+    Return available space on phedex at UNL.
+    Need to have at least 10% free at all times so return the space 
+    available in GB to use without reaching 90% capacity.
+    """
     info = os.statvfs("/mnt/hadoop")
     total = (info.f_blocks * info.f_bsize) / (1024**3)
-    min = total*(0.1)
     free = (info.f_bfree * info.f_bsize) / (1024**3)
-    avail_space_util = free - min
+    minimum_free = total*(0.1)
+    available_space = free - minimum_free
     return int(avail_space_util)
 
-def checkSize(dataset):
-    # Check available space at phedex.unl.edu
-    # See if dataset size is small enough to be moved
-    fs2 = open('Sizes', 'a')
-    size_dataset = checkDataset(dataset)
+def spaceCheck(dataset):
+    """
+    _spaceCheck_
+
+    Check if dataset can be moved to datacenter 
+    without going over the space limit.
+    Return 0 fail and size of dataset if possible.
+    """
+    dataset_size = datasetSize(dataset)
     if (size_dataset == 0):
-        # dataset request didn't succeed, exit out maybe?
         return 0
     else:
-        # Everything went well, do our thing instead
-        # Find available space in phedex
-        phedex_avail_util = checkPhedex()
-        fs2.write("Dataset size: " + str(size_dataset) + "GB for set " + str(dataset) + " | PhEDEx available space to utilize: " + str(phedex_avail_util) + "\n")
-        fs2 = close()
+        available_space = availableSpace()
         if (phedex_avail_util >= size_dataset):
             return int(size_dataset)
         else:
             return 0
-        return 0
+    return 0
 
-def subscriptions():
-    # Decide which subscriptions to make
-    # Current rule: 
-    # Ratio setAcces / filesCount <= 300
-    # Total setAccess >= 200
+def subscriptionDecision():
+    """
+    _subscriptionDecision_
+
+    Suggest subscription if a set have been accesses more than SET_ACCESS 
+    and moving the set will not fill the new node more than 90%.
+    """
     fs = open('Subscriptions', 'a')
     con = lite.connect("dataset_cache.db")
     with con:
@@ -85,24 +101,15 @@ def subscriptions():
             if row:
                 break
 
-            tot_size = 0
+            budget = 0
             cur.execute('SELECT * FROM Budget')
             while True:
                 row = cur.fetchone()
                 if row == None:
                     break
-                tot_size += row[1]
-            #filesCount = 0;
-            #cur.execute('SELECT * FROM AccessTimestamp WHERE Dataset=?', [dataset])
-            #while True:
-            #    access = cur.fetchone()
-            #    if access == None:
-            #        break
-            #    filesCount += 1
-            #if filesCount > 0:
-            #if (setAccess/filesCount) <= SET_FILE_RATIO:
-            size = checkSize(str(dataset))
-            if (tot_size + size > TOTAL_BUDGET):
+                budget += row[1]
+            dataset_size = spaceCheck(str(dataset))
+            if (budget + dataset_size > TOTAL_BUDGET):
                 break
             if (not (size == 0)):
                 fs.write(str(datetime.datetime.now()) + " Move data set: " + str(dataset) + " because it had " + str(setAccess) + " set accesses.\n")
@@ -110,15 +117,19 @@ def subscriptions():
                 timestamp = datetime.datetime.now()
                 delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
                 expiration = timestamp + delta
-                cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
+                cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(dataset_size), expiration))
     con.close()
     fs.close()
     return 1
 
 def update():
-    # Delete entries where the expiration timestamp is older than current time
-    # Update SetCount to reflect database after deletions
-    # Delete sets from SetCount if count is 0 or less
+    """
+    _update_
+
+    Delete entries where the expiration timestamp is older than current time.
+    Update SetCount to reflect database after deletions.
+    Delete sets from SetCount if count is 0 or less.
+    """
     con = lite.connect("dataset_cache.db")
     with con:
         cur = con.cursor()
@@ -140,43 +151,31 @@ def update():
     con.close()
     return 1
 
-def printer():
-    # Print anything that might be of interest
-    # Currently print out the SetCount database table
-    fc = open('Setcount', 'w')
-    con = lite.connect("dataset_cache.db")
-    with con:
-        cur = con.cursor()
-        cur.execute('SELECT * FROM SetCount ORDER BY Count DESC')
-        while True:
-            row = cur.fetchone()
-            if row == None:
-                break
-            fc.write(str(datetime.datetime.now()) + " " + str(row[0]) + "\t" + str(row[1]) + "\n")
-    con.close()
-    fc.close()
-    return 1
-
-
-def report():
-    # Run every hour
+def janitor():
+    """
+    _janitor_
+    
+    Run the janitor once every hour. 
+    The janitor is in charge of cleaning out expired 
+    entries in the database and suggest subscriptions.
+    """
+    Run every hour
     while True:
         time.sleep(3600)
         # Update database, delete entries older than 12h
         update()
-        # Print out stuff
-        printer()
         # Check if should make subscriptions
-        subscriptions()
+        subscriptionDecision()
     return 1
 
-def data_handler(d):
-    # Extract file name from data
-    # If it is in cache fetch from db
-    # Else fetch from PhEDEx
-    # the file may not have dataset, this could be a bug. we will store log this in database
-    # Insert into cache if not already there
-    # Increment count table for dataset
+def dataHandler(d):
+    """
+    _dataHandler_
+
+    Analyze dictionary extracted from UDP packet
+    to insert dataset accesses in database.
+    Dataset may not exist, record this as unknown.
+    """
     con = lite.connect("dataset_cache.db")
     lfn = str(d['file_lfn'])
     with con:
@@ -223,12 +222,21 @@ def data_handler(d):
     return 1
 
 def work(q):
+    """
+    _work_
+    
+    Distribute data handling of UDP packets to worker processes.
+    """
     while True:
         d = q.get()
-        data_handler(d)
+        dataHandler(d)
 
-def data_parser(data):
-    # Extract data and insert into dictionary
+def dataParser(data):
+    """
+    _dataParser_
+    
+    Extract data from UDP packet and insert into dictionary.
+    """
     d = {}
     for line in data.split('\n'):
         if '=' in line:
@@ -238,8 +246,15 @@ def data_parser(data):
     return d
 
 if __name__ == '__main__':
-    # Set up parameters from config file    
-    config_f = open('config', 'r')
+    """
+    __main__
+
+    Parse config file and set parameters based on values.
+    Set up database.
+    Spawn worker processes and janitor.
+    Recieve UDP packets and send to parser and then distribute to workers.
+    """
+    config_f = open('listener.conf', 'r')
     for line in config_f:
         #if re.match("set_file_ratio", line):
         #    value = re.split(" = ", line)
@@ -279,7 +294,7 @@ if __name__ == '__main__':
     queue = manager.Queue()
 
     # Spawn process that to clean out database and make reports every 1h
-    process = Process(target=report, args=())
+    process = Process(target=janitor, args=())
     process.start()
     workers = pool.apply_async(work, (queue,))
 
@@ -293,7 +308,7 @@ if __name__ == '__main__':
     try:
         while True:
             data,addr = UDPSock.recvfrom(buf)
-            dictionary = data_parser(data)
+            dictionary = dataParser(data)
             queue.put(dictionary)
 
     #Close everything if program is interupted
