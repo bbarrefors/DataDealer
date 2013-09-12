@@ -90,8 +90,8 @@ def subscriptionDecision():
     Suggest subscription if a set have been accesses more than SET_ACCESS 
     and moving the set will not fill the new node more than 90%.
     """
-    fs = open('Subscriptions', 'a')
-    con = lite.connect("dataset_cache.db")
+    fs = open('/home/bockelman/barrefors/data.log', 'a')
+    con = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
     with con:
         cur = con.cursor()
         cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
@@ -136,7 +136,7 @@ def update():
     Update SetCount to reflect database after deletions.
     Delete sets from SetCount if count is 0 or less.
     """
-    con = lite.connect("dataset_cache.db")
+    con = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
     with con:
         cur = con.cursor()
         cur.execute('SELECT Dataset FROM SetCount')
@@ -182,7 +182,7 @@ def dataHandler(d):
     to insert dataset accesses in database.
     Dataset may not exist, record this as unknown.
     """
-    con = lite.connect("dataset_cache.db")
+    con = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
     lfn = str(d['file_lfn'])
     with con:
         cur = con.cursor()
