@@ -38,6 +38,7 @@ def subscribe(dataset, l):
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Subscribe dataset " + str(dataset) + "\n")
     l.release()
     with con:
+        cur = con.cursor()
         cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
         timestamp = datetime.datetime.now()
         delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
