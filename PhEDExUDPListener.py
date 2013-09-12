@@ -27,18 +27,23 @@ SET_ACCESS = 200
 TOTAL_BUDGET = 40000
 TIME_FRAME = 72
 BUDGET_TIME_FRAME = 24
+SQLITE_PATH = '/home/bockelman/barrefors/dataset_cache.db'
+LOG_PATH = '/home/bockelman/barrefors/data.log'
 
 def subscribe(dataset, l):
     ID = "Subscribe"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
+    fs = open(LOG_PATH, 'a')
+    con = lite.connect(SQLITE_PATH)
     l.acquire()
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Subscribe dataset " + str(dataset) + "\n")
     l.release()
-    cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
-    timestamp = datetime.datetime.now()
-    delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
-    expiration = timestamp + delta
-    cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(dataset_size), expiration))
+    with con:
+        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
+        timestamp = datetime.datetime.now()
+        delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
+        expiration = timestamp + delta
+        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(dataset_size), expiration))
+    con.close()
     fs.close()
     return 1
 
@@ -50,7 +55,7 @@ def datasetSize(dataset, l):
     In case of error in PhEDEx call return 0.
     """
     ID = "DatasetSize"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
+    fs = open(LOG_PATH, 'a')
     phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + str(dataset)
     try:
         response = urllib2.urlopen(phedex_call)
@@ -82,7 +87,7 @@ def availableSpace(l):
     available in GB to use without reaching 90% capacity.
     """
     ID = "PhedexCheck"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
+    fs = open(LOG_PATH, 'a')
     info = os.statvfs("/mnt/hadoop")
     total = (info.f_blocks * info.f_bsize) / (1024**3)
     free = (info.f_bfree * info.f_bsize) / (1024**3)
@@ -103,7 +108,7 @@ def spaceCheck(dataset, l):
     Return 0 fail and size of dataset if possible.
     """
     ID = "SpaceCheck"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
+    fs = open(LOG_PATH, 'a')
     dataset_size = datasetSize(dataset)
     if (size_dataset == 0):
         fs.close()
@@ -127,8 +132,8 @@ def subscriptionDecision(l):
     and moving the set will not fill the new node more than 90%.
     """
     ID = "Decision"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
-    con = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
+    fs = open(LOG_PATH, 'a')
+    con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
         cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
@@ -172,8 +177,8 @@ def update(l):
     Delete sets from SetCount if count is 0 or less.
     """
     ID = "Update"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
-    con = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
+    fs = open(LOG_PATH, 'a')
+    con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
         cur.execute('SELECT Dataset FROM SetCount')
@@ -210,7 +215,7 @@ def janitor(l):
     # Run every hour
     while True:
         time.sleep(360)
-        fs = open('/home/bockelman/barrefors/data.log', 'a')
+        fs = open(LOG_PATH, 'a')
         l.acquire()
         fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Running hourly routine\n")
         l.release()
@@ -230,8 +235,8 @@ def dataHandler(d, l):
     Dataset may not exist, record this as unknown.
     """
     ID = "Worker"
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
-    con = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
+    fs = open(LOG_PATH, 'a')
+    con = lite.connect(SQLITE_PATH)
     lfn = str(d['file_lfn'])
     with con:
         cur = con.cursor()
@@ -321,6 +326,8 @@ if __name__ == '__main__':
     Recieve UDP packets and send to parser and then distribute to workers.
     """
     ID = "Main"
+    fs = open(LOG_PATH, 'a')
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Parsing config file\n")
     config_f = open('listener.conf', 'r')
     for line in config_f:
         if re.match("set_access", line):
@@ -338,7 +345,8 @@ if __name__ == '__main__':
     config_f.close()
 
     # Create database and tables if they don't already exist
-    connection = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Setting up database\n")
+    connection = lite.connect(SQLITE_PATH)
     with connection:
         cur = connection.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
@@ -368,9 +376,8 @@ if __name__ == '__main__':
     listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
-    
-    fs = open('/home/bockelman/barrefors/data.log', 'a')
-    
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Start lostening for UDP packets\n")
+        
     # Listen for UDP packets
     try:
         while True:
