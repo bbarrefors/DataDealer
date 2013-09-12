@@ -2,7 +2,14 @@
 """
 _PhEDExUDPListener_
 
+This script recieves UDP packets with information from PhEDEx.
+Packets contain information of files that have been accessed.
+This information is stored i na local database and analyzed to
+make decisions on when to subscribe a dataset.
 
+Created by Bjorn Barrefors on 11/9/2013
+
+Holland Computing Center - University of Nebraska-Lincoln
 """
 
 import os
@@ -16,7 +23,6 @@ import datetime
 import sqlite3 as lite
 from multiprocessing import Manager, Process, Pool
 
-#SET_FILE_RATIO = 10
 SET_ACCESS = 200
 TOTAL_BUDGET = 40000
 TIME_FRAME = 72
@@ -245,6 +251,10 @@ def dataParser(data):
                 d[k] = v
     return d
 
+# TODO : Function for setting up database
+
+# TODO : Function for parsing config file
+
 if __name__ == '__main__':
     """
     __main__
@@ -256,9 +266,6 @@ if __name__ == '__main__':
     """
     config_f = open('listener.conf', 'r')
     for line in config_f:
-        #if re.match("set_file_ratio", line):
-        #    value = re.split(" = ", line)
-        #    SET_FILE_RATIO = int(value[1].rstrip())
         if re.match("set_access", line):
             value = re.split(" = ", line)
             SET_ACCESS = int(value[1].rstrip())
@@ -274,7 +281,7 @@ if __name__ == '__main__':
     config_f.close()
 
     # Create database and tables if they don't already exist
-    connection = lite.connect("dataset_cache.db")
+    connection = lite.connect("/home/bockelman/barrefors/dataset_cache.db")
     with connection:
         cur = connection.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
