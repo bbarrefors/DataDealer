@@ -103,7 +103,7 @@ def availableSpace(l):
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "\n")
     l.release()
     fs.close()
-    return int(avail_space_util)
+    return int(available_space)
 
 def spaceCheck(dataset, l):
     """
@@ -115,13 +115,13 @@ def spaceCheck(dataset, l):
     """
     ID = "SpaceCheck"
     fs = open(LOG_PATH, 'a')
-    dataset_size = datasetSize(dataset)
+    size_dataset = datasetSize(dataset, l)
     if (size_dataset == 0):
         fs.close()
         return 0
     else:
-        available_space = availableSpace()
-        if (phedex_avail_util >= size_dataset):
+        available_space = availableSpace(l)
+        if (available_space >= size_dataset):
             fs.close()
             return int(size_dataset)
         else:
@@ -149,9 +149,9 @@ def subscriptionDecision(l):
                 break
             dataset = row[0]
             l.acquire()
+            setAccess = row[1]
             fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " have " + str(setAccess) + " set accesses\n")
             l.release()
-            setAccess = row[1]
             cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
             row = cur.fetchone()
             if row:
@@ -167,7 +167,7 @@ def subscriptionDecision(l):
             dataset_size = spaceCheck(str(dataset), l)
             if (budget + dataset_size > TOTAL_BUDGET):
                 break
-            if (not (size == 0)):
+            if (not (dataset_size == 0)):
                 # TODO : Check if subscription succeeded
                 subscribe(str(dataset), l)
     con.close()
@@ -232,7 +232,7 @@ def janitor(l):
         fs.close()
     return 1
 
-def dataHandler(d, l):
+def dataHandler(d):
     """
     _dataHandler_
 
@@ -240,8 +240,8 @@ def dataHandler(d, l):
     to insert dataset accesses in database.
     Dataset may not exist, record this as unknown.
     """
-    ID = "Worker"
-    fs = open(LOG_PATH, 'a')
+    #ID = "Worker"
+    #fs = open(LOG_PATH, 'a')
     con = lite.connect(SQLITE_PATH)
     lfn = str(d['file_lfn'])
     with con:
@@ -278,23 +278,23 @@ def dataHandler(d, l):
                 else:
                     in_count = 1
                     cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
-                l.acquire()
-                fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to dataset " + str(dataset) + " from file " + str(lfn) + " added to datatbase\n")
-                l.release()
+                #l.acquire()
+                #fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to dataset " + str(dataset) + " from file " + str(lfn) + " added to datatbase\n")
+                #l.release()
             else:
                 # Unknown log
                 delta = datetime.timedelta(hours=TIME_FRAME)
                 timestamp = datetime.datetime.now()
                 dataset = "UNKNOWN"
                 cur.execute('INSERT OR IGNORE INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
-                l.acquire()
-                fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to unknown dataset with file " + str(lfn) + " added to database\n")
-                l.release()
-    fs.close()
+                #l.acquire()
+                #fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to unknown dataset with file " + str(lfn) + " added to database\n")
+                #l.release()
+    #fs.close()
     con.close()
     return 1
 
-def work(q, l):
+def work(q):
     """
     _work_
     
@@ -302,7 +302,7 @@ def work(q, l):
     """
     while True:
         d = q.get()
-        dataHandler(d, l)
+        dataHandler(d)
 
 def dataParser(data):
     """
@@ -375,23 +375,20 @@ if __name__ == '__main__':
     # Spawn process that to clean out database and make reports every 1h
     process = Process(target=janitor, args=(lock,))
     process.start()
-    workers = pool.apply_async(work, (queue, lock))
+    workers = pool.apply_async(work, (queue,))
 
     # UDP packets containing information about file access
     UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Start lostening for UDP packets\n")
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Start listening for UDP packets\n")
         
     # Listen for UDP packets
     try:
         while True:
             data,addr = UDPSock.recvfrom(buf)
             dictionary = dataParser(data)
-            lock.acquire()
-            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": UDP packet received\n")
-            lock.release()            
             queue.put(dictionary)
 
     #Close everything if program is interupted
