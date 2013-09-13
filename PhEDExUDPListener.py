@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python26
 """
 _PhEDExUDPListener_
 
@@ -31,12 +31,17 @@ SQLITE_PATH = '/home/bockelman/barrefors/dataset_cache.db'
 LOG_PATH = '/home/bockelman/barrefors/data.log'
 
 def subscribe(dataset, l):
+    """
+    _subscribe_
+    
+    
+    """
     ID = "Subscribe"
     fs = open(LOG_PATH, 'a')
-    con = lite.connect(SQLITE_PATH)
     l.acquire()
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Subscribe dataset " + str(dataset) + "\n")
     l.release()
+    con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
         cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
