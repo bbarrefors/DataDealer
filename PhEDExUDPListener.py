@@ -72,14 +72,14 @@ def datasetSize(dataset, l):
         fs.close()
         return 0
     json_data = json.load(response)
-    dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
-    size_dataset = 0
-    for block in dataset:
+    data = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
+    size_dataset = float(0)
+    for block in data:
         size_dataset += block.get('bytes')
 
     size_dataset = size_dataset / 10**9
     l.acquire()
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " size is " + str(size_dataset) + "\n")
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " size is " + str(size_dataset) + "GB\n")
     l.release()
     fs.close()
     return int(size_dataset)
@@ -100,7 +100,7 @@ def availableSpace(l):
     minimum_free = total*(0.1)
     available_space = free - minimum_free
     l.acquire()
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "\n")
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "GB\n")
     l.release()
     fs.close()
     return int(available_space)
@@ -148,8 +148,8 @@ def subscriptionDecision(l):
             if row == None:
                 break
             dataset = row[0]
-            l.acquire()
             setAccess = row[1]
+            l.acquire()
             fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " have " + str(setAccess) + " set accesses\n")
             l.release()
             cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
@@ -164,6 +164,9 @@ def subscriptionDecision(l):
                 if row == None:
                     break
                 budget += row[1]
+            l.acquire()
+            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Total budget used " str(budget) + "GB\n")
+            l.release()
             dataset_size = spaceCheck(str(dataset), l)
             if (budget + dataset_size > TOTAL_BUDGET):
                 break
