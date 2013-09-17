@@ -165,7 +165,7 @@ def subscriptionDecision(l):
                     break
                 budget += row[1]
             l.acquire()
-            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Total budget used " str(budget) + "GB\n")
+            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Total budget used " + str(budget) + "GB\n")
             l.release()
             dataset_size = spaceCheck(str(dataset), l)
             if (budget + dataset_size > TOTAL_BUDGET):
