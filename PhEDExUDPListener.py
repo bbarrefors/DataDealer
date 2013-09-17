@@ -30,7 +30,7 @@ BUDGET_TIME_FRAME = 24
 SQLITE_PATH = '/home/bockelman/barrefors/dataset_cache.db'
 LOG_PATH = '/home/bockelman/barrefors/data.log'
 
-def subscribe(dataset, l):
+def subscribe(dataset, size, l):
     """
     _subscribe_
     
@@ -49,7 +49,7 @@ def subscribe(dataset, l):
         timestamp = datetime.datetime.now()
         delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
         expiration = timestamp + delta
-        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(dataset_size), expiration))
+        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
     con.close()
     return 1
 
@@ -174,7 +174,7 @@ def subscriptionDecision(l):
                 break
             if (not (dataset_size == 0)):
                 # TODO : Check if subscription succeeded
-                subscribe(str(dataset), l)
+                subscribe(str(dataset), int(dataset_size), l)
     con.close()
     return 1
 
