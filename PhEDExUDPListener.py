@@ -37,9 +37,10 @@ def subscribe(dataset, l):
     
     """
     ID = "Subscribe"
-    fs = open(LOG_PATH, 'a')
     l.acquire()
+    fs = open(LOG_PATH, 'a')
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Subscribe dataset " + str(dataset) + "\n")
+    fs.close()
     l.release()
     con = lite.connect(SQLITE_PATH)
     with con:
@@ -50,7 +51,6 @@ def subscribe(dataset, l):
         expiration = timestamp + delta
         cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(dataset_size), expiration))
     con.close()
-    fs.close()
     return 1
 
 def datasetSize(dataset, l):
@@ -61,15 +61,15 @@ def datasetSize(dataset, l):
     In case of error in PhEDEx call return 0.
     """
     ID = "DatasetSize"
-    fs = open(LOG_PATH, 'a')
     phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + str(dataset)
     try:
         response = urllib2.urlopen(phedex_call)
     except:
         l.acquire()
+        fs = open(LOG_PATH, 'a')
         fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Couldn't get dataset " + str(dataset) + " size\n")
-        l.release()
         fs.close()
+        l.release()
         return 0
     json_data = json.load(response)
     data = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
@@ -79,9 +79,10 @@ def datasetSize(dataset, l):
 
     size_dataset = size_dataset / 10**9
     l.acquire()
+    fs = open(LOG_PATH, 'a')
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " size is " + str(size_dataset) + "GB\n")
-    l.release()
     fs.close()
+    l.release()
     return int(size_dataset)
 
 def availableSpace(l):
@@ -93,16 +94,16 @@ def availableSpace(l):
     available in GB to use without reaching 90% capacity.
     """
     ID = "PhedexCheck"
-    fs = open(LOG_PATH, 'a')
     info = os.statvfs("/mnt/hadoop")
     total = (info.f_blocks * info.f_bsize) / (1024**3)
     free = (info.f_bfree * info.f_bsize) / (1024**3)
     minimum_free = total*(0.1)
     available_space = free - minimum_free
     l.acquire()
+    fs = open(LOG_PATH, 'a')
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "GB\n")
-    l.release()
     fs.close()
+    l.release()
     return int(available_space)
 
 def spaceCheck(dataset, l):
@@ -114,7 +115,6 @@ def spaceCheck(dataset, l):
     Return 0 fail and size of dataset if possible.
     """
     ID = "SpaceCheck"
-    fs = open(LOG_PATH, 'a')
     size_dataset = datasetSize(dataset, l)
     if (size_dataset == 0):
         fs.close()
@@ -127,7 +127,6 @@ def spaceCheck(dataset, l):
         else:
             fs.close()
             return 0
-    fs.close()
     return 0
 
 def subscriptionDecision(l):
@@ -138,7 +137,6 @@ def subscriptionDecision(l):
     and moving the set will not fill the new node more than 90%.
     """
     ID = "Decision"
-    fs = open(LOG_PATH, 'a')
     con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
@@ -150,7 +148,9 @@ def subscriptionDecision(l):
             dataset = row[0]
             setAccess = row[1]
             l.acquire()
+            fs = open(LOG_PATH, 'a')
             fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " have " + str(setAccess) + " set accesses\n")
+            fs.close()
             l.release()
             cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
             row = cur.fetchone()
@@ -165,7 +165,9 @@ def subscriptionDecision(l):
                     break
                 budget += row[1]
             l.acquire()
+            fs = open(LOG_PATH, 'a')
             fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Total budget used " + str(budget) + "GB\n")
+            fs.close()
             l.release()
             dataset_size = spaceCheck(str(dataset), l)
             if (budget + dataset_size > TOTAL_BUDGET):
@@ -174,7 +176,6 @@ def subscriptionDecision(l):
                 # TODO : Check if subscription succeeded
                 subscribe(str(dataset), l)
     con.close()
-    fs.close()
     return 1
 
 def update(l):
@@ -186,7 +187,6 @@ def update(l):
     Delete sets from SetCount if count is 0 or less.
     """
     ID = "Update"
-    fs = open(LOG_PATH, 'a')
     con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
@@ -207,9 +207,10 @@ def update(l):
         #cur.execute('DELETE FROM Budget WHERE Expiration<?', [datetime.datetime.now()])
     con.close()
     l.acquire()
+    fs = open(LOG_PATH, 'a')
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Done updating database\n")
-    l.release()
     fs.close()
+    l.release()
     return 1
 
 def janitor(l):
@@ -224,15 +225,15 @@ def janitor(l):
     # Run every hour
     while True:
         time.sleep(360)
-        fs = open(LOG_PATH, 'a')
         l.acquire()
+        fs = open(LOG_PATH, 'a')
         fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Running hourly routine\n")
+        fs.close()
         l.release()
         # Update database, delete entries older than 12h
         update(l)
         # Check if should make subscriptions
         subscriptionDecision(l)
-        fs.close()
     return 1
 
 def dataHandler(d):
@@ -243,8 +244,7 @@ def dataHandler(d):
     to insert dataset accesses in database.
     Dataset may not exist, record this as unknown.
     """
-    #ID = "Worker"
-    #fs = open(LOG_PATH, 'a')
+    ID = "Worker"
     con = lite.connect(SQLITE_PATH)
     lfn = str(d['file_lfn'])
     with con:
@@ -281,19 +281,12 @@ def dataHandler(d):
                 else:
                     in_count = 1
                     cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
-                #l.acquire()
-                #fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to dataset " + str(dataset) + " from file " + str(lfn) + " added to datatbase\n")
-                #l.release()
             else:
                 # Unknown log
                 delta = datetime.timedelta(hours=TIME_FRAME)
                 timestamp = datetime.datetime.now()
                 dataset = "UNKNOWN"
                 cur.execute('INSERT OR IGNORE INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
-                #l.acquire()
-                #fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to unknown dataset with file " + str(lfn) + " added to database\n")
-                #l.release()
-    #fs.close()
     con.close()
     return 1
 
@@ -355,6 +348,7 @@ if __name__ == '__main__':
 
     # Create database and tables if they don't already exist
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Setting up database\n")
+    fs.close()
     connection = lite.connect(SQLITE_PATH)
     with connection:
         cur = connection.cursor()
@@ -385,8 +379,6 @@ if __name__ == '__main__':
     listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Start listening for UDP packets\n")
-        
     # Listen for UDP packets
     try:
         while True:
@@ -399,5 +391,4 @@ if __name__ == '__main__':
         UDPSock.close()
         pool.close()
         pool.join()
-        fs.close()
         process.join()
