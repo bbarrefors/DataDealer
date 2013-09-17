@@ -224,7 +224,7 @@ def janitor(l):
     ID = "Janitor"
     # Run every hour
     while True:
-        time.sleep(360)
+        time.sleep(3600)
         l.acquire()
         fs = open(LOG_PATH, 'a')
         fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Running hourly routine\n")
