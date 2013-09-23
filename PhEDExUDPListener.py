@@ -38,16 +38,17 @@ TIME_FRAME = 72
 BUDGET_TIME_FRAME = 24
 SQLITE_PATH = '/home/bockelman/barrefors/dataset_cache.db'
 
-def subscribe(dataset, l):
+def subscribe(dataset, size, l):
     """
     _subscribe_
     
     
     """
     ID = "Subscribe"
-    fs = open(LOG_PATH, 'a')
     l.acquire()
+    fs = open(LOG_PATH, 'a')
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Subscribe dataset " + str(dataset) + "\n")
+    fs.close()
     l.release()
     con = lite.connect(SQLITE_PATH)
     with con:
@@ -56,9 +57,8 @@ def subscribe(dataset, l):
         timestamp = datetime.datetime.now()
         delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
         expiration = timestamp + delta
-        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(dataset_size), expiration))
+        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
     con.close()
-    fs.close()
     return 1
 
 def datasetSize(dataset, l):
@@ -69,27 +69,28 @@ def datasetSize(dataset, l):
     In case of error in PhEDEx call return 0.
     """
     ID = "DatasetSize"
-    fs = open(LOG_PATH, 'a')
     phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + str(dataset)
     try:
         response = urllib2.urlopen(phedex_call)
     except:
         l.acquire()
+        fs = open(LOG_PATH, 'a')
         fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Couldn't get dataset " + str(dataset) + " size\n")
-        l.release()
         fs.close()
+        l.release()
         return 0
     json_data = json.load(response)
-    dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
-    size_dataset = 0
-    for block in dataset:
+    data = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
+    size_dataset = float(0)
+    for block in data:
         size_dataset += block.get('bytes')
 
     size_dataset = size_dataset / 10**9
     l.acquire()
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " size is " + str(size_dataset) + "\n")
-    l.release()
+    fs = open(LOG_PATH, 'a')
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " size is " + str(size_dataset) + "GB\n")
     fs.close()
+    l.release()
     return int(size_dataset)
 
 def availableSpace(l):
@@ -101,17 +102,17 @@ def availableSpace(l):
     available in GB to use without reaching 90% capacity.
     """
     ID = "PhedexCheck"
-    fs = open(LOG_PATH, 'a')
     info = os.statvfs("/mnt/hadoop")
     total = (info.f_blocks * info.f_bsize) / (1024**3)
     free = (info.f_bfree * info.f_bsize) / (1024**3)
     minimum_free = total*(0.1)
     available_space = free - minimum_free
     l.acquire()
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "\n")
-    l.release()
+    fs = open(LOG_PATH, 'a')
+    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "GB\n")
     fs.close()
-    return int(avail_space_util)
+    l.release()
+    return int(available_space)
 
 def spaceCheck(dataset, l):
     """
@@ -122,20 +123,18 @@ def spaceCheck(dataset, l):
     Return 0 fail and size of dataset if possible.
     """
     ID = "SpaceCheck"
-    fs = open(LOG_PATH, 'a')
-    dataset_size = datasetSize(dataset)
+    size_dataset = datasetSize(dataset, l)
     if (size_dataset == 0):
         fs.close()
         return 0
     else:
-        available_space = availableSpace()
-        if (phedex_avail_util >= size_dataset):
+        available_space = availableSpace(l)
+        if (available_space >= size_dataset):
             fs.close()
             return int(size_dataset)
         else:
             fs.close()
             return 0
-    fs.close()
     return 0
 
 def subscriptionDecision(l):
@@ -146,7 +145,6 @@ def subscriptionDecision(l):
     and moving the set will not fill the new node more than 90%.
     """
     ID = "Decision"
-    fs = open(LOG_PATH, 'a')
     con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
@@ -156,10 +154,12 @@ def subscriptionDecision(l):
             if row == None:
                 break
             dataset = row[0]
-            l.acquire()
-            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " have " + str(setAccess) + " set accesses\n")
-            l.release()
             setAccess = row[1]
+            l.acquire()
+            fs = open(LOG_PATH, 'a')
+            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " have " + str(setAccess) + " set accesses\n")
+            fs.close()
+            l.release()
             cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
             row = cur.fetchone()
             if row:
@@ -172,14 +172,18 @@ def subscriptionDecision(l):
                 if row == None:
                     break
                 budget += row[1]
+            l.acquire()
+            fs = open(LOG_PATH, 'a')
+            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Total budget used " + str(budget) + "GB\n")
+            fs.close()
+            l.release()
             dataset_size = spaceCheck(str(dataset), l)
             if (budget + dataset_size > TOTAL_BUDGET):
                 break
-            if (not (size == 0)):
+            if (not (dataset_size == 0)):
                 # TODO : Check if subscription succeeded
-                subscribe(str(dataset), l)
+                subscribe(str(dataset), int(dataset_size), l)
     con.close()
-    fs.close()
     return 1
 
 def update(l):
@@ -191,7 +195,6 @@ def update(l):
     Delete sets from SetCount if count is 0 or less.
     """
     ID = "Update"
-    fs = open(LOG_PATH, 'a')
     con = lite.connect(SQLITE_PATH)
     with con:
         cur = con.cursor()
@@ -212,9 +215,10 @@ def update(l):
         #cur.execute('DELETE FROM Budget WHERE Expiration<?', [datetime.datetime.now()])
     con.close()
     l.acquire()
+    fs = open(LOG_PATH, 'a')
     fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Done updating database\n")
-    l.release()
     fs.close()
+    l.release()
     return 1
 
 def janitor(l):
@@ -228,19 +232,19 @@ def janitor(l):
     ID = "Janitor"
     # Run every hour
     while True:
-        time.sleep(360)
-        fs = open(LOG_PATH, 'a')
+        time.sleep(3600)
         l.acquire()
+        fs = open(LOG_PATH, 'a')
         fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Running hourly routine\n")
+        fs.close()
         l.release()
         # Update database, delete entries older than 12h
         update(l)
         # Check if should make subscriptions
         subscriptionDecision(l)
-        fs.close()
     return 1
 
-def dataHandler(d, l):
+def dataHandler(d):
     """
     _dataHandler_
 
@@ -249,7 +253,6 @@ def dataHandler(d, l):
     Dataset may not exist, record this as unknown.
     """
     ID = "Worker"
-    fs = open(LOG_PATH, 'a')
     con = lite.connect(SQLITE_PATH)
     lfn = str(d['file_lfn'])
     with con:
@@ -286,23 +289,16 @@ def dataHandler(d, l):
                 else:
                     in_count = 1
                     cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
-                l.acquire()
-                fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to dataset " + str(dataset) + " from file " + str(lfn) + " added to datatbase\n")
-                l.release()
             else:
                 # Unknown log
                 delta = datetime.timedelta(hours=TIME_FRAME)
                 timestamp = datetime.datetime.now()
                 dataset = "UNKNOWN"
                 cur.execute('INSERT OR IGNORE INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
-                l.acquire()
-                fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Access to unknown dataset with file " + str(lfn) + " added to database\n")
-                l.release()
-    fs.close()
     con.close()
     return 1
 
-def work(q, l):
+def work(q):
     """
     _work_
     
@@ -310,7 +306,7 @@ def work(q, l):
     """
     while True:
         d = q.get()
-        dataHandler(d, l)
+        dataHandler(d)
 
 def dataParser(data):
     """
@@ -378,21 +374,18 @@ def main():
     # Spawn process that to clean out database and make reports every 1h
     process = Process(target=janitor, args=(lock,))
     process.start()
-    workers = pool.apply_async(work, (queue, lock))
+    workers = pool.apply_async(work, (queue,))
 
     # UDP packets containing information about file access
     UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
-        
     # Listen for UDP packets
     try:
         while True:
             data,addr = UDPSock.recvfrom(buf)
             dictionary = dataParser(data)
-            lock.acquire()
-            lock.release()            
             queue.put(dictionary)
     except:
         if os.path.exists(LOG_PATH):

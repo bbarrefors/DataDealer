@@ -34,6 +34,7 @@ SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
 #GROUP = 'local'
 GROUP = 'Jupiter'
+COMMENTS = 'BjornBarrefors'
 
 class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
 
@@ -73,8 +74,8 @@ def dictIteration(data, xml):
                 k = "bytes"
             xml = xml + " " + k + "=" + '"%s"' % v
     return xml
-                
-def subscribe(site, dataset):
+
+def getData(dataset):
     url = urllib.basejoin(PHEDEX_BASE, "json/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
     print "Querying url %s for data information" % url
     try:
@@ -92,17 +93,20 @@ def subscribe(site, dataset):
             xml = dictIteration(v[0], xml)
             xml = xml + "</" + k + ">"
     xml_data = xml + "</data>"
-    print xml_data
+    return xml_data
+
+def subscribe(site, dataset):
+    data = getData(dataset)
     level = 'dataset'
     priority = 'low'
     move = 'n'
     static = 'n'
     custodial = 'n'
     request_only = 'n'
-    values = { 'node' : site, 'data' : xml_data, 'level' : level,
+    values = { 'node' : site, 'data' : data, 'level' : level,
                'priority' : priority, 'move' : move, 'static' : static,
                'custodial' : custodial, 'request_only' : request_only,
-               'group': GROUP }
+               'group': GROUP, 'comments' : COMMENTS }
     data = urllib.urlencode(values)
     subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
     print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
@@ -120,8 +124,34 @@ def subscribe(site, dataset):
 
     return 0
 
-def main():
-    subscribe(SITE, DATASET)
+def delete(site, dataset):
+    data = getData(dataset)
+    level = 'dataset'
+    rm_subs = 'y'
+    values = { 'node' : site, 'data' : data, 'level' : level,
+               'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
+    data = urllib.urlencode(values)
+    delete_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/delete" % PHEDEX_INSTANCE)
+    print "Querying %s for deletion with data:\n%s" % (delete_url, data)
 
+    #opener = urllib2.build_opener(HTTPSGridAuthHandler())
+    #request = urllib2.Request("https://cmsweb.cern.ch/auth/trouble/")
+    opener = urllib2.build_opener(HTTPSGridAuthHandler())
+    request = urllib2.Request(delete_url, data)
+    try:
+        sub_response = opener.open(request)
+    except urllib2.HTTPError, he:
+        print he.read()
+        raise
+
+    sub_status = sub_response.read()
+    print sub_status
+
+    return 0
+
+def main():
+    #subscribe(SITE, DATASET)
+    delete(SITE, DATASET)
+    
 if __name__ == '__main__':
     sys.exit(main())
