@@ -1,4 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/env python26
+"""
+_PhEDExSubscribe_
+
+Make subscriptions and deletions of datasets using PhEDEx API.
+
+Created by Bjorn Barrefors & Brian Bockelman on 15/9/2013
+
+Holland Computing Center - University of Nebraska-Lincoln
+"""
+################################################################################
+#                                                                              #
+#                             P h E D E x   A P I                              #
+#                                                                              #
+################################################################################
 
 import os
 import re
@@ -10,7 +24,6 @@ try:
     import json
 except ImportError:
     import simplejson as json
-import xml.dom.minidom
 
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 #PHEDEX_INSTANCE = "prod"
@@ -94,8 +107,6 @@ def subscribe(site, dataset):
     subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
     print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
 
-    #opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    #request = urllib2.Request("https://cmsweb.cern.ch/auth/trouble/")
     opener = urllib2.build_opener(HTTPSGridAuthHandler())
     request = urllib2.Request(subscription_url, data)
     try:

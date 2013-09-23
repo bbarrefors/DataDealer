@@ -2,16 +2,22 @@
 """
 _PhEDExUDPListener_
 
-This script recieves UDP packets with information from PhEDEx.
+Listen for UDP packets.
 Packets contain information of files that have been accessed.
-This information is stored i na local database and analyzed to
+Store information in a local database and analyzed to
 make decisions on when to subscribe a dataset.
 
 Created by Bjorn Barrefors on 11/9/2013
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
+################################################################################
+#                                                                              #
+#                   P h E D E x   U D P   L I S T E N E R                      #
+#                                                                              #
+################################################################################
 
+import sys
 import os
 import socket
 import ast
@@ -20,15 +26,17 @@ import urllib2
 import json
 import time
 import datetime
-import sqlite3 as lite
+import traceback
 from multiprocessing import Manager, Process, Pool, Lock
+
+from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
+from PhEDExDatabase import setup
 
 SET_ACCESS = 200
 TOTAL_BUDGET = 40000
 TIME_FRAME = 72
 BUDGET_TIME_FRAME = 24
 SQLITE_PATH = '/home/bockelman/barrefors/dataset_cache.db'
-LOG_PATH = '/home/bockelman/barrefors/data.log'
 
 def subscribe(dataset, l):
     """
@@ -318,23 +326,13 @@ def dataParser(data):
                 d[k] = v
     return d
 
-# TODO : Function for setting up database
-
-# TODO : Function for parsing config file
-
-if __name__ == '__main__':
-    """
-    __main__
-
-    Parse config file and set parameters based on values.
-    Set up database.
-    Spawn worker processes and janitor.
-    Recieve UDP packets and send to parser and then distribute to workers.
-    """
-    ID = "Main"
-    fs = open(LOG_PATH, 'a')
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Parsing config file\n")
-    config_f = open('listener.conf', 'r')
+def config():
+    name = "Config"
+    if os.path.isFile('listener.conf'):
+        config_f = open('listener.conf', 'r')
+    else:
+        log(name, "Config file listener.conf does not exist")
+        return 1
     for line in config_f:
         if re.match("set_access", line):
             value = re.split(" = ", line)
@@ -349,23 +347,28 @@ if __name__ == '__main__':
             value = re.split(" = ", line)
             BUDGET_TIME_FRAME = int(value[1].rstrip())
     config_f.close()
+    return 0
 
-    # Create database and tables if they don't already exist
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Setting up database\n")
-    connection = lite.connect(SQLITE_PATH)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('CREATE TABLE IF NOT EXISTS FileToSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS AccessTimestamp (Dataset TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS SetCount (Dataset TEXT, Count INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS UnknownSet (File TEXT UNIQUE, Dataset TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS Budget (Dataset TEXT, Size INTEGER, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS DontMove (Dataset TEXT UNIQUE)')
-        dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
-        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
-        dataset = "/GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
-        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
-    
+################################################################################
+#                                                                              #
+#                                 M A I N                                      #
+#                                                                              #
+################################################################################
+
+def main():
+    """
+    __main__
+
+    Spawn worker processes.
+    Recieve UDP packets and send to parser and then distribute to workers.
+    """
+    name = "Main"
+    if config():
+        return 1
+
+    if database():
+        return 1
+
     # Spawn worker processes that will parse data and insert into database
     lock = Lock()
     pool = Pool(processes=4)
@@ -382,7 +385,6 @@ if __name__ == '__main__':
     listen_addr = ("0.0.0.0", 9345)
     UDPSock.bind(listen_addr)
     buf = 64*1024
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Start lostening for UDP packets\n")
         
     # Listen for UDP packets
     try:
@@ -390,14 +392,23 @@ if __name__ == '__main__':
             data,addr = UDPSock.recvfrom(buf)
             dictionary = dataParser(data)
             lock.acquire()
-            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": UDP packet received\n")
             lock.release()            
             queue.put(dictionary)
+    except:
+        if os.path.exists(LOG_PATH):
+            log_file = open(LOG_PATH + LOG_FILE, 'a')
+        else:
+            return 1
+        traceback.print_exc(file=log_file)
+        log_file.close()
 
     #Close everything if program is interupted
     finally:
         UDPSock.close()
         pool.close()
         pool.join()
-        fs.close()
         process.join()
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
