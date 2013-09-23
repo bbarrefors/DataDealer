@@ -7,6 +7,7 @@ Keep database up to date and analyze it to make subscribtion and deletion
 decisions.
 
 Created by Bjorn Barrefors on 23/9/2013
+for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """

@@ -6,6 +6,7 @@ _PhEDExLogger_
 Print log and error messages from other modules to log file.
 
 Created by Bjorn Barrefors on 22/9/2013
+for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """

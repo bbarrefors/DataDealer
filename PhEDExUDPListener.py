@@ -8,6 +8,7 @@ Store information in a local database and analyzed to
 make decisions on when to subscribe a dataset.
 
 Created by Bjorn Barrefors on 11/9/2013
+for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """

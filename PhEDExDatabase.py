@@ -5,6 +5,7 @@ _PhEDEXDatabase_
 Manage the database keeping track of which datasets have been accessed and when.
 
 Created by Bjorn Barrefors on 22/9/2013
+for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """

@@ -5,6 +5,7 @@ _PhEDExAPI_
 Make subscriptions and deletions of datasets using PhEDEx API.
 
 Created by Bjorn Barrefors & Brian Bockelman on 15/9/2013
+for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
