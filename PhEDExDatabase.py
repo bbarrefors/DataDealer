@@ -17,7 +17,10 @@ Holland Computing Center - University of Nebraska-Lincoln
 import os.path
 import datetime
 import sqlite3 as lite
+
 from PhEDExLogger import log, error
+from PhEDExUDPListener import TIME_FRAME
+from PhEDExAPI import query
 
 #DB_PATH = '/home/bockelman/barrefors/'
 DB_PATH = '/home/barrefors/scripts/python/'
@@ -38,20 +41,65 @@ def setup():
     """
     name = "DatabaseSetup"
     if not os.path.exists(DB_PATH):
-        error(name, "Database path " + DB_PATH + " does not exist")
+        error(name, "Database path %s does not exist" % DB_PATH)
         return 1
     connection = lite.connect(DB_PATH + DB_FILE)
     with connection:
         cur = connection.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS FileSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS SetAccess (Dataset TEXT, Count INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS Unknown (File TEXT UNIQUE, Dataset TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS Ignore (Dataset TEXT UNIQUE)')
         dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
         cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
         dataset = "/GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
         cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
+        dataset = "UNKNOWN"
+        cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
 
     connection.close()
     log(name, "Database initialized")
+    return 0
+
+################################################################################
+#                                                                              #
+#                                I N S E R T                                   #
+#                                                                              #
+################################################################################
+
+def insert(file_name):
+    """
+    _insert_
+
+    Insert values to table FileSet and update SetAccess.
+    If dataset can't be found add to Unknown
+    """
+    name = "DatabaseInsert"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        # Check if file is already in cache
+        expiration = datetime.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
+        cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [file_name])
+        test = cur.fetchone()[0]
+        if int(test) == int(1):
+            cur.execute('SELECT Dataset FROM FileSet WHERE File=?', [file_name])
+            cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (file_name, expiration))
+            dataset = cur.fetchone()[0]
+        else:
+            dataset = query("file", file_name)
+            if json_data.get('phedex').get('dbs'):
+                dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('name')
+            else:
+                dataset = "UNKNOWN"
+            cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
+        cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
+        test = cur.fetchone()[0]
+        if int(test) == int(1):
+            cur.execute('UPDATE SetAccess SET Count=Count+1 WHERE Dataset=?', [dataset])
+        else:
+            cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, 1))
+    connection.close()
     return 0

@@ -25,19 +25,31 @@ try:
 except ImportError:
     import simplejson as json
 
+from PhEDExLogger import log, error
+
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 #PHEDEX_INSTANCE = "prod"
 PHEDEX_INSTANCE = "dev"
+DATA_TYPE = "json"
+#DATA_TYPE = "xml"
 
 SITE = "T2_US_Nebraska"
-#DATASET = "/Pyquen_WToMuNu_TuneZ2_5023GeV_pythia6/HiWinter13-pa_STARTHI53_V25-v2/GEN-SIM-RECO"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-#GROUP = 'local'
 GROUP = 'Jupiter'
 COMMENTS = 'BjornBarrefors'
 
-class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
+################################################################################
+#                                                                              #
+#                H T T P S   G R I D   A U T H   H A N D L E R                 #
+#                                                                              #
+################################################################################
 
+class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
+"""
+_HTTPSGridAuthHandler_
+
+Set up certificate and proxy to get acces to PhEDEx API subscription calls.
+"""
     def __init__(self):
         urllib2.HTTPSHandler.__init__(self)
         self.key = self.getProxy()
@@ -49,54 +61,122 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
     def getProxy(self):
         proxy = os.environ.get("X509_USER_PROXY")
         if not proxy:
-            proxy = "/tmp/x509up_u%d" % os.geteuid()
+            proxy = "/tmp/x509up_u%d" % (os.geteuid(),)
         return proxy
 
     def getConnection(self, host, timeout=300):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
-def dictIteration(data, xml):
+################################################################################
+#                                                                              #
+#                                 P A R S E                                    #
+#                                                                              #
+################################################################################
+
+def parse(data, xml):
+"""
+_parse_
+
+Take data output from PhEDEx and parse it into  xml syntax corresponding to 
+subscribe and delete calls.
+"""
     for k, v in data.iteritems():
         k = k.replace("_", "-")
         if type(v) is list:
-            xml = xml + ">"
+            xml = "%s>" % (xml,)
             for v1 in v:
-                xml = xml + "<" + k
+                xml = "%s<%s" % (xml, k)
                 xml = dictIteration(v1, xml)
                 if (k == "file"):
-                    xml = xml + "/>"
+                    xml = "%s/>" % (xml,)
                 else:
-                    xml = xml + "</" + k + ">"
+                    xml = "%s</%s>" % (xml, k)
         else:
             if k == "lfn":
                 k = "name"
             elif k == "size":
                 k = "bytes"
-            xml = xml + " " + k + "=" + '"%s"' % v
+            xml = '%s %s="%s"' % (xml, k, v)
     return xml
 
-def getData(dataset):
-    url = urllib.basejoin(PHEDEX_BASE, "json/%s/data" % PHEDEX_INSTANCE) + "?" + urllib.urlencode({"dataset": dataset})
-    print "Querying url %s for data information" % url
+################################################################################
+#                                                                              #
+#                                 Q U E R Y                                    #
+#                                                                              #
+################################################################################
+
+def query(tag, data):
+    """
+    _query_
+    
+    Make a PhEDEx data call.
+    Return data as json.
+    """
+    name = "APIQuery"
+    encoded = urllib.urlencode({'%s' % (tag,) : data})
+    url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data?%s" % (DATA_TYPE, PHEDEX_INSTANCE, encoded))
     try:
         data_response = urllib2.urlopen(url)
     except:
-        print "Failed phedex call"
-        sys.exit()
-    
+        error(name, "Failed phedex call on dataset %s" % (dataset,))
+        return 1
     json_data = json.load(data_response)
-    json_data = json_data.get('phedex')
+    return json_data
+
+################################################################################
+#                                                                              #
+#                                  D A T A                                     #
+#                                                                              #
+################################################################################
+
+def data(dataset):
+    """
+    _data_
+
+    Return data information as xml structure complying with PhEDEx
+    subscribe and delete call.
+    """
+    name = "APIdata"
+    json_data = query("dataset", dataset)
+    if ( not json_data = json_data.get('phedex')):
+        error(name, "No data for dataset %s" % (dataset,))
     xml = '<data version="2">'
     for k, v in json_data.iteritems():
         if k == "dbs":
-            xml = xml + "<" + k
+            xml = "%s<%s" % (xml, k)
             xml = dictIteration(v[0], xml)
-            xml = xml + "</" + k + ">"
-    xml_data = xml + "</data>"
+            xml = "%s</%s>" % (xml, k)
+    xml_data = "%s</data>" % (xml,)
     return xml_data
 
+################################################################################
+#                                                                              #
+#                                  C A L L                                     #
+#                                                                              #
+################################################################################
+
+def call(url, data):
+    name = "APICall"
+    opener = urllib2.build_opener(HTTPSGridAuthHandler())
+    request = urllib2.Request(url, data)
+    try:
+        sub_response = opener.open(request)
+    except urllib2.HTTPError, he:
+        error(name, he.read())
+        return 1
+
+    sub_status = sub_response.read()
+    log(name, sub_status)
+    return 0
+
+################################################################################
+#                                                                              #
+#                             S U B S C R I B E                                #
+#                                                                              #
+################################################################################
+
 def subscribe(site, dataset):
-    data = getData(dataset)
+    data = data(dataset)
     level = 'dataset'
     priority = 'low'
     move = 'n'
@@ -109,18 +189,7 @@ def subscribe(site, dataset):
                'group': GROUP, 'comments' : COMMENTS }
     data = urllib.urlencode(values)
     subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
-    print "Querying %s for subscription with data:\n%s" % (subscription_url, data)
 
-    opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    request = urllib2.Request(subscription_url, data)
-    try:
-        sub_response = opener.open(request)
-    except urllib2.HTTPError, he:
-        print he.read()
-        raise
-
-    sub_status = sub_response.read()
-    print sub_status
 
     return 0
 
@@ -132,10 +201,7 @@ def delete(site, dataset):
                'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
     data = urllib.urlencode(values)
     delete_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/delete" % PHEDEX_INSTANCE)
-    print "Querying %s for deletion with data:\n%s" % (delete_url, data)
 
-    #opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    #request = urllib2.Request("https://cmsweb.cern.ch/auth/trouble/")
     opener = urllib2.build_opener(HTTPSGridAuthHandler())
     request = urllib2.Request(delete_url, data)
     try:

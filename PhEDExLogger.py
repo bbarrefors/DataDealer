@@ -45,7 +45,7 @@ def log(name, msg):
         fcntl.flock(log_file, fcntl.LOCK_EX|fcntl.LOCK_NB)
     except IOError:
         fcntl.flock(log_file, fcntl.LOCK_EX)
-    log_file.write("LOG: " + str(datetime.datetime.now()) + " " + str(name) + " " + str(msg) + "\n")
+    log_file.write("ERROR: %s %s: %s\n" % (str(datetime.datetime.now()), str(name), str(msg)))
     fcntl.lockf(log_file, fcntl.LOCK_UN)
     log_file.close()
     return 0
@@ -70,7 +70,7 @@ def error(name, msg):
         fcntl.flock(log_file, fcntl.LOCK_EX|fcntl.LOCK_NB)
     except IOError:
         fcntl.flock(log_file, fcntl.LOCK_EX)
-    log_file.write("ERROR: " + str(datetime.datetime.now()) + " " + str(name) + " " + str(msg) + "\n")
+    log_file.write("ERROR: %s %s: %s\n" % (str(datetime.datetime.now()), str(name), str(msg)))
     fcntl.lockf(log_file, fcntl.LOCK_UN)
     log_file.close()
     return 0

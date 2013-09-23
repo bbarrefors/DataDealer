@@ -18,7 +18,6 @@ Holland Computing Center - University of Nebraska-Lincoln
 ################################################################################
 
 import sys
-import os
 import socket
 import ast
 import re
@@ -27,10 +26,10 @@ import json
 import time
 import datetime
 import traceback
-from multiprocessing import Manager, Process, Pool, Lock
+from multiprocessing import Manager, Process, Pool
 
 from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
-from PhEDExDatabase import setup
+from PhEDExDatabase import setup, insert
 
 SET_ACCESS = 200
 TOTAL_BUDGET = 40000
@@ -244,6 +243,12 @@ def janitor(l):
         subscriptionDecision(l)
     return 1
 
+################################################################################
+#                                                                              #
+#                           D A T A   H A N D L E R                            #
+#                                                                              #
+################################################################################
+
 def dataHandler(d):
     """
     _dataHandler_
@@ -252,65 +257,18 @@ def dataHandler(d):
     to insert dataset accesses in database.
     Dataset may not exist, record this as unknown.
     """
-    ID = "Worker"
-    con = lite.connect(SQLITE_PATH)
     lfn = str(d['file_lfn'])
-    with con:
-        cur = con.cursor()
-        cur.execute("SELECT EXISTS(SELECT * FROM FileToSet WHERE File=?)", [lfn])
-        test = cur.fetchone()[0]
-        if int(test) == int(1):
-            cur.execute('SELECT Dataset FROM FileToSet WHERE File=?', [lfn])
-            dataset = cur.fetchone()[0]
-            timestamp = datetime.datetime.now()
-            delta = datetime.timedelta(hours=TIME_FRAME)
-            expiration = timestamp + delta
-            cur.execute('UPDATE SetCount SET Count=Count+1 WHERE Dataset=?', [dataset])
-            cur.execute('UPDATE FileToSet SET Expiration=? WHERE File=?', (lfn, expiration))
-            cur.execute('UPDATE AccessTimestamp SET Expiration=? WHERE Dataset=?', (expiration, dataset))
-        else:
-            phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?file=" + lfn
-            try:
-                response = urllib2.urlopen(phedex_call)
-            except:
-                return 0
-            json_data = json.load(response)
-            if json_data.get('phedex').get('dbs'):
-                dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('name')
-                timestamp = datetime.datetime.now()
-                delta = datetime.timedelta(hours=TIME_FRAME)
-                expiration = timestamp + delta
-                cur.execute('INSERT INTO AccessTimestamp VALUES(?,?)', (dataset, expiration))
-                cur.execute('INSERT INTO FileToSet VALUES(?,?,?)', (lfn, dataset, expiration))
-                cur.execute("SELECT EXISTS(SELECT * FROM SetCount WHERE Dataset=?)", [dataset])
-                test = cur.fetchone()[0]
-                if int(test) == int(1):
-                    cur.execute('UPDATE SetCount SET Count=Count+1 WHERE Dataset=?', [dataset])
-                else:
-                    in_count = 1
-                    cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, in_count))
-            else:
-                # Unknown log
-                delta = datetime.timedelta(hours=TIME_FRAME)
-                timestamp = datetime.datetime.now()
-                dataset = "UNKNOWN"
-                cur.execute('INSERT OR IGNORE INTO UnknownSet VALUES(?,?,?)', (lfn, dataset, timestamp))
-    con.close()
-    return 1
+    insert(lfn)
 
-def work(q):
-    """
-    _work_
-    
-    Distribute data handling of UDP packets to worker processes.
-    """
-    while True:
-        d = q.get()
-        dataHandler(d)
+################################################################################
+#                                                                              #
+#                                P A R S E                                     #
+#                                                                              #
+################################################################################
 
-def dataParser(data):
+def parse(data):
     """
-    _dataParser_
+    _parse_
     
     Extract data from UDP packet and insert into dictionary.
     """
@@ -322,12 +280,40 @@ def dataParser(data):
                 d[k] = v
     return d
 
+################################################################################
+#                                                                              #
+#                                 W O R K                                      #
+#                                                                              #
+################################################################################
+
+def work(q):
+    """
+    _work_
+    
+    Distribute data handling of UDP packets to worker processes.
+    """
+    while True:
+        data = q.get()
+        dataHandler(parse(data))
+
+################################################################################
+#                                                                              #
+#                               C O N F I G                                    #
+#                                                                              #
+################################################################################
+
 def config():
+"""
+_config_
+
+Parse input file listener.conf for values.
+If file not found, use default values.
+"""
     name = "Config"
     if os.path.isFile('listener.conf'):
         config_f = open('listener.conf', 'r')
     else:
-        log(name, "Config file listener.conf does not exist")
+        log(name, "Config file listener.conf does not exist, will use default values")
         return 1
     for line in config_f:
         if re.match("set_access", line):
@@ -336,12 +322,9 @@ def config():
         elif re.match("total_budget", line):
             value = re.split(" = ", line)
             TOTAL_BUDGET = int(value[1].rstrip())
-        elif re.match("time_frame", line):
+        elif re.match("time _frame", line):
             value = re.split(" = ", line)
             TIME_FRAME = int(value[1].rstrip())
-        elif re.match("budget_time_frame", line):
-            value = re.split(" = ", line)
-            BUDGET_TIME_FRAME = int(value[1].rstrip())
     config_f.close()
     return 0
 
@@ -356,52 +339,51 @@ def main():
     __main__
 
     Spawn worker processes.
-    Recieve UDP packets and send to parser and then distribute to workers.
+    Listem for UDP packets and send to parser and then distribute to workers.
     """
+    # Initialize
     name = "Main"
-    if config():
+    config():
+
+    if setup():
         return 1
 
-    if database():
-        return 1
-
-    # Spawn worker processes that will parse data and insert into database
-    lock = Lock()
-    pool = Pool(processes=4)
-    manager = Manager()
-    queue = manager.Queue()
-
-    # Spawn process that to clean out database and make reports every 1h
-    process = Process(target=janitor, args=(lock,))
-    process.start()
-    workers = pool.apply_async(work, (queue,))
-
-    # UDP packets containing information about file access
-    UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-    listen_addr = ("0.0.0.0", 9345)
-    UDPSock.bind(listen_addr)
-    buf = 64*1024
-    # Listen for UDP packets
     try:
+        # Spawn worker processes that will parse data and insert into database
+        pool = Pool(processes=4)
+        manager = Manager()
+        queue = manager.Queue()
+        
+        # Spawn process o clean out database and make reports every 1h
+        process = Process(target=janitor, args=())
+        process.start()
+        workers = pool.apply_async(work, (queue,))
+        
+        # UDP packets containing information about file access
+        UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        listen_addr = ("0.0.0.0", 9345)
+        UDPSock.bind(listen_addr)
+        buf = 64*1024
+        # Listen for UDP packets
         while True:
             data,addr = UDPSock.recvfrom(buf)
-            dictionary = dataParser(data)
-            queue.put(dictionary)
+            queue.put(data)
     except:
+        # Print out raised exception to log file
         if os.path.exists(LOG_PATH):
             log_file = open(LOG_PATH + LOG_FILE, 'a')
         else:
             return 1
         traceback.print_exc(file=log_file)
         log_file.close()
-
-    #Close everything if program is interupted
+        
     finally:
+        #Close everything if program is interupted
         UDPSock.close()
         pool.close()
         pool.join()
         process.join()
         return 1
-
+    
 if __name__ == '__main__':
     sys.exit(main())
