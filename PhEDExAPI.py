@@ -1,6 +1,6 @@
 #!/usr/bin/env python26
 """
-_PhEDExSubscribe_
+_PhEDExAPI_
 
 Make subscriptions and deletions of datasets using PhEDEx API.
 
@@ -156,6 +156,11 @@ def data(dataset):
 ################################################################################
 
 def call(url, data):
+    """
+    _call_
+
+    Make http post call to PhEDEx API.
+    """
     name = "APICall"
     opener = urllib2.build_opener(HTTPSGridAuthHandler())
     request = urllib2.Request(url, data)
@@ -176,6 +181,13 @@ def call(url, data):
 ################################################################################
 
 def subscribe(site, dataset):
+    """
+    _subscribe_
+
+    Set up subscription call to PhEDEx API.
+    """
+    name = "APISubscribe"
+    log(name, "Subscribing %s to %s" % (dataset, site))
     data = data(dataset)
     level = 'dataset'
     priority = 'low'
@@ -189,11 +201,24 @@ def subscribe(site, dataset):
                'group': GROUP, 'comments' : COMMENTS }
     data = urllib.urlencode(values)
     subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
-
-
+    if call(subscription_url, data):
+        return 1
     return 0
 
+################################################################################
+#                                                                              #
+#                             S U B S C R I B E                                #
+#                                                                              #
+################################################################################
+
 def delete(site, dataset):
+    """
+    _subscribe_
+
+    Set up subscription call to PhEDEx API.
+    """
+    name = "APIDelete"
+    log(name, "Deleting %s from %s" % (dataset, site))
     data = getData(dataset)
     level = 'dataset'
     rm_subs = 'y'
@@ -201,18 +226,8 @@ def delete(site, dataset):
                'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
     data = urllib.urlencode(values)
     delete_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/delete" % PHEDEX_INSTANCE)
-
-    opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    request = urllib2.Request(delete_url, data)
-    try:
-        sub_response = opener.open(request)
-    except urllib2.HTTPError, he:
-        print he.read()
-        raise
-
-    sub_status = sub_response.read()
-    print sub_status
-
+    if call(delete_url, data):
+        return 1
     return 0
 
 def main():

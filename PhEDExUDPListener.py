@@ -30,12 +30,11 @@ from multiprocessing import Manager, Process, Pool
 
 from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
 from PhEDExDatabase import setup, insert
+from PhEDEXRoutine import janitor, analyzer
+from PhEDExAPI import subscribe, delete
 
 SET_ACCESS = 200
-TOTAL_BUDGET = 40000
 TIME_FRAME = 72
-BUDGET_TIME_FRAME = 24
-SQLITE_PATH = '/home/bockelman/barrefors/dataset_cache.db'
 
 def subscribe(dataset, size, l):
     """
@@ -220,27 +219,27 @@ def update(l):
     l.release()
     return 1
 
-def janitor(l):
+################################################################################
+#                                                                              #
+#                                                       #
+#                                                                              #
+################################################################################
+
+def routine():
     """
-    _janitor_
+    _routine_
     
-    Run the janitor once every hour. 
+    Run the janitor and analyzer once every hour. 
     The janitor is in charge of cleaning out expired 
-    entries in the database and suggest subscriptions.
+    entries in the database and the analyzer suggests subscriptions.
     """
-    ID = "Janitor"
     # Run every hour
     while True:
         time.sleep(3600)
-        l.acquire()
-        fs = open(LOG_PATH, 'a')
-        fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Running hourly routine\n")
-        fs.close()
-        l.release()
         # Update database, delete entries older than 12h
-        update(l)
+        janitor()
         # Check if should make subscriptions
-        subscriptionDecision(l)
+        subscriptionDecision()
     return 1
 
 ################################################################################
@@ -319,9 +318,6 @@ If file not found, use default values.
         if re.match("set_access", line):
             value = re.split(" = ", line)
             SET_ACCESS = int(value[1].rstrip())
-        elif re.match("total_budget", line):
-            value = re.split(" = ", line)
-            TOTAL_BUDGET = int(value[1].rstrip())
         elif re.match("time _frame", line):
             value = re.split(" = ", line)
             TIME_FRAME = int(value[1].rstrip())

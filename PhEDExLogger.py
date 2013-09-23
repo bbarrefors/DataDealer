@@ -1,7 +1,7 @@
 #!/usr/bin/env python26
 
 """
-_PhEDExSubscribe_
+_PhEDExLogger_
 
 Print log and error messages from other modules to log file.
 
