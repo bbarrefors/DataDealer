@@ -185,44 +185,9 @@ def subscriptionDecision(l):
     con.close()
     return 1
 
-def update(l):
-    """
-    _update_
-
-    Delete entries where the expiration timestamp is older than current time.
-    Update SetCount to reflect database after deletions.
-    Delete sets from SetCount if count is 0 or less.
-    """
-    ID = "Update"
-    con = lite.connect(SQLITE_PATH)
-    with con:
-        cur = con.cursor()
-        cur.execute('SELECT Dataset FROM SetCount')
-        while True:
-            dataSet = cur.fetchone()
-            if dataSet == None:
-                break
-            del_count = 0;
-            cur.execute('DELETE FROM AccessTimestamp WHERE Expiration<? AND Dataset=?', (datetime.datetime.now(),dataSet[0]))
-            del_count = cur.rowcount
-            cur.execute('UPDATE SetCount SET Count=Count-? WHERE Dataset=?',(del_count, dataSet[0]))
-            
-        cur.execute('DELETE FROM FileToSet WHERE Expiration<?', [datetime.datetime.now()])
-        minCount = 1
-        cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
-        cur.execute('DELETE FROM UnknownSet WHERE Expiration<?', [datetime.datetime.now()])
-        #cur.execute('DELETE FROM Budget WHERE Expiration<?', [datetime.datetime.now()])
-    con.close()
-    l.acquire()
-    fs = open(LOG_PATH, 'a')
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Done updating database\n")
-    fs.close()
-    l.release()
-    return 1
-
 ################################################################################
 #                                                                              #
-#                                                       #
+#                                 R O U T I N E                                #
 #                                                                              #
 ################################################################################
 

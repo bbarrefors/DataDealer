@@ -17,10 +17,11 @@ Holland Computing Center - University of Nebraska-Lincoln
 #                                                                              #
 ################################################################################
 
+from PhEDExDatabase import delete
 
 ################################################################################
 #                                                                              #
-#                                L O G                                         #
+#                             J A N I T O R                                    #
 #                                                                              #
 ################################################################################
 
@@ -28,5 +29,9 @@ def janitor():
     """
     _janitor_
 
+    Delete entries in database that are expired.
+    Update SetAccess based on deletions.
     """
-    return 0
+    name = "RoutineJanitor"
+    log(name, "Updating database")
+    delete()

@@ -47,6 +47,7 @@ def setup():
     connection = lite.connect(DB_PATH + DB_FILE)
     with connection:
         cur = connection.cursor()
+        cur.execute('CREATE TABLE IF NOT EXISTS Access (Dataset TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS FileSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
         cur.execute('CREATE TABLE IF NOT EXISTS SetAccess (Dataset TEXT, Count INTEGER)')
         cur.execute('CREATE TABLE IF NOT EXISTS Ignore (Dataset TEXT UNIQUE)')
@@ -96,11 +97,52 @@ def insert(file_name):
             else:
                 dataset = "UNKNOWN"
             cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
+        cur.execute('INSERT INTO Access VALUES(?,?)', (dataset, expiration))
         cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
         test = cur.fetchone()[0]
         if int(test) == int(1):
             cur.execute('UPDATE SetAccess SET Count=Count+1 WHERE Dataset=?', [dataset])
         else:
-            cur.execute('INSERT INTO SetCount VALUES(?,?)', (dataset, 1))
+            cur.execute('INSERT INTO SetAccess VALUES(?,?)', (dataset, 1))
+    connection.close()
+    return 0
+
+################################################################################
+#                                                                              #
+#                                D E L E T E                                   #
+#                                                                              #
+################################################################################
+
+def delete():
+    """
+    _delete_
+    
+    Delete expired entries from the database.
+    Update SetAccess.
+    """
+    name = "DatabaseDelete"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        cur.execute('SELECT Dataset FROM SetAccess')
+        datasets = []
+        while True:
+            ds = cur.fetchone()
+            if ds == None:
+                break
+            datasets.append(ds)
+        for ds in datasets:
+            del_count = 0;
+            dataset = ds[0]
+            cur.execute('DELETE FROM Access WHERE Expiration<? AND Dataset=?', (datetime.datetime.now(),dataset))
+            del_count = cur.rowcount
+            cur.execute('UPDATE SetAccess SET Count=Count-? WHERE Dataset=?',(del_count, dataset))
+            
+        cur.execute('DELETE FROM FileSet WHERE Expiration<?', [datetime.datetime.now()])
+        minCount = 1
+        cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
     connection.close()
     return 0
