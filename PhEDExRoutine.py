@@ -17,7 +17,10 @@ Holland Computing Center - University of Nebraska-Lincoln
 #                                                                              #
 ################################################################################
 
-from PhEDExDatabase import delete
+import os
+
+from PhEDExDatabase import delete, setAccess, ignore
+from PhEDExAPI import datasetSize
 
 ################################################################################
 #                                                                              #
@@ -35,3 +38,56 @@ def janitor():
     name = "RoutineJanitor"
     log(name, "Updating database")
     delete()
+
+################################################################################
+#                                                                              #
+#                            S I T E   S P A C E                               #
+#                                                                              #
+################################################################################
+
+def siteSpace():
+    """
+    _siteSpace_
+
+    Find the available space of current site, UNL. Available space means
+    space that can be utilized without filling storage over 90%.
+    No site is passed at the moment as this is only implemented at UNL.
+    For the future we would like to make this generic for any site.
+    Return space in GB.
+    """
+    name = "RoutineSiteSpace"
+    info = os.statvfs("/mnt/hadoop")
+    total = (info.f_blocks * info.f_bsize) / (1024**3)
+    free = (info.f_bfree * info.f_bsize) / (1024**3)
+    minimum_free = total*(0.1)
+    available_space = free - minimum_free
+    log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
+    return int(available_space)
+
+################################################################################
+#                                                                              #
+#                              A N A L Y Z E                                   #
+#                                                                              #
+################################################################################
+
+def analyze():
+    """
+    _analyze_
+
+    Find candidate datasets to subscribe.
+    Need to make sure the budget is not exceeded. If it is delete previously
+    subscribed dataset. Use a FIFO selection for now.
+    """
+    name = "RoutineAnalyze"
+    log(name, "Analyze database for possible subscriptions")
+    space = siteSpace()
+    count = setAccess()
+    for dataset in count:
+        if (not ignore(dataset)):
+            size = datasetSize(dataset)
+            if (not (size == 1)):
+                if (size <= space):
+                    # Add check for budgeting
+                    subscribe("T2_US_Nebraska", dataset)
+                    # Can we delete some sets previously subscribed to free up space
+    return 0

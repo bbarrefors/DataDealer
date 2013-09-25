@@ -20,7 +20,7 @@ import datetime
 import sqlite3 as lite
 
 from PhEDExLogger import log, error
-from PhEDExUDPListener import TIME_FRAME
+from PhEDExUDPListener import TIME_FRAME, SET_ACCESS
 from PhEDExAPI import query
 
 #DB_PATH = '/home/bockelman/barrefors/'
@@ -146,3 +146,62 @@ def delete():
         cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
     connection.close()
     return 0
+
+################################################################################
+#                                                                              #
+#                           S E T   A C C E S S                                #
+#                                                                              #
+################################################################################
+
+def setAccess():
+    """
+    _setAccess_
+    
+    Get all sets accessed more than SET_ACCESS times during the TIME_FRAME.
+    Sort from most to least accesses.
+    """
+    name = "DatabaseSetAccess"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        cur.execute('SELECT Dataset FROM SetAccess WHERE Count>=? ORDER BY Count', [SET_ACCESS])
+        datasets = []
+        while True:
+            ds = cur.fetchone()
+            if ds == None:
+                break
+            datasets.append(ds)
+        datasets.reverse()
+    connection.close()
+    return datasets
+
+################################################################################
+#                                                                              #
+#                                I G N O R E                                   #
+#                                                                              #
+################################################################################
+
+def ignore(dataset):
+    """
+    _ignore_
+    
+    Is the dataset on the ignore list?
+    Return bool
+    """
+    name = "DatabaseIgnore"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        cur.execute("SELECT EXISTS(SELECT * FROM Ignore WHERE Dataset=?)", [dataset])
+        test = cur.fetchone()[0]
+    connection.close()
+    if int(test) == int(1):
+        return True
+    else:
+        return False

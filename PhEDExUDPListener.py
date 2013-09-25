@@ -31,159 +31,12 @@ from multiprocessing import Manager, Process, Pool
 
 from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
 from PhEDExDatabase import setup, insert
-from PhEDEXRoutine import janitor, analyzer
+from PhEDEXRoutine import janitor, analyze
 from PhEDExAPI import subscribe, delete
 
 SET_ACCESS = 200
 TIME_FRAME = 72
-
-def subscribe(dataset, size, l):
-    """
-    _subscribe_
-    
-    
-    """
-    ID = "Subscribe"
-    l.acquire()
-    fs = open(LOG_PATH, 'a')
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Subscribe dataset " + str(dataset) + "\n")
-    fs.close()
-    l.release()
-    con = lite.connect(SQLITE_PATH)
-    with con:
-        cur = con.cursor()
-        cur.execute('INSERT OR IGNORE INTO DontMove VALUES(?)', [dataset])
-        timestamp = datetime.datetime.now()
-        delta = datetime.timedelta(hours=BUDGET_TIME_FRAME)
-        expiration = timestamp + delta
-        cur.execute('INSERT INTO Budget VALUES(?,?,?)', (dataset, int(size), expiration))
-    con.close()
-    return 1
-
-def datasetSize(dataset, l):
-    """
-    _datasetSize_
-    
-    Accumulate all block sizes and calculate total size of dataset in GB.
-    In case of error in PhEDEx call return 0.
-    """
-    ID = "DatasetSize"
-    phedex_call = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/data?dataset=" + str(dataset)
-    try:
-        response = urllib2.urlopen(phedex_call)
-    except:
-        l.acquire()
-        fs = open(LOG_PATH, 'a')
-        fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Couldn't get dataset " + str(dataset) + " size\n")
-        fs.close()
-        l.release()
-        return 0
-    json_data = json.load(response)
-    data = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('block')
-    size_dataset = float(0)
-    for block in data:
-        size_dataset += block.get('bytes')
-
-    size_dataset = size_dataset / 10**9
-    l.acquire()
-    fs = open(LOG_PATH, 'a')
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " size is " + str(size_dataset) + "GB\n")
-    fs.close()
-    l.release()
-    return int(size_dataset)
-
-def availableSpace(l):
-    """
-    _availableSpace_
-
-    Return available space on phedex at UNL.
-    Need to have at least 10% free at all times so return the space 
-    available in GB to use without reaching 90% capacity.
-    """
-    ID = "PhedexCheck"
-    info = os.statvfs("/mnt/hadoop")
-    total = (info.f_blocks * info.f_bsize) / (1024**3)
-    free = (info.f_bfree * info.f_bsize) / (1024**3)
-    minimum_free = total*(0.1)
-    available_space = free - minimum_free
-    l.acquire()
-    fs = open(LOG_PATH, 'a')
-    fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Phedex available space is " + str(available_space) + "GB\n")
-    fs.close()
-    l.release()
-    return int(available_space)
-
-def spaceCheck(dataset, l):
-    """
-    _spaceCheck_
-
-    Check if dataset can be moved to datacenter 
-    without going over the space limit.
-    Return 0 fail and size of dataset if possible.
-    """
-    ID = "SpaceCheck"
-    size_dataset = datasetSize(dataset, l)
-    if (size_dataset == 0):
-        fs.close()
-        return 0
-    else:
-        available_space = availableSpace(l)
-        if (available_space >= size_dataset):
-            fs.close()
-            return int(size_dataset)
-        else:
-            fs.close()
-            return 0
-    return 0
-
-def subscriptionDecision(l):
-    """
-    _subscriptionDecision_
-
-    Suggest subscription if a set have been accesses more than SET_ACCESS 
-    and moving the set will not fill the new node more than 90%.
-    """
-    ID = "Decision"
-    con = lite.connect(SQLITE_PATH)
-    with con:
-        cur = con.cursor()
-        cur.execute('SELECT * FROM SetCount WHERE Count>=?', [SET_ACCESS])
-        while True:
-            row = cur.fetchone()
-            if row == None:
-                break
-            dataset = row[0]
-            setAccess = row[1]
-            l.acquire()
-            fs = open(LOG_PATH, 'a')
-            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Dataset " + str(dataset) + " have " + str(setAccess) + " set accesses\n")
-            fs.close()
-            l.release()
-            cur.execute('SELECT * FROM DontMove WHERE Dataset=?', [dataset])
-            row = cur.fetchone()
-            if row:
-                break
-
-            budget = 0
-            cur.execute('SELECT * FROM Budget')
-            while True:
-                row = cur.fetchone()
-                if row == None:
-                    break
-                budget += row[1]
-            l.acquire()
-            fs = open(LOG_PATH, 'a')
-            fs.write(str(datetime.datetime.now()) + " " + str(ID) + ": Total budget used " + str(budget) + "GB\n")
-            fs.close()
-            l.release()
-            dataset_size = spaceCheck(str(dataset), l)
-            if (budget + dataset_size > TOTAL_BUDGET):
-                break
-            if (not (dataset_size == 0)):
-                # TODO : Check if subscription succeeded
-                subscribe(str(dataset), int(dataset_size), l)
-    con.close()
-    return 1
+BUDGET = 100000
 
 ################################################################################
 #                                                                              #
@@ -205,7 +58,7 @@ def routine():
         # Update database, delete entries older than 12h
         janitor()
         # Check if should make subscriptions
-        subscriptionDecision()
+        analyze()
     return 1
 
 ################################################################################
@@ -275,10 +128,13 @@ Parse input file listener.conf for values.
 If file not found, use default values.
 """
     name = "Config"
-    if os.path.isFile('listener.conf'):
-        config_f = open('listener.conf', 'r')
+    global SET_ACCESS
+    global TIME_FRAME
+    global BUDGET
+    if os.path.isFile('cmsdata.config'):
+        config_f = open('cmsdata.config', 'r')
     else:
-        log(name, "Config file listener.conf does not exist, will use default values")
+        log(name, "Config file cmsdata.config does not exist, will use default values")
         return 1
     for line in config_f:
         if re.match("set_access", line):
@@ -287,6 +143,9 @@ If file not found, use default values.
         elif re.match("time _frame", line):
             value = re.split(" = ", line)
             TIME_FRAME = int(value[1].rstrip())
+        elif re.match("budget", line):
+            value = re.split(" = ", line)
+            BUDGET = int(value[1].rstrip())
     config_f.close()
     return 0
 

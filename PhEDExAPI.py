@@ -138,7 +138,7 @@ def data(dataset):
     subscribe and delete call.
     """
     name = "APIdata"
-    json_data = query("dataset", dataset)
+    json_data = query("dataset", dataset) 
     if ( not json_data = json_data.get('phedex')):
         error(name, "No data for dataset %s" % (dataset,))
     xml = '<data version="2">'
@@ -208,15 +208,15 @@ def subscribe(site, dataset):
 
 ################################################################################
 #                                                                              #
-#                             S U B S C R I B E                                #
+#                                D E L E T E                                   #
 #                                                                              #
 ################################################################################
 
 def delete(site, dataset):
     """
-    _subscribe_
+    _delete_
 
-    Set up subscription call to PhEDEx API.
+    Set up delete call to PhEDEx API.
     """
     name = "APIDelete"
     log(name, "Deleting %s from %s" % (dataset, site))
@@ -230,6 +230,32 @@ def delete(site, dataset):
     if call(delete_url, data):
         return 1
     return 0
+
+################################################################################
+#                                                                              #
+#                        D A T A S E T   S I Z E                               #
+#                                                                              #
+################################################################################
+
+def datasetSize(dataset):
+    """
+    _datasetSize_
+
+    Get total size of dataset in GB.
+    """
+    name = "APIdatasetSize"
+    json_data = query("dataset", dataset) 
+    if ( not json_data = json_data.get('phedex')):
+        error(name, "No data for dataset %s" % (dataset,))
+        return 1
+    data = json_data.get('dbs')[0].get('dataset')[0].get('block')
+    size = float(0)
+    for block in data:
+        size += block.get('bytes')
+
+    size = size / 10**9
+    log(name, "Total size of dataset %s is %dGB" % (dataset, sizeff)
+    return int(size)
 
 def main():
     #subscribe(SITE, DATASET)
