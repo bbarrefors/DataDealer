@@ -234,6 +234,31 @@ def delete(site, dataset):
 
 ################################################################################
 #                                                                              #
+#                              R E Q U E S T S                                 #
+#                                                                              #
+################################################################################
+
+def requests(site, dataset):
+    """
+    _requests_
+
+    Set up TransferRequests call to PhEDEx API.
+    """
+    name = "APIRequests"
+    log(name, "Deleting %s from %s" % (dataset, site))
+    del_data = data(dataset)
+    level = 'dataset'
+    rm_subs = 'y'
+    values = { 'node' : site, 'data' : del_data, 'level' : level,
+               'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
+    url_subdata = urllib.urlencode(values)
+    delete_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/delete" % PHEDEX_INSTANCE)
+    if call(delete_url, url_subdata):
+        return 1
+    return 0
+
+################################################################################
+#                                                                              #
 #                        D A T A S E T   S I Z E                               #
 #                                                                              #
 ################################################################################
