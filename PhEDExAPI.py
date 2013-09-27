@@ -246,7 +246,8 @@ def datasetSize(dataset):
     """
     name = "APIdatasetSize"
     json_data = query("dataset", dataset) 
-    if ( not json_data = json_data.get('phedex')):
+    json_data = json_data.get('phedex')
+    if (not json_data):
         error(name, "No data for dataset %s" % (dataset,))
         return 1
     data = json_data.get('dbs')[0].get('dataset')[0].get('block')
