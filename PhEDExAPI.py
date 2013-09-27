@@ -139,7 +139,8 @@ def data(dataset):
     """
     name = "APIdata"
     json_data = query("dataset", dataset) 
-    if ( not json_data = json_data.get('phedex')):
+    json_data = json_data.get('phedex')
+    if (not json_data):
         error(name, "No data for dataset %s" % (dataset,))
     xml = '<data version="2">'
     for k, v in json_data.iteritems():
