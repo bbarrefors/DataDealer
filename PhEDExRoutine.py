@@ -90,4 +90,5 @@ def analyze():
                     # Add check for budgeting
                     subscribe("T2_US_Nebraska", dataset)
                     # Can we delete some sets previously subscribed to free up space
+                    # Look up oldest subscription
     return 0

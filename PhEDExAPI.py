@@ -254,7 +254,7 @@ def datasetSize(dataset):
         size += block.get('bytes')
 
     size = size / 10**9
-    log(name, "Total size of dataset %s is %dGB" % (dataset, sizeff)
+    log(name, "Total size of dataset %s is %dGB" % (dataset, size))
     return int(size)
 
 def main():
