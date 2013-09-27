@@ -46,11 +46,11 @@ COMMENTS = 'BjornBarrefors'
 ################################################################################
 
 class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
-"""
-_HTTPSGridAuthHandler_
-
-Set up certificate and proxy to get acces to PhEDEx API subscription calls.
-"""
+    """
+    _HTTPSGridAuthHandler_
+    
+    Set up certificate and proxy to get acces to PhEDEx API subscription calls.
+    """
     def __init__(self):
         urllib2.HTTPSHandler.__init__(self)
         self.key = self.getProxy()
@@ -75,12 +75,12 @@ Set up certificate and proxy to get acces to PhEDEx API subscription calls.
 ################################################################################
 
 def parse(data, xml):
-"""
-_parse_
-
-Take data output from PhEDEx and parse it into  xml syntax corresponding to 
-subscribe and delete calls.
-"""
+    """
+    _parse_
+    
+    Take data output from PhEDEx and parse it into  xml syntax corresponding to 
+    subscribe and delete calls.
+    """
     for k, v in data.iteritems():
         k = k.replace("_", "-")
         if type(v) is list:

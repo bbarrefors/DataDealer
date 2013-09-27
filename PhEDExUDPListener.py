@@ -121,12 +121,12 @@ def work(q):
 ################################################################################
 
 def config():
-"""
-_config_
-
-Parse input file listener.conf for values.
-If file not found, use default values.
-"""
+    """
+    _config_
+    
+    Parse input file listener.conf for values.
+    If file not found, use default values.
+    """
     name = "Config"
     global SET_ACCESS
     global TIME_FRAME
