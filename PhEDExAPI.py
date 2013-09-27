@@ -221,7 +221,7 @@ def delete(site, dataset):
     """
     name = "APIDelete"
     log(name, "Deleting %s from %s" % (dataset, site))
-    data = getData(dataset)
+    data = data(dataset)
     level = 'dataset'
     rm_subs = 'y'
     values = { 'node' : site, 'data' : data, 'level' : level,
