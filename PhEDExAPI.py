@@ -37,7 +37,10 @@ DATA_TYPE = "json"
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
 GROUP = 'Jupiter'
+NAME = 'Carl Lundstedt'
 COMMENTS = 'BjornBarrefors'
+# What's the time standard?
+#CREATED_BY = 
 
 ################################################################################
 #                                                                              #
@@ -245,12 +248,11 @@ def requests(site, dataset):
     Set up TransferRequests call to PhEDEx API.
     """
     name = "APIRequests"
-    log(name, "Deleting %s from %s" % (dataset, site))
-    del_data = data(dataset)
-    level = 'dataset'
-    rm_subs = 'y'
-    values = { 'node' : site, 'data' : del_data, 'level' : level,
-               'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
+    site = SITE
+    requested_by = NAME
+    # Created since a week ago?
+    #created_since = ???
+    values = { 'node' : site, 'requested_by' : requested_by, 'created_since' : created_since }
     url_subdata = urllib.urlencode(values)
     delete_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/delete" % PHEDEX_INSTANCE)
     if call(delete_url, url_subdata):
