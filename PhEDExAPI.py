@@ -87,7 +87,7 @@ def parse(data, xml):
             xml = "%s>" % (xml,)
             for v1 in v:
                 xml = "%s<%s" % (xml, k)
-                xml = dictIteration(v1, xml)
+                xml = parse(v1, xml)
                 if (k == "file"):
                     xml = "%s/>" % (xml,)
                 else:
@@ -146,7 +146,7 @@ def data(dataset):
     for k, v in json_data.iteritems():
         if k == "dbs":
             xml = "%s<%s" % (xml, k)
-            xml = dictIteration(v[0], xml)
+            xml = parse(v[0], xml)
             xml = "%s</%s>" % (xml, k)
     xml_data = "%s</data>" % (xml,)
     return xml_data
