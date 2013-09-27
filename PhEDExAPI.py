@@ -190,20 +190,20 @@ def subscribe(site, dataset):
     """
     name = "APISubscribe"
     log(name, "Subscribing %s to %s" % (dataset, site))
-    data = data(dataset)
+    sub_data = data(dataset)
     level = 'dataset'
     priority = 'low'
     move = 'n'
     static = 'n'
     custodial = 'n'
     request_only = 'n'
-    values = { 'node' : site, 'data' : data, 'level' : level,
+    values = { 'node' : site, 'data' : sub_data, 'level' : level,
                'priority' : priority, 'move' : move, 'static' : static,
                'custodial' : custodial, 'request_only' : request_only,
                'group': GROUP, 'comments' : COMMENTS }
-    data = urllib.urlencode(values)
+    url_subdata = urllib.urlencode(values)
     subscription_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/subscribe" % PHEDEX_INSTANCE)
-    if call(subscription_url, data):
+    if call(subscription_url, url_subdata):
         return 1
     return 0
 
@@ -221,14 +221,14 @@ def delete(site, dataset):
     """
     name = "APIDelete"
     log(name, "Deleting %s from %s" % (dataset, site))
-    data = data(dataset)
+    del_data = data(dataset)
     level = 'dataset'
     rm_subs = 'y'
-    values = { 'node' : site, 'data' : data, 'level' : level,
+    values = { 'node' : site, 'data' : del_data, 'level' : level,
                'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
-    data = urllib.urlencode(values)
+    url_subdata = urllib.urlencode(values)
     delete_url = urllib.basejoin(PHEDEX_BASE, "xml/%s/delete" % PHEDEX_INSTANCE)
-    if call(delete_url, data):
+    if call(delete_url, url_subdata):
         return 1
     return 0
 
