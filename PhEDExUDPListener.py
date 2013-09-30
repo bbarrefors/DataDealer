@@ -19,20 +19,16 @@ Holland Computing Center - University of Nebraska-Lincoln
 ################################################################################
 
 import sys
-import socket
-import ast
-import re
-import urllib2
-import json
+import os
 import time
-import datetime
+import re
+import socket
 import traceback
 from multiprocessing import Manager, Process, Pool
 
 from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
 from PhEDExDatabase import setup, insert
 from PhEDEXRoutine import janitor, analyze
-from PhEDExAPI import subscribe, delete
 
 SET_ACCESS = 200
 TIME_FRAME = 72
@@ -76,7 +72,7 @@ def dataHandler(d):
     Dataset may not exist, record this as unknown.
     """
     lfn = str(d['file_lfn'])
-    insert(lfn)
+    #insert(lfn)
 
 ################################################################################
 #                                                                              #
@@ -134,7 +130,7 @@ def config():
     if os.path.isFile('cmsdata.config'):
         config_f = open('cmsdata.config', 'r')
     else:
-        log(name, "Config file cmsdata.config does not exist, will use default values")
+        error(name, "Config file cmsdata.config does not exist, will use default values")
         return 1
     for line in config_f:
         if re.match("set_access", line):
