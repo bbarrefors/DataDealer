@@ -23,8 +23,8 @@ from PhEDExLogger import log, error
 from PhEDExUDPListener import TIME_FRAME, SET_ACCESS
 from PhEDExAPI import query
 
-#DB_PATH = '/home/bockelman/barrefors/'
-DB_PATH = '/home/barrefors/scripts/python/'
+DB_PATH = '/home/bockelman/barrefors/'
+#DB_PATH = '/home/barrefors/scripts/python/'
 DB_FILE = 'phedex.db'
 
 ################################################################################
