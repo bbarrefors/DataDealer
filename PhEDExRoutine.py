@@ -40,6 +40,7 @@ def janitor():
     name = "RoutineJanitor"
     log(name, "Updating database")
     delete()
+    deleteSubscriptions()
 
 ################################################################################
 #                                                                              #
@@ -88,10 +89,10 @@ def analyze():
         if (not ignore(dataset)):
             size = datasetSize(dataset)
             if (not (size == 1)):
-                if (size <= space):
+                while (size > space):
                     # Add check for budgeting
                     subscribe("T2_US_Nebraska", dataset)
-                #else:
+                else:
                     # Can we delete some sets previously subscribed to free up space
                     # Look up oldest subscription
                     

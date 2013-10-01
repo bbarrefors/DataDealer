@@ -85,7 +85,8 @@ def insert(file_name):
     with connection:
         cur = connection.cursor()
         # Check if file is already in cache
-        expiration = datetime.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
+        expiration = datetimeme.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
+        expiration = expiration.strftime("%Y-%m-%d %H:%M:%S")
         cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [file_name])
         test = cur.fetchone()[0]
         if int(test) == int(1):

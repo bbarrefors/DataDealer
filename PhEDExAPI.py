@@ -37,10 +37,9 @@ DATA_TYPE = "json"
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
 GROUP = 'Jupiter'
-NAME = 'Carl Lundstedt'
-COMMENTS = 'BjornBarrefors'
-# What's the time standard?
-#CREATED_BY = 
+START_TIME = ''
+END_TIME = ''
+REQUESTED_BY = 'Bjorn Barrefors'
 
 ################################################################################
 #                                                                              #
