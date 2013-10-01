@@ -90,12 +90,13 @@ def insert(file_name):
         test = cur.fetchone()[0]
         if int(test) == int(1):
             cur.execute('SELECT Dataset FROM FileSet WHERE File=?', [file_name])
-            cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (file_name, expiration))
             dataset = cur.fetchone()[0]
+            cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
-            dataset = query("file", file_name)
-            if json_data.get('phedex').get('dbs'):
-                dataset = json_data.get('phedex').get('dbs')[0].get('dataset')[0].get('name')
+            json_data = query("file", file_name)
+            jdata = json_data.get('phedex').get('dbs')
+            if jdata:
+                dataset = jdata[0].get('dataset')[0].get('name')
             else:
                 dataset = "UNKNOWN"
             cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
