@@ -26,8 +26,7 @@ from PhEDExAPI import query
 SET_ACCESS = 200
 TIME_FRAME = 72
 BUDGET = 100000
-DB_PATH = '/home/bockelman/barrefors/'
-#DB_PATH = '/home/barrefors/scripts/python/'
+DB_PATH = '/grid_home/cmsphedex/'
 DB_FILE = 'cmsdata.db'
 
 ################################################################################

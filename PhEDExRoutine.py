@@ -91,7 +91,7 @@ def analyze():
                 if (size <= space):
                     # Add check for budgeting
                     subscribe("T2_US_Nebraska", dataset)
-                else:
+                #else:
                     # Can we delete some sets previously subscribed to free up space
                     # Look up oldest subscription
                     

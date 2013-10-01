@@ -168,7 +168,7 @@ def main():
         queue = manager.Queue()
         
         # Spawn process o clean out database and make reports every 1h
-        process = Process(target=janitor, args=())
+        process = Process(target=routine, args=())
         process.start()
         workers = pool.apply_async(work, (queue,))
         
