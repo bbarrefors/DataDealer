@@ -16,13 +16,14 @@ Holland Computing Center - University of Nebraska-Lincoln
 #                                                                              #
 ################################################################################
 
+import sys
 import os.path
 import datetime
 import fcntl
 
 LOG_PATH = '/home/bockelman/barrefors/'
 #LOG_PATH = '/home/barrefors/scripts/python/'
-LOG_FILE = 'datad.log'
+LOG_FILE = 'cmsdata.log'
 
 ################################################################################
 #                                                                              #
@@ -46,7 +47,7 @@ def log(name, msg):
         fcntl.flock(log_file, fcntl.LOCK_EX|fcntl.LOCK_NB)
     except IOError:
         fcntl.flock(log_file, fcntl.LOCK_EX)
-    log_file.write("ERROR: %s %s: %s\n" % (str(datetime.datetime.now()), str(name), str(msg)))
+    log_file.write("LOG: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
     fcntl.lockf(log_file, fcntl.LOCK_UN)
     log_file.close()
     return 0

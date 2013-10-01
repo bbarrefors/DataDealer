@@ -1,4 +1,4 @@
-#!/usr/bin/env python26
+#!/usr/bin/python26 -B
 """
 _PhEDExUDPListener_
 
@@ -27,12 +27,8 @@ import traceback
 from multiprocessing import Manager, Process, Pool
 
 from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
-from PhEDExDatabase import setup, insert
-from PhEDEXRoutine import janitor, analyze
-
-SET_ACCESS = 200
-TIME_FRAME = 72
-BUDGET = 100000
+from PhEDExDatabase import setup, insert, setTimeFrame, setSetAccess, setBudget
+from PhEDExRoutine import janitor, analyze
 
 ################################################################################
 #                                                                              #
@@ -72,7 +68,7 @@ def dataHandler(d):
     Dataset may not exist, record this as unknown.
     """
     lfn = str(d['file_lfn'])
-    #insert(lfn)
+    insert(lfn)
 
 ################################################################################
 #                                                                              #
@@ -124,10 +120,7 @@ def config():
     If file not found, use default values.
     """
     name = "Config"
-    global SET_ACCESS
-    global TIME_FRAME
-    global BUDGET
-    if os.path.isFile('cmsdata.config'):
+    if os.path.isfile('cmsdata.config'):
         config_f = open('cmsdata.config', 'r')
     else:
         error(name, "Config file cmsdata.config does not exist, will use default values")
@@ -135,13 +128,16 @@ def config():
     for line in config_f:
         if re.match("set_access", line):
             value = re.split(" = ", line)
-            SET_ACCESS = int(value[1].rstrip())
+            set_access = int(value[1].rstrip())
+            setSetAccess(set_access)
         elif re.match("time _frame", line):
             value = re.split(" = ", line)
-            TIME_FRAME = int(value[1].rstrip())
+            time_frame = int(value[1].rstrip())
+            setTimeFrame(time_frame)
         elif re.match("budget", line):
             value = re.split(" = ", line)
-            BUDGET = int(value[1].rstrip())
+            budget = int(value[1].rstrip())
+            setBudget(budget)
     config_f.close()
     return 0
 
@@ -156,11 +152,11 @@ def main():
     __main__
 
     Spawn worker processes.
-    Listem for UDP packets and send to parser and then distribute to workers.
+    Listen for UDP packets and send to parser and then distribute to workers.
     """
     # Initialize
     name = "Main"
-    config():
+    config()
 
     if setup():
         return 1
@@ -198,9 +194,7 @@ def main():
         #Close everything if program is interupted
         UDPSock.close()
         pool.close()
-        pool.join()
         process.join()
-        return 1
     
 if __name__ == '__main__':
     sys.exit(main())

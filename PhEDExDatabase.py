@@ -15,17 +15,20 @@ Holland Computing Center - University of Nebraska-Lincoln
 #                                                                              #
 ################################################################################
 
+import sys
 import os.path
 import datetime
 import sqlite3 as lite
 
 from PhEDExLogger import log, error
-from PhEDExUDPListener import TIME_FRAME, SET_ACCESS
 from PhEDExAPI import query
 
+SET_ACCESS = 200
+TIME_FRAME = 72
+BUDGET = 100000
 DB_PATH = '/home/bockelman/barrefors/'
 #DB_PATH = '/home/barrefors/scripts/python/'
-DB_FILE = 'phedex.db'
+DB_FILE = 'cmsdata.db'
 
 ################################################################################
 #                                                                              #
@@ -143,7 +146,7 @@ def delete():
             
         cur.execute('DELETE FROM FileSet WHERE Expiration<?', [datetime.datetime.now()])
         minCount = 1
-        cur.execute('DELETE FROM SetCount WHERE Count<?', [minCount])
+        cur.execute('DELETE FROM SetAccess WHERE Count<?', [minCount])
     connection.close()
     return 0
 
@@ -205,3 +208,54 @@ def ignore(dataset):
         return True
     else:
         return False
+
+################################################################################
+#                                                                              #
+#                             S E T   A C C E S S                              #
+#                                                                              #
+################################################################################
+
+def setSetAccess(set_access):
+    """
+    _setAccess_
+    
+    Set the SET_ACCESS variable.
+    """
+    name = "SetAccess"
+    global SET_ACCESS
+    SET_ACCESS = set_access
+
+################################################################################
+#                                                                              #
+#                             T I M E   F R A M E                              #
+#                                                                              #
+################################################################################
+
+def setTimeFrame(time_frame):
+    """
+    _timeFrame_
+    
+    Set the TIME_FRAME variable.
+    """
+    name = "TimeFrame"
+    global TIME_FRAME
+    TIME_FRAME = time_frame
+
+################################################################################
+#                                                                              #
+#                                 B U D G E T                                  #
+#                                                                              #
+################################################################################
+
+def setBudget(budget):
+    """
+    _budget_
+    
+    Set the BUDGET variable.
+    """
+    name = "Budget"
+    global BUDGET
+    BUDGET = budget
+
+if __name__ == '__main__':
+    sys.exit(setup())

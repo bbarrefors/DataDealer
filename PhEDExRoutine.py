@@ -17,10 +17,12 @@ Holland Computing Center - University of Nebraska-Lincoln
 #                                                                              #
 ################################################################################
 
+import sys
 import os
 
 from PhEDExDatabase import delete, setAccess, ignore
 from PhEDExAPI import datasetSize
+from PhEDExLogger import log, error
 
 ################################################################################
 #                                                                              #
@@ -89,6 +91,8 @@ def analyze():
                 if (size <= space):
                     # Add check for budgeting
                     subscribe("T2_US_Nebraska", dataset)
+                else:
                     # Can we delete some sets previously subscribed to free up space
                     # Look up oldest subscription
+                    
     return 0
