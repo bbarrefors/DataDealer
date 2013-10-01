@@ -33,13 +33,11 @@ PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 PHEDEX_INSTANCE = "dev"
 DATA_TYPE = "json"
 #DATA_TYPE = "xml"
-
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
 GROUP = 'Jupiter'
-START_TIME = ''
-END_TIME = ''
-REQUESTED_BY = 'Bjorn Barrefors'
+#START_TIME = ''
+#END_TIME = ''
 
 ################################################################################
 #                                                                              #
@@ -121,7 +119,7 @@ def query(tag, data):
     try:
         data_response = urllib2.urlopen(url)
     except:
-        error(name, "Failed phedex call on dataset %s" % (dataset,))
+        error(name, "Failed phedex call on %s %s" % (tag, data))
         return 1
     json_data = json.load(data_response)
     return json_data
@@ -282,12 +280,14 @@ def datasetSize(dataset):
         size += block.get('bytes')
 
     size = size / 10**9
-    log(name, "Total size of dataset %s is %dGB" % (dataset, size))
+    #log(name, "Total size of dataset %s is %dGB" % (dataset, size))
+    print size
     return int(size)
 
-def main():
-    #subscribe(SITE, DATASET)
-    delete(SITE, DATASET)
-    
 if __name__ == '__main__':
-    sys.exit(main())
+    """
+    __main__
+
+    For testing purpose only.
+    """
+    sys.exit(query("file", "/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/AAB9C0E0-62F7-DF11-B304-0030487CD812.root"))

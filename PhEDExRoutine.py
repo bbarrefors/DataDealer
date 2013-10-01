@@ -36,11 +36,12 @@ def janitor():
 
     Delete entries in database that are expired.
     Update SetAccess based on deletions.
+    TODO : Delete sets which was subscribed more than a set time period ago.
     """
     name = "RoutineJanitor"
     log(name, "Updating database")
     delete()
-    deleteSubscriptions()
+    #deleteSubscriptions()
 
 ################################################################################
 #                                                                              #
@@ -64,7 +65,7 @@ def siteSpace():
     free = (info.f_bfree * info.f_bsize) / (1024**3)
     minimum_free = total*(0.1)
     available_space = free - minimum_free
-    #log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
+    log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
     print available_space
     return int(available_space)
 
@@ -79,8 +80,10 @@ def analyze():
     _analyze_
 
     Find candidate datasets to subscribe.
-    Need to make sure the budget is not exceeded. If it is delete previously
-    subscribed dataset. Use a FIFO selection for now.
+    Need to make sure the budget is not exceeded.
+    TODO : Check if set is already at site
+    TODO : Check budget
+    TODO : Free up more space
     """
     name = "RoutineAnalyze"
     log(name, "Analyze database for possible subscriptions")

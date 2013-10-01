@@ -1,4 +1,4 @@
-#!/usr/bin/python -B
+#!/usr/bin/python26 -B
 """
 _PhEDExUDPListener_
 
@@ -30,6 +30,8 @@ from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
 from PhEDExDatabase import setup, insert, setTimeFrame, setSetAccess, setBudget
 from PhEDExRoutine import janitor, analyze
 
+CONFIG_FILE = 'cmsdata.config'
+
 ################################################################################
 #                                                                              #
 #                                 R O U T I N E                                #
@@ -51,7 +53,6 @@ def routine():
         janitor()
         # Check if should make subscriptions
         analyze()
-        print "doing stuff"
     return 1
 
 ################################################################################
@@ -121,10 +122,11 @@ def config():
     If file not found, use default values.
     """
     name = "Config"
-    if os.path.isfile('cmsdata.config'):
-        config_f = open('cmsdata.config', 'r')
+    
+    if os.path.isfile(CONFIG_FILE):
+        config_f = open(CONFIG_FILE, 'r')
     else:
-        error(name, "Config file cmsdata.config does not exist, will use default values")
+        error(name, "Config file %s does not exist, will use default values" % (CONFIG_FILE,))
         return 1
     for line in config_f:
         if re.match("set_access", line):
@@ -198,4 +200,9 @@ def main():
         process.join()
     
 if __name__ == '__main__':
+    """
+    __main__
+
+    This is where it all starts.
+    """
     sys.exit(main())

@@ -26,7 +26,8 @@ from PhEDExAPI import query
 SET_ACCESS = 200
 TIME_FRAME = 72
 BUDGET = 100000
-DB_PATH = '/grid_home/cmsphedex/'
+#DB_PATH = '/grid_home/cmsphedex/'
+DB_PATH = '/home/bockelman/barrefors/cmsdata/'
 DB_FILE = 'cmsdata.db'
 
 ################################################################################
@@ -85,8 +86,7 @@ def insert(file_name):
     with connection:
         cur = connection.cursor()
         # Check if file is already in cache
-        expiration = datetimeme.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
-        expiration = expiration.strftime("%Y-%m-%d %H:%M:%S")
+        expiration = datetime.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
         cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [file_name])
         test = cur.fetchone()[0]
         if int(test) == int(1):
@@ -212,7 +212,7 @@ def ignore(dataset):
 
 ################################################################################
 #                                                                              #
-#                             S E T   A C C E S S                              #
+#                        S E T   S E T   A C C E S S                           #
 #                                                                              #
 ################################################################################
 
@@ -228,7 +228,7 @@ def setSetAccess(set_access):
 
 ################################################################################
 #                                                                              #
-#                             T I M E   F R A M E                              #
+#                        S E T   T I M E   F R A M E                           #
 #                                                                              #
 ################################################################################
 
@@ -244,7 +244,7 @@ def setTimeFrame(time_frame):
 
 ################################################################################
 #                                                                              #
-#                                 B U D G E T                                  #
+#                           S E T    B U D G E T                               #
 #                                                                              #
 ################################################################################
 
@@ -259,4 +259,9 @@ def setBudget(budget):
     BUDGET = budget
 
 if __name__ == '__main__':
-    sys.exit(setup())
+    """
+    __main__
+
+    For testing purpose only.
+    """
+    sys.exit()
