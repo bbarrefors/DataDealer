@@ -64,7 +64,8 @@ def siteSpace():
     free = (info.f_bfree * info.f_bsize) / (1024**3)
     minimum_free = total*(0.1)
     available_space = free - minimum_free
-    log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
+    #log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
+    print available_space
     return int(available_space)
 
 ################################################################################
@@ -92,8 +93,16 @@ def analyze():
                 while (size > space):
                     # Add check for budgeting
                     subscribe("T2_US_Nebraska", dataset)
-                else:
+                #else:
                     # Can we delete some sets previously subscribed to free up space
                     # Look up oldest subscription
                     
     return 0
+
+if __name__ == '__main__':
+    """
+    __main__
+
+    For testing purpose only.
+    """
+    sys.exit(siteSpace())

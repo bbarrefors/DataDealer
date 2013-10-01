@@ -1,4 +1,4 @@
-#!/usr/bin/python26 -B
+#!/usr/bin/python -B
 """
 _PhEDExUDPListener_
 
@@ -51,6 +51,7 @@ def routine():
         janitor()
         # Check if should make subscriptions
         analyze()
+        print "doing stuff"
     return 1
 
 ################################################################################
