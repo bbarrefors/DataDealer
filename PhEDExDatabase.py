@@ -18,10 +18,11 @@ Holland Computing Center - University of Nebraska-Lincoln
 import sys
 import os.path
 import datetime
+import urllib
 import sqlite3 as lite
 
 from PhEDExLogger import log, error
-from PhEDExAPI import query
+from PhEDExAPI import PhEDExCall, PHEDEX_BASE, PHEDEX_INSTANCE, DATA_TYPE
 
 SET_ACCESS = 200
 TIME_FRAME = 72
@@ -94,7 +95,9 @@ def insert(file_name):
             dataset = cur.fetchone()[0]
             cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
-            json_data = query("file", file_name)
+            values = { 'file' : file_name }
+            size_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/data" % PHEDEX_INSTANCE)
+            response = PhEDExCall(data_url, values)
             jdata = json_data.get('phedex').get('dbs')
             if jdata:
                 dataset = jdata[0].get('dataset')[0].get('name')

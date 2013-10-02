@@ -21,8 +21,8 @@ import os.path
 import datetime
 import fcntl
 
-#LOG_PATH = '/grid_home/cmsphedex/'
-LOG_PATH = '/home/bockelman/barrefors/cmsdata/'
+LOG_PATH = '/grid_home/cmsphedex/'
+#LOG_PATH = '/home/bockelman/barrefors/cmsdata/'
 LOG_FILE = 'cmsdata.log'
 
 ################################################################################

@@ -26,25 +26,6 @@ from PhEDExLogger import log, error
 
 ################################################################################
 #                                                                              #
-#                             J A N I T O R                                    #
-#                                                                              #
-################################################################################
-
-def janitor():
-    """
-    _janitor_
-
-    Delete entries in database that are expired.
-    Update SetAccess based on deletions.
-    TODO : Delete sets which was subscribed more than a set time period ago.
-    """
-    name = "RoutineJanitor"
-    log(name, "Updating database")
-    delete()
-    #deleteSubscriptions()
-
-################################################################################
-#                                                                              #
 #                            S I T E   S P A C E                               #
 #                                                                              #
 ################################################################################
@@ -71,6 +52,25 @@ def siteSpace():
 
 ################################################################################
 #                                                                              #
+#                             J A N I T O R                                    #
+#                                                                              #
+################################################################################
+
+def janitor():
+    """
+    _janitor_
+
+    Delete entries in database that are expired.
+    Update SetAccess based on deletions.
+    TODO : Delete sets which was subscribed more than a set time period ago.
+    """
+    name = "RoutineJanitor"
+    log(name, "Updating database")
+    delete()
+    #deleteSubscriptions()
+
+################################################################################
+#                                                                              #
 #                              A N A L Y Z E                                   #
 #                                                                              #
 ################################################################################
@@ -92,7 +92,7 @@ def analyze():
     for dataset in count:
         if (not ignore(dataset)):
             size = datasetSize(dataset)
-            if (not (size == 1)):
+            if (size):
                 while (size > space):
                     # Add check for budgeting
                     subscribe("T2_US_Nebraska", dataset)
