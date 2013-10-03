@@ -73,7 +73,7 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
 
 ################################################################################
 #                                                                              #
-#                                  C A L L                                     #
+#                           P h E D E x   C A L L                              #
 #                                                                              #
 ################################################################################
 
@@ -280,6 +280,7 @@ def datasetSize(dataset):
         size += block.get('bytes')
 
     size = size / 10**9
+    print size
     log(name, "Total size of dataset %s is %dGB" % (dataset, size))
     return int(size)
 
@@ -289,4 +290,4 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit(requests(SITE))
+    sys.exit(datasetSize(DATASET))

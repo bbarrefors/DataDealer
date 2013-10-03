@@ -28,7 +28,8 @@ SET_ACCESS = 200
 TIME_FRAME = 72
 BUDGET = 100000
 #DB_PATH = '/grid_home/cmsphedex/'
-DB_PATH = '/home/bockelman/barrefors/cmsdata/'
+#DB_PATH = '/home/bockelman/barrefors/cmsdata/'
+DB_PATH = '/home/barrefors/cmsdata/'
 DB_FILE = 'cmsdata.db'
 
 ################################################################################
