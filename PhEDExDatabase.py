@@ -97,9 +97,9 @@ def insert(file_name):
             cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
             values = { 'file' : file_name }
-            size_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/data" % PHEDEX_INSTANCE)
+            size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
             response = PhEDExCall(data_url, values)
-            jdata = json_data.get('phedex').get('dbs')
+            jdata = response.get('phedex').get('dbs')
             if jdata:
                 dataset = jdata[0].get('dataset')[0].get('name')
             else:

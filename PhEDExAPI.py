@@ -221,11 +221,12 @@ def exists(site, dataset):
     subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(subscription_url, values)
     if response:
-        log(name, "Subscribe response %s" % (str(response),))
+        exists = response.get('phedex').get('dataset')
+        if exists:
+            return 1
         return 0
     else:
-        error(name, "Subscribe did not succeed")
-        return 1
+        return 0
 
 ################################################################################
 #                                                                              #
@@ -272,7 +273,7 @@ def subscriptions(site):
     """
     name = "APISubscriptions"
     # Created since a week ago?
-    past = datetime.datetime.now() - datetime.timedelta(days = 14)
+    past = datetime.datetime.now() - datetime.timedelta(months = 6)
     create_since = time.mktime(past.utctimetuple())
     values = { 'node' : site, 'create_since' : create_since, 'group' : GROUP }
     subscriptions_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscriptions" % (DATA_TYPE, PHEDEX_INSTANCE))

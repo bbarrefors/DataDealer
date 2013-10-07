@@ -93,18 +93,22 @@ def analyze():
         if (ignore(dataset)):
             log(name, "Dataset %s is in ignore" % (dataset,))
             continue
-        
+        if (exists(dataset, "T2_US_Nebraska")):
+            continue
         size = datasetSize(dataset)
         if (not size):
             continue
         else if (size > budget):
             log(name, "Dataset %s size %d is more than budget" % (dataset, size))
             continue
-        
-        log(name, "Trying to free up space")
-        while (size > space):
-            
-            subscribe("T2_US_Nebraska", dataset)                    
+        log(name, "Trying to free up space if needed")
+        response = subscriptions("T2_US_Nebraska")
+        datasets = response.get('phedex')
+        for del_dataset in datasets:
+            if (size < space):
+                break
+            delete("T2_US_Nebraska", del_dataset)
+        subscribe("T2_US_Nebraska", dataset)                    
     return 0
 
 if __name__ == '__main__':
