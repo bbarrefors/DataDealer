@@ -143,7 +143,7 @@ def data(dataset):
     """
     name = "APIdata"
     values = { 'dataset' : dataset }
-    size_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/data" % PHEDEX_INSTANCE)
+    size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(size_url, values)
     if not response:
         error(name, "Data did not succeed")
@@ -189,7 +189,7 @@ def subscribe(site, dataset):
                'priority' : priority, 'move' : move, 'static' : static,
                'custodial' : custodial, 'request_only' : request_only,
                'group': GROUP, 'comments' : COMMENTS }
-    subscription_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/subscribe" % (PHEDEX_INSTANCE,))
+    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscribe" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(subscription_url, values)
     if response:
         log(name, "Subscribe response %s" % (str(response),))
@@ -220,7 +220,7 @@ def delete(site, dataset):
     rm_subs = 'y'
     values = { 'node' : site, 'data' : del_data, 'level' : level,
                'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
-    delete_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/delete" % PHEDEX_INSTANCE)
+    delete_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/delete" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(delete_url, values)
     if response:
         log(name, "Delete response %s" % (str(response),))
@@ -246,7 +246,7 @@ def subscriptions(site):
     past = datetime.datetime.now() - datetime.timedelta(days = 14)
     create_since = time.mktime(past.utctimetuple())
     values = { 'node' : site, 'create_since' : create_since, 'group' : GROUP }
-    subscriptions_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/subscriptions" % PHEDEX_INSTANCE)
+    subscriptions_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscriptions" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(subscriptions_url, values)
     if not response:
         error(name, "Subscriptions did not succeed")
@@ -268,9 +268,11 @@ def datasetSize(dataset):
     """
     name = "APIdatasetSize"
     values = { 'dataset' : dataset }
-    size_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/data" % PHEDEX_INSTANCE)
+    size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(size_url, values) 
-    json_data = json_data.get('phedex')
+    if (not response):
+        return 0
+    json_data = response.get('phedex')
     if (not json_data):
         error(name, "No data for dataset %s" % (dataset,))
         return 0
