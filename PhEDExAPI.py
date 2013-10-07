@@ -189,7 +189,36 @@ def subscribe(site, dataset):
                'priority' : priority, 'move' : move, 'static' : static,
                'custodial' : custodial, 'request_only' : request_only,
                'group': GROUP, 'comments' : COMMENTS }
-    subscription_url = urllib.basejoin(PHEDEX_BASE, "DATA_TYPE/%s/subscribe" % (PHEDEX_INSTANCE,))
+    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscribe" % (DATA_TYPE, PHEDEX_INSTANCE,))
+    response = PhEDExCall(subscription_url, values)
+    if response:
+        log(name, "Subscribe response %s" % (str(response),))
+        return 0
+    else:
+        error(name, "Subscribe did not succeed")
+        return 1
+
+################################################################################
+#                                                                              #
+#                                 E X I S T S                                  #
+#                                                                              #
+################################################################################
+
+def exists(site, dataset):
+    """
+    _exists_
+
+    Set up blockreplicas call to PhEDEx API.
+    """
+    name = "APIExists"
+    log(name, "Check if %s exists on %s" % (dataset, site))
+    data = dataset
+    node = site
+    complete = 'y'
+    show_dataset = 'y'
+    values = { 'node' : site, 'dataset' : data, 'complete' : complete,
+               'show_dataset' : show_dataset }
+    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE,))
     response = PhEDExCall(subscription_url, values)
     if response:
         log(name, "Subscribe response %s" % (str(response),))

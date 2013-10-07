@@ -20,8 +20,8 @@ Holland Computing Center - University of Nebraska-Lincoln
 import sys
 import os
 
-from PhEDExDatabase import delete, setAccess, ignore
-from PhEDExAPI import datasetSize
+from PhEDExDatabase import delete, setAccess, ignore, BUDGET
+from PhEDExAPI import datasetSize, subscribe
 from PhEDExLogger import log, error
 
 ################################################################################
@@ -62,12 +62,11 @@ def janitor():
 
     Delete entries in database that are expired.
     Update SetAccess based on deletions.
-    TODO : Delete sets which was subscribed more than a set time period ago.
     """
     name = "RoutineJanitor"
     log(name, "Updating database")
     delete()
-    #deleteSubscriptions()
+    return 0
 
 ################################################################################
 #                                                                              #
@@ -90,16 +89,22 @@ def analyze():
     space = siteSpace()
     count = setAccess()
     for dataset in count:
-        if (not ignore(dataset)):
-            size = datasetSize(dataset)
-            if (size):
-                while (size > space):
-                    # Add check for budgeting
-                    subscribe("T2_US_Nebraska", dataset)
-                #else:
-                    # Can we delete some sets previously subscribed to free up space
-                    # Look up oldest subscription
-                    
+        log(name, "Possible subscription of %s" % (dataset,))
+        if (ignore(dataset)):
+            log(name, "Dataset %s is in ignore" % (dataset,))
+            continue
+        
+        size = datasetSize(dataset)
+        if (not size):
+            continue
+        else if (size > budget):
+            log(name, "Dataset %s size %d is more than budget" % (dataset, size))
+            continue
+        
+        log(name, "Trying to free up space")
+        while (size > space):
+            
+            subscribe("T2_US_Nebraska", dataset)                    
     return 0
 
 if __name__ == '__main__':
