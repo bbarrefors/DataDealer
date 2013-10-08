@@ -20,7 +20,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 import sys
 import os
 
-from PhEDExDatabase import delete, setAccess, ignore, BUDGET
+from PhEDExDatabase import delete, setAccess, setBudget, ignore, BUDGET
 from PhEDExAPI import datasetSize, subscribe
 from PhEDExLogger import log, error
 
@@ -98,16 +98,22 @@ def analyze():
         size = datasetSize(dataset)
         if (not size):
             continue
-        else if (size > budget):
-            log(name, "Dataset %s size %d is more than budget" % (dataset, size))
-            continue
-        log(name, "Trying to free up space if needed")
-        response = subscriptions("T2_US_Nebraska")
+        if (size < space and size < BUDGET):
+            subscribe("T2_US_Nebraska", dataset)
+            setBudget(BUDGET - size)
+            return 0
+        log(name, "Trying to free up space")
+        response = subscriptions("T2_US_Nebraska", 4*7)
         datasets = response.get('phedex')
+        response = subscriptions("T2_US_Nebraska", 3)
+        datasets2 = response.get('phedex')
+        dataset = dataset - dataset2
         for del_dataset in datasets:
-            if (size < space):
+            if (size < space and size < BUDGET):
                 break
             delete("T2_US_Nebraska", del_dataset)
+        else:
+            continue
         subscribe("T2_US_Nebraska", dataset)                    
     return 0
 
