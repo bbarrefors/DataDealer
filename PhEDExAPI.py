@@ -92,9 +92,16 @@ def PhEDExCall(url, values):
     except urllib2.HTTPError, he:
         error(name, he.read())
         return 0
+    except urllib2.URLError:
+        error(name, "PhEDEx call returned URLError")
+        return 0
 
-    json_data = response.read()
-    return json_data
+    json_data = json.load(response)
+    if not json_data:
+        error(name, response)
+        return 0
+    phedex_data = json_data.get('phedex')
+    return phedex_data
 
 ################################################################################
 #                                                                              #
@@ -130,36 +137,59 @@ def parse(data, xml):
 
 ################################################################################
 #                                                                              #
-#                                  D A T A                                     #
+#                             X M L   D A T A                                  #
 #                                                                              #
 ################################################################################
 
-def data(dataset):
+def xmlData(dataset):
     """
-    _data_
+    _xmlData_
 
     Return data information as xml structure complying with PhEDEx
     subscribe and delete call.
     """
-    name = "APIdata"
+    name = "APIXMLData"
     values = { 'dataset' : dataset }
-    size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-    response = PhEDExCall(size_url, values)
+    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
+    response = PhEDExCall(data_url, values)
     if not response:
-        error(name, "Data did not succeed")
-        return 0
-    json_data = response.get('phedex')
-    if (not json_data):
         error(name, "No data for dataset %s" % (dataset,))
         return 0
     xml = '<data version="2">'
-    for k, v in json_data.iteritems():
+    for k, v in response.iteritems():
         if k == "dbs":
             xml = "%s<%s" % (xml, k)
             xml = parse(v[0], xml)
             xml = "%s</%s>" % (xml, k)
     xml_data = "%s</data>" % (xml,)
     return xml_data
+
+################################################################################
+#                                                                              #
+#                              D A T A S E T                                   #
+#                                                                              #
+################################################################################
+
+def dataset(file_name):
+    """
+    _dataset_
+
+    Return dataset from logical file name lfn.
+    Set to UNKNOWN if no set is returned.
+    """
+    name = "APIDataset"
+    values = { 'file' : file_name }
+    dataset_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
+    response = PhEDExCall(dataset_url, values)
+    if not response:
+        dataset = "UNKNOWN"
+        return dataset
+    jdata = response.get('dbs')
+    if jdata:
+        dataset = jdata[0].get('dataset')[0].get('name')
+    else:
+        dataset = "UNKNOWN"
+    return dataset
 
 ################################################################################
 #                                                                              #
@@ -175,7 +205,7 @@ def subscribe(site, dataset):
     """
     name = "APISubscribe"
     log(name, "Subscribing %s to %s" % (dataset, site))
-    sub_data = data(dataset)
+    sub_data = xmlData(dataset)
     if not sub_data:
         error(name, "Subscribe did not succeed")
         return 1
@@ -196,6 +226,37 @@ def subscribe(site, dataset):
         return 0
     else:
         error(name, "Subscribe did not succeed")
+        return 1
+
+################################################################################
+#                                                                              #
+#                                D E L E T E                                   #
+#                                                                              #
+################################################################################
+
+def delete(site, dataset):
+    """
+    _delete_
+
+    Set up delete call to PhEDEx API.
+    """
+    name = "APIDelete"
+    log(name, "Deleting %s from %s" % (dataset, site))
+    del_data = xmlData(dataset)
+    if not del_data:
+        error(name, "Delete did not succeed")
+        return 1
+    level = 'dataset'
+    rm_subs = 'y'
+    values = { 'node' : site, 'data' : del_data, 'level' : level,
+               'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
+    delete_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/delete" % (DATA_TYPE, PHEDEX_INSTANCE))
+    response = PhEDExCall(delete_url, values)
+    if response:
+        log(name, "Delete response %s" % (str(response),))
+        return 0
+    else:
+        error(name, "Delete did not succeed")
         return 1
 
 ################################################################################
@@ -221,7 +282,7 @@ def exists(site, dataset):
     subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(subscription_url, values)
     if response:
-        exists = response.get('phedex').get('dataset')
+        exists = response.get('dataset')
         if exists:
             return 1
         return 0
@@ -230,42 +291,11 @@ def exists(site, dataset):
 
 ################################################################################
 #                                                                              #
-#                                D E L E T E                                   #
-#                                                                              #
-################################################################################
-
-def delete(site, dataset):
-    """
-    _delete_
-
-    Set up delete call to PhEDEx API.
-    """
-    name = "APIDelete"
-    log(name, "Deleting %s from %s" % (dataset, site))
-    del_data = data(dataset)
-    if not del_data:
-        error(name, "Delete did not succeed")
-        return 1
-    level = 'dataset'
-    rm_subs = 'y'
-    values = { 'node' : site, 'data' : del_data, 'level' : level,
-               'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
-    delete_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/delete" % (DATA_TYPE, PHEDEX_INSTANCE))
-    response = PhEDExCall(delete_url, values)
-    if response:
-        log(name, "Delete response %s" % (str(response),))
-        return 0
-    else:
-        error(name, "Delete did not succeed")
-        return 1
-
-################################################################################
-#                                                                              #
 #                         S U B S C R I P T I O N S                            #
 #                                                                              #
 ################################################################################
 
-def subscriptions(site):
+def subscriptions(site, days):
     """
     _subscriptions_
 
@@ -273,16 +303,23 @@ def subscriptions(site):
     """
     name = "APISubscriptions"
     # Created since a week ago?
-    past = datetime.datetime.now() - datetime.timedelta(months = 6)
+    past = datetime.datetime.now() - datetime.timedelta(days = days)
     create_since = time.mktime(past.utctimetuple())
     values = { 'node' : site, 'create_since' : create_since, 'group' : GROUP }
     subscriptions_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscriptions" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(subscriptions_url, values)
     if not response:
         error(name, "Subscriptions did not succeed")
-        return 1    
+        return 1
     # TODO : Do stuff with data
-    return 0
+    datasets = []
+    data = response.get('dataset')
+    print data
+    if not data:
+        return datasets
+    for dataset in data:
+        datasets.append(dataset.get('name'))
+    return datasets
 
 ################################################################################
 #                                                                              #
@@ -300,19 +337,18 @@ def datasetSize(dataset):
     values = { 'dataset' : dataset }
     size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(size_url, values) 
-    if (not response):
+    if not response:
         return 0
-    json_data = response.get('phedex')
-    if (not json_data):
+    dbs = response.get('dbs')
+    if (not dbs):
         error(name, "No data for dataset %s" % (dataset,))
         return 0
-    data = json_data.get('dbs')[0].get('dataset')[0].get('block')
+    data = dbs[0].get('dataset')[0].get('block')
     size = float(0)
     for block in data:
         size += block.get('bytes')
 
     size = size / 10**9
-    print size
     log(name, "Total size of dataset %s is %dGB" % (dataset, size))
     return int(size)
 
@@ -322,4 +358,4 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit(datasetSize(DATASET))
+    sys.exit(dataset("/store/generator/Summer12/TTJets_SemiLeptMGDecays_8TeV-madgraph-tauola/GEN/START53_V7C-v4/00000/32DB2D3B-5C1B-E311-AB9A-02163E008BC9.root"))

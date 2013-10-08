@@ -22,7 +22,7 @@ import urllib
 import sqlite3 as lite
 
 from PhEDExLogger import log, error
-from PhEDExAPI import PhEDExCall, PHEDEX_BASE, PHEDEX_INSTANCE, DATA_TYPE
+from PhEDExAPI import dataset
 
 SET_ACCESS = 200
 TIME_FRAME = 72
@@ -96,14 +96,7 @@ def insert(file_name):
             dataset = cur.fetchone()[0]
             cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
-            values = { 'file' : file_name }
-            size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-            response = PhEDExCall(data_url, values)
-            jdata = response.get('phedex').get('dbs')
-            if jdata:
-                dataset = jdata[0].get('dataset')[0].get('name')
-            else:
-                dataset = "UNKNOWN"
+            dataset = dataset(file_name)
             cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
         cur.execute('INSERT INTO Access VALUES(?,?)', (dataset, expiration))
         cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
