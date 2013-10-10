@@ -22,7 +22,7 @@ import urllib
 import sqlite3 as lite
 
 from PhEDExLogger import log, error
-from PhEDExAPI import dataset
+from PhEDExAPI import findDataset
 
 SET_ACCESS = 200
 TIME_FRAME = 72
@@ -76,7 +76,7 @@ def setup():
 def insert(file_name):
     """
     _insert_
-
+    
     Insert values to table FileSet and update SetAccess.
     If dataset can't be found add to Unknown
     """
@@ -96,7 +96,8 @@ def insert(file_name):
             dataset = cur.fetchone()[0]
             cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
-            dataset = dataset(file_name)
+            dataset = findDataset(file_name)
+            print dataset
             cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
         cur.execute('INSERT INTO Access VALUES(?,?)', (dataset, expiration))
         cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
@@ -261,4 +262,5 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit()
+    #sys.exit(setup())
+    sys.exit(insert("/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/204BD8FD-2D09-E011-A254-00304879BAB2.root"))

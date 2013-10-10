@@ -31,12 +31,13 @@ except ImportError:
 from PhEDExLogger import log, error
 
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
-#PHEDEX_INSTANCE = "prod"
-PHEDEX_INSTANCE = "dev"
+PHEDEX_INSTANCE = "prod"
+#PHEDEX_INSTANCE = "dev"
 DATA_TYPE = "json"
 #DATA_TYPE = "xml"
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
+GROUP = 'Local'
 GROUP = 'Jupiter'
 COMMENTS = 'BjornBarrefors'
 #CREATE_SINCE = ''
@@ -170,14 +171,14 @@ def xmlData(dataset):
 #                                                                              #
 ################################################################################
 
-def dataset(file_name):
+def findDataset(file_name):
     """
-    _dataset_
+    _findDataset_
 
     Return dataset from logical file name lfn.
     Set to UNKNOWN if no set is returned.
     """
-    name = "APIDataset"
+    name = "APIFindDataset"
     values = { 'file' : file_name }
     dataset_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(dataset_url, values)
