@@ -114,14 +114,14 @@ def insert(file_name):
 #                                                                              #
 ################################################################################
 
-def delete():
+def clean():
     """
-    _delete_
+    _clean_
     
     Delete expired entries from the database.
     Update SetAccess.
     """
-    name = "DatabaseDelete"
+    name = "DatabaseClean"
     if not os.path.exists(DB_PATH):
         error(name, "Database path %s does not exist" % DB_PATH)
         return 1

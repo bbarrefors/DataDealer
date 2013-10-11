@@ -20,7 +20,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 import sys
 import os
 
-from PhEDExDatabase import delete, setAccess, setBudget, ignore, insertIgnore, removeIgnore, BUDGET
+from PhEDExDatabase import clean, setAccess, setBudget, ignore, insertIgnore, removeIgnore, BUDGET
 from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions
 from PhEDExLogger import log, error
 
@@ -65,7 +65,7 @@ def janitor():
     """
     name = "RoutineJanitor"
     log(name, "Updating database")
-    delete()
+    clean()
     return 0
 
 ################################################################################
@@ -133,4 +133,4 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit(analyze())
+    sys.exit(janitor())
