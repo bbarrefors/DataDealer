@@ -24,7 +24,7 @@ import sqlite3 as lite
 from PhEDExLogger import log, error
 from PhEDExAPI import findDataset
 
-SET_ACCESS = 200
+SET_ACCESS = 500
 TIME_FRAME = 72
 BUDGET = 100000
 DB_PATH = '/grid_home/cmsphedex/'
@@ -97,7 +97,6 @@ def insert(file_name):
             cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
             dataset = findDataset(file_name)
-            print dataset
             cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
         cur.execute('INSERT INTO Access VALUES(?,?)', (dataset, expiration))
         cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
@@ -204,9 +203,55 @@ def ignore(dataset):
         test = cur.fetchone()[0]
     connection.close()
     if int(test) == int(1):
+        print "Set is in ignore"
         return True
     else:
+        print "Set is not in ignore"
         return False
+
+################################################################################
+#                                                                              #
+#                                I G N O R E                                   #
+#                                                                              #
+################################################################################
+
+def insertIgnore(dataset):
+    """
+    _ignore_
+    
+    """
+    name = "DatabaseInsertIgnore"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
+    connection.close()
+    return 0
+
+################################################################################
+#                                                                              #
+#                                I G N O R E                                   #
+#                                                                              #
+################################################################################
+
+def removeIgnore(dataset):
+    """
+    _ignore_
+    
+    """
+    name = "DatabaseRemoveIgnore"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        cur.execute('DELETE FROM Ignore WHERE Dataset=?', [dataset])
+    connection.close()
+    return 0
 
 ################################################################################
 #                                                                              #

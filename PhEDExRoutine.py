@@ -20,8 +20,8 @@ Holland Computing Center - University of Nebraska-Lincoln
 import sys
 import os
 
-from PhEDExDatabase import delete, setAccess, setBudget, ignore, BUDGET
-from PhEDExAPI import datasetSize, subscribe
+from PhEDExDatabase import delete, setAccess, setBudget, ignore, insertIgnore, removeIgnore, BUDGET
+from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions
 from PhEDExLogger import log, error
 
 ################################################################################
@@ -88,33 +88,43 @@ def analyze():
     log(name, "Analyze database for possible subscriptions")
     space = siteSpace()
     count = setAccess()
-    for dataset in count:
+    for datas in count:
+        dataset = datas[0]
         log(name, "Possible subscription of %s" % (dataset,))
         if (ignore(dataset)):
             log(name, "Dataset %s is in ignore" % (dataset,))
             continue
-        if (exists(dataset, "T2_US_Nebraska")):
+        if (exists("T2_US_Nebraska", dataset)):
+            log(name, "Dataset %s is already at %s" % (dataset, "T2_US_Nebraska"))
             continue
         size = datasetSize(dataset)
+        log(name, "Dataset %s size is %dGB" % (dataset, size))
         if (not size):
             continue
         if (size < space and size < BUDGET):
-            subscribe("T2_US_Nebraska", dataset)
-            setBudget(BUDGET - size)
-            return 0
+            if (not subscribe("T2_US_Nebraska", dataset)):
+                insertIgnore(dataset)
+                setBudget(BUDGET - size)
+            continue
         log(name, "Trying to free up space")
         response = subscriptions("T2_US_Nebraska", 4*7)
         datasets = response.get('phedex')
         response = subscriptions("T2_US_Nebraska", 3)
         datasets2 = response.get('phedex')
-        dataset = dataset - dataset2
+        datasets = datasets - dataset2
         for del_dataset in datasets:
             if (size < space and size < BUDGET):
                 break
-            delete("T2_US_Nebraska", del_dataset)
+            if (not delete("T2_US_Nebraska", del_dataset)):
+                removeIgnore(del_dataset)
+                new_size = datasetSizde(del_dataset)
+                setBudget(BUDGET + new_size)
+                space = space + new_size
         else:
             continue
-        subscribe("T2_US_Nebraska", dataset)                    
+        if (subscribe("T2_US_Nebraska", dataset)):
+            insertIgnore(dataset)
+            setBudget(BUDGET - size)
     return 0
 
 if __name__ == '__main__':
@@ -123,4 +133,4 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit(siteSpace())
+    sys.exit(analyze())
