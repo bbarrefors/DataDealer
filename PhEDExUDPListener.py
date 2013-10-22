@@ -70,7 +70,8 @@ def dataHandler(d):
     Dataset may not exist, record this as unknown.
     """
     lfn = str(d['file_lfn'])
-    insert(lfn)
+    print lfn
+#   insert(lfn)
 
 ################################################################################
 #                                                                              #
@@ -159,9 +160,9 @@ def main():
     """
     # Initialize
     name = "Main"
-    config()
+#    config()
 
-    if setup():
+#    if setup():
         return 1
 
     try:
@@ -183,6 +184,7 @@ def main():
         # Listen for UDP packets
         while True:
             data,addr = UDPSock.recvfrom(buf)
+            print data
             queue.put(data)
     except:
         # Print out raised exception to log file

@@ -205,7 +205,7 @@ def subscribe(site, dataset):
     Set up subscription call to PhEDEx API.
     """
     name = "APISubscribe"
-    log(name, "Subscribing %s to %s" % (dataset, site))
+    #log(name, "Subscribing %s to %s" % (dataset, site))
     sub_data = xmlData(dataset)
     if not sub_data:
         error(name, "Subscribe did not succeed")
@@ -223,7 +223,7 @@ def subscribe(site, dataset):
     subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscribe" % (DATA_TYPE, PHEDEX_INSTANCE,))
     response = PhEDExCall(subscription_url, values)
     if response:
-        log(name, "Subscribe response %s" % (str(response),))
+        #log(name, "Subscribe response %s" % (str(response),))
         return 0
     else:
         error(name, "Subscribe did not succeed")
@@ -242,7 +242,7 @@ def delete(site, dataset):
     Set up delete call to PhEDEx API.
     """
     name = "APIDelete"
-    log(name, "Deleting %s from %s" % (dataset, site))
+    #log(name, "Deleting %s from %s" % (dataset, site))
     del_data = xmlData(dataset)
     if not del_data:
         error(name, "Delete did not succeed")
@@ -254,7 +254,7 @@ def delete(site, dataset):
     delete_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/delete" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(delete_url, values)
     if response:
-        log(name, "Delete response %s" % (str(response),))
+        #log(name, "Delete response %s" % (str(response),))
         return 0
     else:
         error(name, "Delete did not succeed")
@@ -273,7 +273,7 @@ def exists(site, dataset):
     Set up blockreplicas call to PhEDEx API.
     """
     name = "APIExists"
-    log(name, "Check if %s exists on %s" % (dataset, site))
+    #log(name, "Check if %s exists on %s" % (dataset, site))
     data = dataset
     node = site
     complete = 'y'
@@ -350,7 +350,7 @@ def datasetSize(dataset):
         size += block.get('bytes')
 
     size = size / 10**9
-    log(name, "Total size of dataset %s is %dGB" % (dataset, size))
+    #log(name, "Total size of dataset %s is %dGB" % (dataset, size))
     return int(size)
 
 if __name__ == '__main__':

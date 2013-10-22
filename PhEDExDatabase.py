@@ -64,7 +64,7 @@ def setup():
         cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
 
     connection.close()
-    log(name, "Database initialized")
+    #log(name, "Database initialized")
     return 0
 
 ################################################################################

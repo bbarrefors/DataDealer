@@ -26,6 +26,24 @@ from PhEDExLogger import log, error
 
 ################################################################################
 #                                                                              #
+#                             J A N I T O R                                    #
+#                                                                              #
+################################################################################
+
+def janitor():
+    """
+    _janitor_
+
+    Delete entries in database that are expired.
+    Update SetAccess based on deletions.
+    """
+    name = "RoutineJanitor"
+    #log(name, "Updating database")
+    clean()
+    return 0
+
+################################################################################
+#                                                                              #
 #                            S I T E   S P A C E                               #
 #                                                                              #
 ################################################################################
@@ -49,24 +67,6 @@ def siteSpace():
     log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
     print available_space
     return int(available_space)
-
-################################################################################
-#                                                                              #
-#                             J A N I T O R                                    #
-#                                                                              #
-################################################################################
-
-def janitor():
-    """
-    _janitor_
-
-    Delete entries in database that are expired.
-    Update SetAccess based on deletions.
-    """
-    name = "RoutineJanitor"
-    log(name, "Updating database")
-    clean()
-    return 0
 
 ################################################################################
 #                                                                              #
