@@ -28,7 +28,7 @@ from multiprocessing import Manager, Process, Pool
 
 from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
 from PhEDExDatabase import setup, insert, setTimeFrame, setSetAccess, setBudget
-from PhEDExRoutine import janitor, analyze
+from PhEDExRoutine import janitor, analyze, summary
 
 CONFIG_FILE = 'cmsdata.config'
 
@@ -48,11 +48,13 @@ def routine():
     """
     # Run every hour
     while True:
-        time.sleep(3600)
-        # Update database, delete entries older than 12h
-        janitor()
-        # Check if should make subscriptions
-        analyze()
+        for i in range(24):
+            time.sleep(3600)
+            # Update database, delete entries older than 12h
+            janitor()
+            # Check if should make subscriptions
+            analyze()
+        summary()
     return 1
 
 ################################################################################
@@ -70,8 +72,8 @@ def dataHandler(d):
     Dataset may not exist, record this as unknown.
     """
     lfn = str(d['file_lfn'])
-    print lfn
-#   insert(lfn)
+    dir = lfn.rsplit('/',2)[0]
+    insert(dir, lfn)
 
 ################################################################################
 #                                                                              #
@@ -160,9 +162,9 @@ def main():
     """
     # Initialize
     name = "Main"
-#    config()
+    config()
 
-#    if setup():
+    if setup():
         return 1
 
     try:
@@ -184,7 +186,6 @@ def main():
         # Listen for UDP packets
         while True:
             data,addr = UDPSock.recvfrom(buf)
-            print data
             queue.put(data)
     except:
         # Print out raised exception to log file

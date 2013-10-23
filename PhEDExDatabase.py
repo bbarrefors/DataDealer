@@ -53,7 +53,7 @@ def setup():
     with connection:
         cur = connection.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS Access (Dataset TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS FileSet (File TEXT, Dataset TEXT, Expiration TIMESTAMP)')
+        cur.execute('CREATE TABLE IF NOT EXISTS FileSet (File TEXT, Dataset TEXT)')
         cur.execute('CREATE TABLE IF NOT EXISTS SetAccess (Dataset TEXT, Count INTEGER)')
         cur.execute('CREATE TABLE IF NOT EXISTS Ignore (Dataset TEXT UNIQUE)')
         dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
@@ -73,12 +73,13 @@ def setup():
 #                                                                              #
 ################################################################################
 
-def insert(file_name):
+def insert(dir, file_name):
     """
     _insert_
     
     Insert values to table FileSet and update SetAccess.
-    If dataset can't be found add to Unknown
+    If dataset can't be found add to Unknown.
+    Check cache first.
     """
     name = "DatabaseInsert"
     if not os.path.exists(DB_PATH):
@@ -88,16 +89,16 @@ def insert(file_name):
     with connection:
         cur = connection.cursor()
         # Check if file is already in cache
+        # Tachically we only check directory since this will decrease the size of cache
         expiration = datetime.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
-        cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [file_name])
+        cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [dir])
         test = cur.fetchone()[0]
         if int(test) == int(1):
-            cur.execute('SELECT Dataset FROM FileSet WHERE File=?', [file_name])
+            cur.execute('SELECT Dataset FROM FileSet WHERE File=?', [dir])
             dataset = cur.fetchone()[0]
-            cur.execute('UPDATE FileSet SET Expiration=? WHERE File=?', (expiration, file_name))
         else:
             dataset = findDataset(file_name)
-            cur.execute('INSERT INTO FileSet VALUES(?,?,?)', (file_name, dataset, expiration))
+            cur.execute('INSERT INTO FileSet VALUES(?,?)', (dir, dataset))
         cur.execute('INSERT INTO Access VALUES(?,?)', (dataset, expiration))
         cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
         test = cur.fetchone()[0]
@@ -142,7 +143,6 @@ def clean():
             del_count = cur.rowcount
             cur.execute('UPDATE SetAccess SET Count=Count-? WHERE Dataset=?',(del_count, dataset))
             
-        cur.execute('DELETE FROM FileSet WHERE Expiration<?', [datetime.datetime.now()])
         minCount = 1
         cur.execute('DELETE FROM SetAccess WHERE Count<?', [minCount])
     connection.close()
@@ -181,6 +181,34 @@ def setAccess():
 
 ################################################################################
 #                                                                              #
+#                           S E T   A C C E S S                                #
+#                                                                              #
+################################################################################
+
+def access(dataset):
+    """
+    _access_
+    
+    Get the number of accesses for the given set.
+    """
+    name = "DatabaseAccess"
+    if not os.path.exists(DB_PATH):
+        error(name, "Database path %s does not exist" % DB_PATH)
+        return 1
+    connection = lite.connect(DB_PATH + DB_FILE)
+    with connection:
+        cur = connection.cursor()
+        cur.execute('SELECT Count FROM SetAccess WHERE Dataset=?', [dataset])
+        ac = cur.fetchone()
+        if ac == None:
+            accesses = 0
+        else:
+            accesses = ac[0]
+    connection.close()
+    return int(accesses)
+
+################################################################################
+#                                                                              #
 #                                I G N O R E                                   #
 #                                                                              #
 ################################################################################
@@ -208,50 +236,6 @@ def ignore(dataset):
     else:
         print "Set is not in ignore"
         return False
-
-################################################################################
-#                                                                              #
-#                                I G N O R E                                   #
-#                                                                              #
-################################################################################
-
-def insertIgnore(dataset):
-    """
-    _ignore_
-    
-    """
-    name = "DatabaseInsertIgnore"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
-    connection.close()
-    return 0
-
-################################################################################
-#                                                                              #
-#                                I G N O R E                                   #
-#                                                                              #
-################################################################################
-
-def removeIgnore(dataset):
-    """
-    _ignore_
-    
-    """
-    name = "DatabaseRemoveIgnore"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('DELETE FROM Ignore WHERE Dataset=?', [dataset])
-    connection.close()
-    return 0
 
 ################################################################################
 #                                                                              #
