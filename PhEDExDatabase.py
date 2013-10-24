@@ -89,7 +89,7 @@ def insert(dir, file_name):
     with connection:
         cur = connection.cursor()
         # Check if file is already in cache
-        # Tachically we only check directory since this will decrease the size of cache
+        # Technically we only check directory since this will decrease the size of cache
         expiration = datetime.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
         cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [dir])
         test = cur.fetchone()[0]

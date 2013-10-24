@@ -31,14 +31,14 @@ except ImportError:
 from PhEDExLogger import log, error
 
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
-PHEDEX_INSTANCE = "prod"
-#PHEDEX_INSTANCE = "dev"
+#PHEDEX_INSTANCE = "prod"
+PHEDEX_INSTANCE = "dev"
 DATA_TYPE = "json"
 #DATA_TYPE = "xml"
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-GROUP = 'local'
-#GROUP = 'Jupiter'
+#GROUP = 'local'
+GROUP = 'Jupiter'
 COMMENTS = 'BjornBarrefors'
 #CREATE_SINCE = ''
 #END_TIME = ''
@@ -93,7 +93,8 @@ def PhEDExCall(url, values):
     except urllib2.HTTPError, he:
         error(name, he.read())
         return 0
-    except urllib2.URLError:
+    except urllib2.URLError, e:
+        print e
         error(name, "PhEDEx call returned URLError")
         return 0
 
@@ -315,7 +316,6 @@ def subscriptions(site, days):
     # TODO : Do stuff with data
     datasets = []
     data = response.get('dataset')
-    print data
     if not data:
         return datasets
     for dataset in data:
@@ -359,4 +359,4 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit(dataset("/store/generator/Summer12/TTJets_SemiLeptMGDecays_8TeV-madgraph-tauola/GEN/START53_V7C-v4/00000/32DB2D3B-5C1B-E311-AB9A-02163E008BC9.root"))
+    sys.exit(findDataset("/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/AAB9C0E0-62F7-DF11-B304-0030487CD812.root"))

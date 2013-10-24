@@ -20,7 +20,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 import sys
 import os
 
-from PhEDExDatabase import clean, setAccess, setBudget, ignore, insertIgnore, removeIgnore, access, BUDGET
+from PhEDExDatabase import clean, setAccess, setBudget, ignore, access, BUDGET
 from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions
 from PhEDExLogger import log, error
 
@@ -84,8 +84,7 @@ def analyze():
     name = "RoutineAnalyze"
     #log(name, "Analyze database for possible subscriptions")
     space = siteSpace()
-    response = subscriptions("T2_US_Nebraska", 6*4*7)
-    subscribedSets = response.get('phedex')
+    subscribedSets = subscriptions("T2_US_Nebraska", 6*4*7)
     budget = 0
     for dset in subscribedSets:
         budget += datasetSize(dset)
@@ -104,11 +103,10 @@ def analyze():
         if (not size):
             continue
         if (size < space and size < BUDGET - budget):
-            subscribe("T2_US_Nebraska", dataset):
+            subscribe("T2_US_Nebraska", dataset)
             continue
         #log(name, "Trying to free up space")
-        response = subscriptions("T2_US_Nebraska", 3)
-        subSets = response.get('phedex')
+        subSets = subscriptions("T2_US_Nebraska", 3)
         datasets = subscribedSets - subSets
         for del_dataset in datasets:
             if (size < space and size < BUDGET - budget):
@@ -119,7 +117,7 @@ def analyze():
                 space += new_size
         else:
             continue
-        if (subscribe("T2_US_Nebraska", dataset):
+        if (not subscribe("T2_US_Nebraska", dataset)):
             budget += size
             space -= size
     return 0
@@ -138,20 +136,17 @@ def summary():
     How much data have CMS DATA transferred to site in the last 24h?
     """
     name = "RoutineSummary"
-    response = subscriptions("T2_US_Nebraska", 1)
-    subscribedSets = response.get('phedex')
+    subscribedSets = subscriptions("T2_US_Nebraska", 1)
     transferredData = 0
     for dset in subscribedSets:
         transferredData += datasetSize(dset)
-    response = subscriptions("T2_US_Nebraska", 6*4*7)
-    subscribedSets = response.get('phedex')
+    subscribedSets = subscriptions("T2_US_Nebraska", 6*4*7)
     ownedData = 0
     for dset in subscribedSets:
         ownedData += datasetSize(dset)
     log(name, "CMS DATA owns a total of %dGB of data at site" % (ownedData,))
     log(name, "CMS DATA have subscribed a total of %dGB of data to site in the last 24h" % (transferredData,))
-    response = subscriptions("T2_US_Nebraska", 7)
-    subscribedSets = response.get('phedex')
+    subscribedSets = subscriptions("T2_US_Nebraska", 7)
     log(name, "Number of accesses during the last 3 days for the sets subscribed in the last week")
     for set in subscribedSets:
         accesses = access(set)
