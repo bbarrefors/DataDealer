@@ -1,4 +1,4 @@
-#!/usr/bin/python26 -B
+#!/usr/bin/python -B
 """
 _PhEDExUDPListener_
 

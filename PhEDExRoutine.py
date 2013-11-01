@@ -1,5 +1,4 @@
-#!/usr/bin/env python26
-
+#!/usr/bin/env python
 """
 _PhEDExRoutine_
 
