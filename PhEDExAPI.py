@@ -31,14 +31,14 @@ except ImportError:
 from PhEDExLogger import log, error
 
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
-#PHEDEX_INSTANCE = "prod"
-PHEDEX_INSTANCE = "dev"
+PHEDEX_INSTANCE = "prod"
+#PHEDEX_INSTANCE = "dev"
 DATA_TYPE = "json"
 #DATA_TYPE = "xml"
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-#GROUP = 'local'
-GROUP = 'Jupiter'
+GROUP = 'local'
+#GROUP = 'Jupiter'
 COMMENTS = 'BjornBarrefors'
 #CREATE_SINCE = ''
 #END_TIME = ''
@@ -94,7 +94,6 @@ def PhEDExCall(url, values):
         error(name, he.read())
         return 0
     except urllib2.URLError, e:
-        print e
         error(name, "PhEDEx call returned URLError")
         return 0
 

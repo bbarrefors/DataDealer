@@ -231,10 +231,8 @@ def ignore(dataset):
         test = cur.fetchone()[0]
     connection.close()
     if int(test) == int(1):
-        print "Set is in ignore"
         return True
     else:
-        print "Set is not in ignore"
         return False
 
 ################################################################################

@@ -63,8 +63,7 @@ def siteSpace():
     free = (info.f_bfree * info.f_bsize) / (1024**3)
     minimum_free = total*(0.1)
     available_space = free - minimum_free
-    log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
-    print available_space
+    #log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
     return int(available_space)
 
 ################################################################################
@@ -106,7 +105,7 @@ def analyze():
             continue
         #log(name, "Trying to free up space")
         subSets = subscriptions("T2_US_Nebraska", 3)
-        datasets = subscribedSets - subSets
+        datasets = set(subscribedSets) - set(subSets)
         for del_dataset in datasets:
             if (size < space and size < BUDGET - budget):
                 break
@@ -147,9 +146,9 @@ def summary():
     log(name, "CMS DATA have subscribed a total of %dGB of data to site in the last 24h" % (transferredData,))
     subscribedSets = subscriptions("T2_US_Nebraska", 7)
     log(name, "Number of accesses during the last 3 days for the sets subscribed in the last week")
-    for set in subscribedSets:
-        accesses = access(set)
-        log(name, "%s - %d" % (set, accesses))
+    for subSet in subscribedSets:
+        accesses = access(subSet)
+        log(name, "%s - %d" % (subSet, accesses))
 
 if __name__ == '__main__':
     """
