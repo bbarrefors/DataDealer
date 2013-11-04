@@ -11,7 +11,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 """
 ################################################################################
 #                                                                              #
-#                              P o p   DB   A P I                              #
+#                             P o p   D B   A P I                              #
 #                                                                              #
 ################################################################################
 
@@ -28,7 +28,10 @@ try:
 except ImportError:
     import simplejson as json
 
+from CMSDATALogger import log, error
+
 POP_DB_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
+SITE = "T2_US_Nebraska"
 
 if __name__ == '__main__':
     """

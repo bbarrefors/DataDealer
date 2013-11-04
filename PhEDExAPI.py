@@ -28,7 +28,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from PhEDExLogger import log, error
+from CMSDATALogger import log, error
 
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 PHEDEX_INSTANCE = "prod"
@@ -352,13 +352,40 @@ def datasetSize(dataset):
     #log(name, "Total size of dataset %s is %dGB" % (dataset, size))
     return int(size)
 
+################################################################################
+#                                                                              #
+#                              R E P L I C A S                                 #
+#                                                                              #
+################################################################################
+
+def replicas(dataset):
+    """
+    _replicas_
+
+    Set up blockreplicas call to PhEDEx API.
+    """
+    name = "APIExists"
+    data = dataset
+    complete = 'y'
+    show_dataset = 'n'
+    values = { 'dataset' : data, 'complete' : complete,
+               'show_dataset' : show_dataset }
+    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE))
+    response = PhEDExCall(subscription_url, values)
+    sites = []
+    if response:
+        block = response.get('block')
+        replicas = block[0].get('replica')
+        for replica in replicas:
+            site = replica.get('node')
+            sites.append(site)
+    return sites
+
 if __name__ == '__main__':
     """
     __main__
 
     For testing purpose only.
     """
-    sets = subscriptions(SITE, 60)
-    for dSet in sets:
-        delete(SITE, dSet)
+    sets = replicas("/TTJets_HadronicMGDecays_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A_ext-v1/AODSIM")
     sys.exit(0)
