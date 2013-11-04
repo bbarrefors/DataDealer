@@ -1,6 +1,6 @@
 #!/usr/bin/python -B
 """
-_PhEDExUDPListener_
+_CMSDATAListener_
 
 Listen for UDP packets.
 Packets contain information of files that have been accessed.
@@ -14,7 +14,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 """
 ################################################################################
 #                                                                              #
-#                   P h E D E x   U D P   L I S T E N E R                      #
+#                       C M S D A T A   L I S T E N E R                        #
 #                                                                              #
 ################################################################################
 
@@ -26,9 +26,9 @@ import socket
 import traceback
 from multiprocessing import Manager, Process, Pool
 
-from PhEDExLogger import log, error, LOG_PATH, LOG_FILE
-from PhEDExDatabase import setup, insert, setTimeFrame, setSetAccess, setBudget
-from PhEDExRoutine import janitor, analyze, summary
+from CMSDATALogger import log, error, LOG_PATH, LOG_FILE
+from CMSDATADatabase import setup, insert, setTimeFrame, setSetAccess, setBudget
+from CMSDATARoutine import janitor, analyze, summary
 
 CONFIG_FILE = 'cmsdata.config'
 

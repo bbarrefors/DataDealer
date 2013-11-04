@@ -358,4 +358,7 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sys.exit(findDataset("/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/AAB9C0E0-62F7-DF11-B304-0030487CD812.root"))
+    sets = subscriptions(SITE, 60)
+    for dSet in sets:
+        delete(SITE, dSet)
+    sys.exit(0)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_PDBPopAPI_
+_PopDBAPI_
 
 Make requests to the CMS Data Popularity API.
 
@@ -11,7 +11,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 """
 ################################################################################
 #                                                                              #
-#                             D B   P o p   A P I                              #
+#                              P o p   DB   A P I                              #
 #                                                                              #
 ################################################################################
 
@@ -27,6 +27,8 @@ try:
     import json
 except ImportError:
     import simplejson as json
+
+POP_DB_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
 
 if __name__ == '__main__':
     """

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-_PhEDExLogger_
+_CMSDATALogger_
 
 Print log and error messages from other modules to log file.
 
@@ -12,7 +12,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 """
 ################################################################################
 #                                                                              #
-#                         P h E D E x   L O G G E R                            #
+#                       C M S D A T A   L O G G E R                            #
 #                                                                              #
 ################################################################################
 

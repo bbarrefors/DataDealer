@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_PhEDEXDatabase_
+_CMSDATADatabase_
 
 Manage the database keeping track of which datasets have been accessed and when.
 
@@ -11,7 +11,7 @@ Holland Computing Center - University of Nebraska-Lincoln
 """
 ################################################################################
 #                                                                              #
-#                     P h E D E x   D A T A B A S E                            #
+#                     C M S D A T A   D A T A B A S E                          #
 #                                                                              #
 ################################################################################
 
@@ -21,7 +21,7 @@ import datetime
 import urllib
 import sqlite3 as lite
 
-from PhEDExLogger import log, error
+from CMSDATALogger import log, error
 from PhEDExAPI import findDataset
 
 SET_ACCESS = 500

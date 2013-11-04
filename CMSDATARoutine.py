@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_PhEDExRoutine_
+_CMSDATARoutine_
 
 Keep database up to date and analyze it to make subscribtion and deletion
 decisions.
@@ -12,16 +12,16 @@ Holland Computing Center - University of Nebraska-Lincoln
 """
 ################################################################################
 #                                                                              #
-#                        P h E D E x   R O U T I N E                           #
+#                       C M S D A T A   R O U T I N E                          #
 #                                                                              #
 ################################################################################
 
 import sys
 import os
 
-from PhEDExDatabase import clean, setAccess, setBudget, ignore, access, BUDGET
+from CMSDATADatabase import clean, setAccess, setBudget, ignore, access, BUDGET
 from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions
-from PhEDExLogger import log, error
+from CMSDATALogger import log, error
 
 ################################################################################
 #                                                                              #
