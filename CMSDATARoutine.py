@@ -118,13 +118,13 @@ def analyze():
         else:
             continue
         if (not subscribe("T2_US_Nebraska", dataset)):
-                    log(name, "Data set %s just subscribed have replicas at the following sites.", (dataset, ))
-                    sites = replicas(dset)
-                    for site in sites:
-                        # Get the total number of accesss and CPU hours at site
-                        accesses = 100
-                        cpu_hours = 1000
-                        log(name, "%s have %d accesses and %d CPU hours last 24h", (accesses, cpu_hours))
+            log(name, "Data set %s just subscribed have replicas at the following sites.", (dataset, ))
+            sites = replicas(dset)
+            for site in sites:
+                # Get the total number of accesss and CPU hours at site
+                accesses = 100
+                cpu_hours = 1000
+                log(name, "%s have %d accesses and %d CPU hours last 24h", (accesses, cpu_hours))
             budget += size
             space -= size
     return 0
