@@ -84,7 +84,7 @@ def PhEDExCall(url, values):
 
     Make http post call to PhEDEx API.
     """
-    name = "APIPhEDExCall"
+    name = "PhEDExAPICall"
     data = urllib.urlencode(values)
     opener = urllib2.build_opener(HTTPSGridAuthHandler())
     request = urllib2.Request(url, data)

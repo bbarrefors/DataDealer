@@ -18,10 +18,12 @@ Holland Computing Center - University of Nebraska-Lincoln
 
 import sys
 import os
+import datetime
 
 from CMSDATADatabase import clean, setAccess, setBudget, ignore, access, BUDGET
 from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions, replicas
 from CMSDATALogger import log, error
+from PopDBAPI import renewSSOCookie
 
 ################################################################################
 #                                                                              #
@@ -141,21 +143,24 @@ def summary():
     How much data have CMS DATA transferred to site in the last 24h?
     """
     name = "RoutineSummary"
+    renewSSOCookie()
     subscribedSets = subscriptions("T2_US_Nebraska", 1)
     transferredData = 0
     for dset in subscribedSets:
         transferredData += datasetSize(dset)
     subscribedSets = subscriptions("T2_US_Nebraska", 6*4*7)
     ownedData = 0
+    today = datetime.date.today()
+    tstart = today - datetime.timedelta(days=1)
+    tstop = tstart
     for dset in subscribedSets:
         ownedData += datasetSize(dset)
         log(name, "Data set %s have replicas at the following sites.", (dset, ))
         sites = replicas(dset)
         for site in sites:
             # Get the total number of accesss and CPU hours at site
-            accesses = 100
-            cpu_hours = 1000
-            log(name, "%s have %d accesses and %d CPU hours last 24h", (accesses, cpu_hours))
+            accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
+            log(name, "%s have %d accesses and %d CPU hours during %s", (accesses, cpu_hours, str(tstart)))
     log(name, "CMS DATA owns a total of %dGB of data at site" % (ownedData,))
     log(name, "CMS DATA have subscribed a total of %dGB of data to site in the last 24h" % (transferredData,))
     subscribedSets = subscriptions("T2_US_Nebraska", 7)
