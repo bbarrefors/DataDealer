@@ -118,13 +118,13 @@ def analyze():
         else:
             continue
         if (not subscribe("T2_US_Nebraska", dataset)):
-            log(name, "Data set %s just subscribed have replicas at the following sites.", (dataset, ))
+            log(name, "Data set %s just subscribed have replicas at the following sites." % (dataset, ))
             sites = replicas(dset)
             for site in sites:
                 # Get the total number of accesss and CPU hours at site
                 accesses = 100
                 cpu_hours = 1000
-                log(name, "%s have %d accesses and %d CPU hours last 24h", (accesses, cpu_hours))
+                log(name, "%s have %d accesses and %d CPU hours last 24h" % (accesses, cpu_hours))
             budget += size
             space -= size
     return 0
@@ -155,12 +155,12 @@ def summary():
     tstop = tstart
     for dset in subscribedSets:
         ownedData += datasetSize(dset)
-        log(name, "Data set %s have replicas at the following sites.", (dset, ))
+        log(name, "Data set %s have replicas at the following sites." % (dset, ))
         sites = replicas(dset)
         for site in sites:
             # Get the total number of accesss and CPU hours at site
             accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
-            log(name, "%s have %d accesses and %d CPU hours during %s", (accesses, cpu_hours, str(tstart)))
+            log(name, "%s have %d accesses and %d CPU hours during %s" % (accesses, cpu_hours, str(tstart)))
     log(name, "CMS DATA owns a total of %dGB of data at site" % (ownedData,))
     log(name, "CMS DATA have subscribed a total of %dGB of data to site in the last 24h" % (transferredData,))
     subscribedSets = subscriptions("T2_US_Nebraska", 7)
