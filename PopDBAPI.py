@@ -52,10 +52,12 @@ def PopDBCall(url, values):
     full_url = request.get_full_url() + request.get_data()
     p1 = Popen(["curl", "-k", "-L", "--cookie", COOKIE, "--cookie-jar", COOKIE, full_url], stdout=PIPE)
     response = p1.communicate()[0]
-    json_data = json.loads(response)
-    if not json_data:
-        error(name, response)
-        return 0
+    try:
+        json_data = json.loads(response)
+    except ValueError:
+        #error(name, response)
+        print "ERROR"
+        return 0, 0
     return json_data
 
 def DSStatInTimeWindow(start, stop, site):
@@ -82,5 +84,5 @@ if __name__ == '__main__':
     For testing purpose only.
     """
     #renewSSOCookie()
-    #nacc, totcpu = DSStatInTimeWindow("2013-11-5", "2013-11-6", SITE)
+    nacc, totcpu = DSStatInTimeWindow("2013-11-5", "2013-11-6", SITE)
     sys.exit(1)

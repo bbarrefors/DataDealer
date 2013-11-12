@@ -48,13 +48,13 @@ def routine():
     """
     # Run every hour
     while True:
+        summary()
         for i in range(24):
             time.sleep(3600)
             # Update database, delete entries older than 12h
             janitor()
             # Check if should make subscriptions
             analyze()
-        summary()
     return 1
 
 ################################################################################

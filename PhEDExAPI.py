@@ -387,5 +387,7 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    sets = replicas("/TTJets_HadronicMGDecays_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A_ext-v1/AODSIM")
+    sets = subscriptions(SITE, 60)
+    for dset in sets:
+        delete(SITE, dset)
     sys.exit(0)

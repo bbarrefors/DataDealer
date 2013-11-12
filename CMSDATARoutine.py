@@ -23,7 +23,7 @@ import datetime
 from CMSDATADatabase import clean, setAccess, setBudget, ignore, access, BUDGET
 from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions, replicas
 from CMSDATALogger import log, error
-from PopDBAPI import renewSSOCookie
+from PopDBAPI import renewSSOCookie, DSStatInTimeWindow
 
 ################################################################################
 #                                                                              #
@@ -124,7 +124,7 @@ def analyze():
                 # Get the total number of accesss and CPU hours at site
                 accesses = 100
                 cpu_hours = 1000
-                log(name, "%s have %d accesses and %d CPU hours last 24h" % (accesses, cpu_hours))
+                log(name, "%s have %d accesses and %d CPU hours last 24h" % (dataset, int(accesses), int(cpu_hours)))
             budget += size
             space -= size
     return 0
@@ -160,14 +160,15 @@ def summary():
         for site in sites:
             # Get the total number of accesss and CPU hours at site
             accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
-            log(name, "%s have %d accesses and %d CPU hours during %s" % (accesses, cpu_hours, str(tstart)))
+            if accesses:
+                log(name, "%s have %d accesses and %d CPU hours during %s" % (site, int(accesses), int(cpu_hours), str(tstart)))
     log(name, "CMS DATA owns a total of %dGB of data at site" % (ownedData,))
     log(name, "CMS DATA have subscribed a total of %dGB of data to site in the last 24h" % (transferredData,))
     subscribedSets = subscriptions("T2_US_Nebraska", 7)
     log(name, "Number of accesses during the last 3 days for the sets subscribed in the last week")
     for subSet in subscribedSets:
         accesses = access(subSet)
-        log(name, "%s - %d" % (subSet, accesses))
+        log(name, "%s - %d" % (subSet, int(accesses)))
 
 if __name__ == '__main__':
     """
