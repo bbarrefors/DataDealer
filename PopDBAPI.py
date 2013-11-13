@@ -57,7 +57,7 @@ def PopDBCall(url, values):
     except ValueError:
         #error(name, response)
         print "ERROR"
-        return 0, 0
+        return 0
     return json_data
 
 def DSStatInTimeWindow(start, stop, site):

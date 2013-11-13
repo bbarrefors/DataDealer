@@ -103,7 +103,16 @@ def analyze():
         if (not size):
             continue
         if (size < space and size < BUDGET - budget):
-            subscribe("T2_US_Nebraska", dataset)
+            if (not subscribe("T2_US_Nebraska", dataset)):
+                log(name, "Data set %s just subscribed have replicas at the following sites." % (dataset, ))
+                sites = replicas(dset)
+                today = datetime.date.today()
+                tstart = today - datetime.timedelta(days=1)
+                tstop = tstart
+                for site in sites:
+                    accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
+                    if accesses:
+                        log(name, "%s have %d accesses and %d CPU hours during %s" % (site, int(accesses), int(cpu_hours), str(tstart)))
             continue
         #log(name, "Trying to free up space")
         subSets = subscriptions("T2_US_Nebraska", 3)
@@ -120,11 +129,13 @@ def analyze():
         if (not subscribe("T2_US_Nebraska", dataset)):
             log(name, "Data set %s just subscribed have replicas at the following sites." % (dataset, ))
             sites = replicas(dset)
+            today = datetime.date.today()
+            tstart = today - datetime.timedelta(days=1)
+            tstop = tstart
             for site in sites:
-                # Get the total number of accesss and CPU hours at site
-                accesses = 100
-                cpu_hours = 1000
-                log(name, "%s have %d accesses and %d CPU hours last 24h" % (dataset, int(accesses), int(cpu_hours)))
+                accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
+                if accesses:
+                    log(name, "%s have %d accesses and %d CPU hours during %s" % (site, int(accesses), int(cpu_hours), str(tstart)))
             budget += size
             space -= size
     return 0
