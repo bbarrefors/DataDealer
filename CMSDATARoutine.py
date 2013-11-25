@@ -35,11 +35,10 @@ def janitor():
     """
     _janitor_
 
-    Delete entries in database that are expired.
+    Delete entries in database that have expired.
     Update SetAccess based on deletions.
     """
     name = "RoutineJanitor"
-    #log(name, "Updating database")
     clean()
     return 0
 
@@ -65,7 +64,6 @@ def siteSpace():
     free = (info.f_bfree * info.f_bsize) / (1024**3)
     minimum_free = total*(0.1)
     available_space = free - minimum_free
-    #log(name, "Total of %dGB available for dataset transfers on phedex" % (available_space,))
     return int(available_space)
 
 ################################################################################
@@ -82,51 +80,24 @@ def analyze():
     Need to make sure the budget is not exceeded.
     """
     name = "RoutineAnalyze"
-    #log(name, "Analyze database for possible subscriptions")
     space = siteSpace()
     subscribedSets = subscriptions("T2_US_Nebraska", 6*4*7)
+    subSets = set(subscribedSets)
     budget = 0
-    for dset in subscribedSets:
+    for dset in subSets:
         budget += datasetSize(dset)
     count = setAccess()
     for datas in count:
         dataset = datas[0]
-        #log(name, "Possible subscription of %s" % (dataset,))
         if (ignore(dataset)):
-            #log(name, "Dataset %s is in ignore" % (dataset,))
             continue
         if (exists("T2_US_Nebraska", dataset)):
-            #log(name, "Dataset %s is already at %s" % (dataset, "T2_US_Nebraska"))
             continue
         size = datasetSize(dataset)
-        #log(name, "Dataset %s size is %dGB" % (dataset, size))
         if (not size):
             continue
         if (size < space and size < BUDGET - budget):
-            if (not subscribe("T2_US_Nebraska", dataset)):
-                log(name, "Data set %s just subscribed have replicas at the following sites." % (dataset, ))
-                sites = replicas(dset)
-                today = datetime.date.today()
-                tstart = today - datetime.timedelta(days=1)
-                tstop = tstart
-                for site in sites:
-                    accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
-                    if accesses:
-                        log(name, "%s have %d accesses and %d CPU hours during %s" % (site, int(accesses), int(cpu_hours), str(tstart)))
-            continue
-        #log(name, "Trying to free up space")
-        subSets = subscriptions("T2_US_Nebraska", 3)
-        datasets = set(subscribedSets) - set(subSets)
-        for del_dataset in datasets:
-            if (size < space and size < BUDGET - budget):
-                break
-            if (not delete("T2_US_Nebraska", del_dataset)):
-                new_size = datasetSize(del_dataset)
-                budget -= new_size
-                space += new_size
-        else:
-            continue
-        if (not subscribe("T2_US_Nebraska", dataset)):
+            #if (not subscribe("T2_US_Nebraska", dataset)):
             log(name, "Data set %s just subscribed have replicas at the following sites." % (dataset, ))
             sites = replicas(dset)
             today = datetime.date.today()
@@ -136,8 +107,32 @@ def analyze():
                 accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
                 if accesses:
                     log(name, "%s have %d accesses and %d CPU hours during %s" % (site, int(accesses), int(cpu_hours), str(tstart)))
-            budget += size
-            space -= size
+            continue
+        #log(name, "Trying to free up space")
+        subSets = subscriptions("T2_US_Nebraska", 3)
+        datasets = set(subscribedSets) - set(subSets)
+        for del_dataset in datasets:
+            if (size < space and size < BUDGET - budget):
+                break
+            #if (not delete("T2_US_Nebraska", del_dataset)):
+            log(name, "Delete data set %s to free up space." % (del_dataset,))
+            new_size = datasetSize(del_dataset)
+            budget -= new_size
+            space += new_size
+        else:
+            continue
+        #if (not subscribe("T2_US_Nebraska", dataset)):
+        log(name, "Data set %s just subscribed have replicas at the following sites." % (dataset, ))
+        sites = replicas(dset)
+        today = datetime.date.today()
+        tstart = today - datetime.timedelta(days=1)
+        tstop = tstart
+        for site in sites:
+            accesses, cpu_hours = DSStatInTimeWindow(tstart, tstop, site)
+            if accesses:
+                log(name, "%s have %d accesses and %d CPU hours during %s" % (site, int(accesses), int(cpu_hours), str(tstart)))
+        budget += size
+        space -= size
     return 0
 
 ################################################################################
@@ -156,15 +151,17 @@ def summary():
     name = "RoutineSummary"
     renewSSOCookie()
     subscribedSets = subscriptions("T2_US_Nebraska", 1)
+    subSets = set(subscribedSets)
     transferredData = 0
-    for dset in subscribedSets:
+    for dset in subSets:
         transferredData += datasetSize(dset)
     subscribedSets = subscriptions("T2_US_Nebraska", 6*4*7)
+    subSets = set(subscribedSets)
     ownedData = 0
     today = datetime.date.today()
     tstart = today - datetime.timedelta(days=1)
     tstop = tstart
-    for dset in subscribedSets:
+    for dset in subSets:
         ownedData += datasetSize(dset)
         log(name, "Data set %s have replicas at the following sites." % (dset, ))
         sites = replicas(dset)
@@ -176,8 +173,9 @@ def summary():
     log(name, "CMS DATA owns a total of %dGB of data at site" % (ownedData,))
     log(name, "CMS DATA have subscribed a total of %dGB of data to site in the last 24h" % (transferredData,))
     subscribedSets = subscriptions("T2_US_Nebraska", 7)
+    subSets = set(subscribedSets)
     log(name, "Number of accesses during the last 3 days for the sets subscribed in the last week")
-    for subSet in subscribedSets:
+    for subSet in subSets:
         accesses = access(subSet)
         log(name, "%s - %d" % (subSet, int(accesses)))
 

@@ -77,12 +77,30 @@ def DSStatInTimeWindow(start, stop, site):
             cpuh += int(dset.get('TOTCPU'))
     return nacc, cpuh
 
+def getDSdata(start, stop, orderby):
+    tstart = start
+    tstop = stop
+    aggr = "year"
+    values = { 'tstart' : tstart, 'tstop' : tstop,
+               'aggr' : aggr, 'orderby' : orderby }
+    dsstat_url = urllib.basejoin(POP_DB_BASE, "%s/?&" % ("getDSdata",))
+    response = PopDBCall(dsstat_url, values)
+    nacc = 0
+    cpuh = 0
+    sets = []
+    if response:
+        data = response.get('data')
+        for dset in data:
+            sets.append(dset.get('name'))
+    return sets
+
 if __name__ == '__main__':
     """
     __main__
 
     For testing purpose only.
     """
-    #renewSSOCookie()
-    nacc, totcpu = DSStatInTimeWindow("2013-11-5", "2013-11-6", SITE)
+    renewSSOCookie()
+    sets = getDSdata("2013-11-23", "2013-11-25", "totcpu")
+    print sets
     sys.exit(1)

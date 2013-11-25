@@ -179,7 +179,8 @@ def findDataset(file_name):
     Set to UNKNOWN if no set is returned.
     """
     name = "APIFindDataset"
-    values = { 'file' : file_name }
+    level = "block"
+    values = { 'file' : file_name, 'level' : level }
     dataset_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
     response = PhEDExCall(dataset_url, values)
     if not response:
