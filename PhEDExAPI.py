@@ -40,8 +40,6 @@ DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
 GROUP = 'local'
 #GROUP = 'Jupiter'
 COMMENTS = 'BjornBarrefors'
-#CREATE_SINCE = ''
-#END_TIME = ''
 
 ################################################################################
 #                                                                              #
@@ -53,7 +51,8 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
     """
     _HTTPSGridAuthHandler_
     
-    Set up certificate and proxy to get acces to PhEDEx API subscription calls.
+    Set up certificate and proxy to get acces to PhEDEx API subscription and 
+    delete calls.
     """
     def __init__(self):
         urllib2.HTTPSHandler.__init__(self)
@@ -83,6 +82,10 @@ def PhEDExCall(url, values):
     _PhEDExCall_
 
     Make http post call to PhEDEx API.
+    Function only gauranttees that something is returned.
+    The caller need to check the response for correctness.
+
+    Returns a check variable, if 0 no error was encountered.
     """
     name = "PhEDExAPICall"
     data = urllib.urlencode(values)
@@ -91,107 +94,41 @@ def PhEDExCall(url, values):
     try:
         response = opener.open(request)
     except urllib2.HTTPError, he:
-        error(name, he.read())
-        return 0
+        return 1, str(he.read())
     except urllib2.URLError, e:
-        error(name, "PhEDEx call returned URLError")
-        return 0
-
-    json_data = json.load(response)
-    if not json_data:
-        error(name, response)
-        return 0
-    phedex_data = json_data.get('phedex')
-    return phedex_data
+        return 1, "A URLError was received"
+    return 0, response
 
 ################################################################################
 #                                                                              #
-#                                 P A R S E                                    #
+#                                  D A T A                                     #
 #                                                                              #
 ################################################################################
 
-def parse(data, xml):
-    """
-    _parse_
-    
-    Take data output from PhEDEx and parse it into  xml syntax corresponding to 
-    subscribe and delete calls.
-    """
-    for k, v in data.iteritems():
-        k = k.replace("_", "-")
-        if type(v) is list:
-            xml = "%s>" % (xml,)
-            for v1 in v:
-                xml = "%s<%s" % (xml, k)
-                xml = parse(v1, xml)
-                if (k == "file"):
-                    xml = "%s/>" % (xml,)
-                else:
-                    xml = "%s</%s>" % (xml, k)
-        else:
-            if k == "lfn":
-                k = "name"
-            elif k == "size":
-                k = "bytes"
-            xml = '%s %s="%s"' % (xml, k, v)
-    return xml
-
-################################################################################
-#                                                                              #
-#                             X M L   D A T A                                  #
-#                                                                              #
-################################################################################
-
-def xmlData(dataset):
-    """
-    _xmlData_
-
-    Return data information as xml structure complying with PhEDEx
-    subscribe and delete call.
-    """
-    name = "APIXMLData"
-    values = { 'dataset' : dataset }
-    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-    response = PhEDExCall(data_url, values)
-    if not response:
-        error(name, "No data for dataset %s" % (dataset,))
-        return 0
-    xml = '<data version="2">'
-    for k, v in response.iteritems():
-        if k == "dbs":
-            xml = "%s<%s" % (xml, k)
-            xml = parse(v[0], xml)
-            xml = "%s</%s>" % (xml, k)
-    xml_data = "%s</data>" % (xml,)
-    return xml_data
-
-################################################################################
-#                                                                              #
-#                              D A T A S E T                                   #
-#                                                                              #
-################################################################################
-
-def findDataset(file_name):
+def data(dataset="", block="", file_name="", level="block", create_since="", format="json", instance="prod"):
     """
     _findDataset_
 
-    Return dataset from logical file name lfn.
-    Set to UNKNOWN if no set is returned.
+    Build PhEDEx data call.
+    At least one of the arguments, dataset, block, file have to be passed.
     """
-    name = "APIFindDataset"
-    level = "block"
-    values = { 'file' : file_name, 'level' : level }
-    dataset_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-    response = PhEDExCall(dataset_url, values)
-    if not response:
-        dataset = "UNKNOWN"
-        return dataset
-    jdata = response.get('dbs')
-    if jdata:
-        dataset = jdata[0].get('dataset')[0].get('name')
+    if ((not dataset) and (not block) and (not file_name)):
+        return 1, "Not enough parameters passed"
+    values = { 'dataset' : dataset, 'block' : block, 'file' : file_name, 
+               'level' : level, 'create_since' : create_since }
+    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (format, instance))
+    check, response = PhEDExCall(data_url, values)
+    if check:
+        # An error occurred
+        return 1, response
+    if format == "json":
+        data = json.load(response)
+        if not data:
+            return 1, "No json data available"
     else:
-        dataset = "UNKNOWN"
-    return dataset
+        data = response
+    test = data.get('db')
+    return 0, data
 
 ################################################################################
 #                                                                              #
@@ -382,13 +319,72 @@ def replicas(dataset):
             sites.append(site)
     return sites
 
+################################################################################
+#                                                                              #
+#                                 P A R S E                                    #
+#                                                                              #
+################################################################################
+
+def parse(data, xml):
+    """
+    _parse_
+    
+    Take data output from PhEDEx and parse it into  xml syntax corresponding to 
+    subscribe and delete calls.
+    """
+    for k, v in data.iteritems():
+        k = k.replace("_", "-")
+        if type(v) is list:
+            xml = "%s>" % (xml,)
+            for v1 in v:
+                xml = "%s<%s" % (xml, k)
+                xml = parse(v1, xml)
+                if (k == "file"):
+                    xml = "%s/>" % (xml,)
+                else:
+                    xml = "%s</%s>" % (xml, k)
+        else:
+            if k == "lfn":
+                k = "name"
+            elif k == "size":
+                k = "bytes"
+            xml = '%s %s="%s"' % (xml, k, v)
+    return xml
+
+################################################################################
+#                                                                              #
+#                             X M L   D A T A                                  #
+#                                                                              #
+################################################################################
+
+def xmlData(dataset):
+    """
+    _xmlData_
+
+    Return data information as xml structure complying with PhEDEx
+    subscribe and delete call.
+    """
+    name = "APIXMLData"
+    values = { 'dataset' : dataset }
+    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
+    response = PhEDExCall(data_url, values)
+    if not response:
+        error(name, "No data for dataset %s" % (dataset,))
+        return 0
+    xml = '<data version="2">'
+    for k, v in response.iteritems():
+        if k == "dbs":
+            xml = "%s<%s" % (xml, k)
+            xml = parse(v[0], xml)
+            xml = "%s</%s>" % (xml, k)
+    xml_data = "%s</data>" % (xml,)
+    return xml_data
+
 if __name__ == '__main__':
     """
     __main__
 
     For testing purpose only.
     """
-    sets = subscriptions(SITE, 60)
-    for dset in sets:
-        delete(SITE, dset)
+    check, response = data(dataset=DATASET)
     sys.exit(0)

@@ -23,7 +23,7 @@ import datetime
 from CMSDATADatabase import clean, setAccess, setBudget, ignore, access, BUDGET
 from PhEDExAPI import datasetSize, subscribe, delete, exists, subscriptions, replicas
 from CMSDATALogger import log, error
-from PopDBAPI import renewSSOCookie, DSStatInTimeWindow
+from PopDBAPI import renewSSOCookie, DSStatInTimeWindow, getDSdata
 
 ################################################################################
 #                                                                              #
@@ -87,14 +87,22 @@ def analyze():
     for dset in subSets:
         budget += datasetSize(dset)
     count = setAccess()
+    today = datetime.date.today()
+    tstart = today - datetime.timedelta(days=3)
+    tstop = today
+    popSets = getDSdata(tstart, tstop, "totcpu", "5")
     for datas in count:
         dataset = datas[0]
         if (ignore(dataset)):
             continue
         if (exists("T2_US_Nebraska", dataset)):
+            log(name, "%s is already at UNL" % (datas,))
             continue
         size = datasetSize(dataset)
         if (not size):
+            continue
+        if not (datas in popSets):
+            log(name, "%s not in top 5 sets" % (datas,))
             continue
         if (size < space and size < BUDGET - budget):
             #if (not subscribe("T2_US_Nebraska", dataset)):
