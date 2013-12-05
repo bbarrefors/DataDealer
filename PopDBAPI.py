@@ -90,6 +90,7 @@ def getDSdata(start, stop, orderby):
     sets = []
     if response:
         data = response.get('data')
+        print data
         for dset in data:
             sets.append(dset.get('name'))
     return sets
