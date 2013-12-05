@@ -77,11 +77,11 @@ def DSStatInTimeWindow(start, stop, site):
             cpuh += int(dset.get('TOTCPU'))
     return nacc, cpuh
 
-def getDSdata(start, stop, orderby):
+def getDSdata(start, stop, orderby, n):
     tstart = start
     tstop = stop
     aggr = "year"
-    values = { 'tstart' : tstart, 'tstop' : tstop,
+    values = { 'tstart' : tstart, 'tstop' : tstop, 'n' : n,
                'aggr' : aggr, 'orderby' : orderby }
     dsstat_url = urllib.basejoin(POP_DB_BASE, "%s/?&" % ("getDSdata",))
     response = PopDBCall(dsstat_url, values)
@@ -100,7 +100,18 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    renewSSOCookie()
-    sets = getDSdata("2013-11-23", "2013-11-25", "totcpu")
+    #renewSSOCookie()
+    today = datetime.date.today()
+    tstart = today - datetime.timedelta(days=7)
+    tstop = today
+    sets = getDSdata(tstart, tstop, "totcpu", "5")
+    for s in sets:
+        access, totcpu = DSStatInTimeWindow(tstart, tstop, "summary")
+        print ("%s have %d accesses and %d CPU hours from %s to %s" % (s, int(access), int(totcpu), str(tstart), str(tstop)))
+        for i in range(7):
+            tstart = tstart - datetime.timedelta(days=1)
+            tstop = tstart
+            access, totcpu = DSStatInTimeWindow(tstart, tstop, "summary")
+            print ("%s have %d accesses and %d CPU hours during %s" % (s, int(access), int(totcpu), str(tstart)))
     print sets
     sys.exit(1)
