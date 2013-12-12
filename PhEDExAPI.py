@@ -31,14 +31,14 @@ except ImportError:
 from CMSDATALogger import log, error
 
 PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
-PHEDEX_INSTANCE = "prod"
-#PHEDEX_INSTANCE = "dev"
-DATA_TYPE = "json"
-#DATA_TYPE = "xml"
+#PHEDEX_INSTANCE = "prod"
+PHEDEX_INSTANCE = "dev"
+#DATA_TYPE = "json"
+DATA_TYPE = "xml"
 SITE = "T2_US_Nebraska"
 DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-GROUP = 'local'
-#GROUP = 'Jupiter'
+#GROUP = 'local'
+GROUP = 'Jupiter'
 COMMENTS = 'BjornBarrefors'
 
 ################################################################################
@@ -82,10 +82,15 @@ def PhEDExCall(url, values):
     _PhEDExCall_
 
     Make http post call to PhEDEx API.
+    
     Function only gauranttees that something is returned.
     The caller need to check the response for correctness.
 
     Returns a check variable, if 0 no error was encountered.
+    
+    TODO: 1. Testing.
+             1. What type of errors can we encounter?
+             2. How do we make sure all of those can be caught?
     """
     name = "PhEDExAPICall"
     data = urllib.urlencode(values)
@@ -107,16 +112,27 @@ def PhEDExCall(url, values):
 
 def data(dataset="", block="", file_name="", level="block", create_since="", format="json", instance="prod"):
     """
-    _findDataset_
-
-    Build PhEDEx data call.
-    At least one of the arguments, dataset, block, file have to be passed.
+    _data_
+    
+    PhEDEx data call
+    
+    At least one of the arguments dataset, block, file have to be passed.
+    No checking is made for xml data.
+    Even if JSON data is returned no gaurantees are made for the structure
+    of it.
+    
+    TODO: 1. Testing.
+             1. What is returned?
+             2. Keep in mind need to test for both json and xml.
     """
     if ((not dataset) and (not block) and (not file_name)):
         return 1, "Not enough parameters passed"
+
     values = { 'dataset' : dataset, 'block' : block, 'file' : file_name, 
                'level' : level, 'create_since' : create_since }
+
     data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (format, instance))
+
     check, response = PhEDExCall(data_url, values)
     if check:
         # An error occurred
@@ -127,7 +143,49 @@ def data(dataset="", block="", file_name="", level="block", create_since="", for
             return 1, "No json data available"
     else:
         data = response
-    test = data.get('db')
+
+    return 0, data
+
+################################################################################
+#                                                                              #
+#                   B L O C K   R E P L I C A   S U M M A R Y                  #
+#                                                                              #
+################################################################################
+
+def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
+    """
+    _blockReplicaSummary_
+
+    PhEDEx blockReplicaSummary call
+    
+    At least one of the arguments dataset, block, file have to be passed.
+    No checking is made for xml data.
+    Even if JSON data is returned no gaurantees are made for the structure
+    of it.
+
+    TODO: See data
+    """
+    if ((not dataset) and (not block) and (not file_name)):
+        return 1, "Not enough parameters passed"
+
+    values = { 'block' : block, 'dataset' : dataset, 'node' : node, 
+               'update_since' : update_since, 'create_since' : create_since 
+               'complete' : complete, 'dist_complete' : dist_complete, 
+               'subscribed' : subscribed, 'custodial' : custodial }
+
+    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
+
+    check, response = PhEDExCall(data_url, values)
+    if check:
+        # An error occurred
+        return 1, response
+    if format == "json":
+        data = json.load(response)
+        if not data:
+            return 1, "No json data available"
+    else:
+        data = response
+
     return 0, data
 
 ################################################################################
@@ -197,36 +255,6 @@ def delete(site, dataset):
     else:
         error(name, "Delete did not succeed")
         return 1
-
-################################################################################
-#                                                                              #
-#                                 E X I S T S                                  #
-#                                                                              #
-################################################################################
-
-def exists(site, dataset):
-    """
-    _exists_
-
-    Set up blockreplicas call to PhEDEx API.
-    """
-    name = "APIExists"
-    #log(name, "Check if %s exists on %s" % (dataset, site))
-    data = dataset
-    node = site
-    complete = 'y'
-    show_dataset = 'y'
-    values = { 'node' : site, 'dataset' : data, 'complete' : complete,
-               'show_dataset' : show_dataset }
-    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE))
-    response = PhEDExCall(subscription_url, values)
-    if response:
-        exists = response.get('dataset')
-        if exists:
-            return 1
-        return 0
-    else:
-        return 0
 
 ################################################################################
 #                                                                              #
@@ -386,5 +414,5 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    check, response = data(dataset=DATASET)
+    check, response = data(dataset=DATASET, instance=PHEDEX_INSTANCE)
     sys.exit(0)
