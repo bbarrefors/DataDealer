@@ -1,23 +1,20 @@
 #!/usr/bin/env python
+
 """
 _PhEDExAPI_
-
-Make subscriptions and deletions of datasets using PhEDEx API.
 
 Created by Bjorn Barrefors & Brian Bockelman on 15/9/2013
 for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-################################################################################
-#                                                                              #
-#                             P h E D E x   A P I                              #
-#                                                                              #
-################################################################################
+__author__ =  'Bjorn Barrefors'
+__organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
+__email__ = 'bbarrefo@cse.unl.edu'
 
+import sys
 import os
 import re
-import sys
 import urllib
 import urllib2
 import httplib
@@ -28,165 +25,162 @@ try:
 except ImportError:
     import simplejson as json
 
-from CMSDATALogger import log, error
+from CMSDATALogger import CMSDATALogger
 
-PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
-#PHEDEX_INSTANCE = "prod"
-PHEDEX_INSTANCE = "dev"
-#DATA_TYPE = "json"
-DATA_TYPE = "xml"
-SITE = "T2_US_Nebraska"
-DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-#GROUP = 'local'
-GROUP = 'Jupiter'
-COMMENTS = 'BjornBarrefors'
 
 ################################################################################
 #                                                                              #
-#                H T T P S   G R I D   A U T H   H A N D L E R                 #
+#                             P h E D E x   A P I                              #
 #                                                                              #
 ################################################################################
 
-class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
+class PhEDExAPI:
     """
-    _HTTPSGridAuthHandler_
+    _PhEDExAPI_
+
+    Interface to submit queries to the PhEDEx API
     
-    Set up certificate and proxy to get acces to PhEDEx API subscription and 
-    delete calls.
+    Class variables:
+    PHEDEX_BASE -- Base URL to the PhEDEx web API
     """
+    # Useful variables
+    # PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
+    # PHEDEX_INSTANCE = "prod"
+    # PHEDEX_INSTANCE = "dev"
+    # DATA_TYPE = "json"
+    # DATA_TYPE = "xml"
+    # SITE = "T2_US_Nebraska"
+    # DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
+    # GROUP = 'local'
+    # GROUP = 'Jupiter'
+    # COMMENTS = 'BjornBarrefors'
     def __init__(self):
-        urllib2.HTTPSHandler.__init__(self)
-        self.key = self.getProxy()
-        self.cert = self.key
+        """
+        Set up class constants
+        """
+        self.PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 
-    def https_open(self, req):
-        return self.do_open(self.getConnection, req)
 
-    def getProxy(self):
-        proxy = os.environ.get("X509_USER_PROXY")
-        if not proxy:
-            proxy = "/tmp/x509up_u%d" % (os.geteuid(),)
-        return proxy
-
-    def getConnection(self, host, timeout=300):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
-
-################################################################################
-#                                                                              #
-#                           P h E D E x   C A L L                              #
-#                                                                              #
-################################################################################
-
-def PhEDExCall(url, values):
-    """
-    _PhEDExCall_
-
-    Make http post call to PhEDEx API.
+    ################################################################################
+    #                                                                              #
+    #                           P h E D E x   C A L L                              #
+    #                                                                              #
+    ################################################################################
     
-    Function only gauranttees that something is returned.
-    The caller need to check the response for correctness.
-
-    Returns a check variable, if 0 no error was encountered.
-    
-    TODO: 1. Testing.
-             1. What type of errors can we encounter?
-             2. How do we make sure all of those can be caught?
-    """
-    name = "PhEDExAPICall"
-    data = urllib.urlencode(values)
-    opener = urllib2.build_opener(HTTPSGridAuthHandler())
-    request = urllib2.Request(url, data)
-    try:
-        response = opener.open(request)
-    except urllib2.HTTPError, he:
-        return 1, str(he.read())
-    except urllib2.URLError, e:
-        return 1, "A URLError was received"
+    def PhEDExCall(url, values):
+        """
+        _PhEDExCall_
+        
+        Make http post call to PhEDEx API.
+        
+        Function only gaurantees that something is returned,
+        the caller need to check the response for correctness.
+        
+        Keyword arguments:
+        url    -- URL to make API call
+        values -- Arguments to pass to the call
+        
+        Return values:
+        1 -- Status, 0 = everything went well, 1 = something went wrong
+        2 -- IF status == 0 : HTTP response ELSE : Error message
+        """
+        name = "PhEDExAPICall"
+        data = urllib.urlencode(values)
+        opener = urllib2.build_opener(HTTPSGridAuthHandler())
+        request = urllib2.Request(url, data)
+        try:
+            response = opener.open(request)
+        except urllib2.HTTPError, e:
+            return 1, str(e.read())
+        except urllib2.URLError, e:
+            return 1, str(e.args)
     return 0, response
 
-################################################################################
-#                                                                              #
-#                                  D A T A                                     #
-#                                                                              #
-################################################################################
 
-def data(dataset="", block="", file_name="", level="block", create_since="", format="json", instance="prod"):
-    """
-    _data_
+    ################################################################################
+    #                                                                              #
+    #                                  D A T A                                     #
+    #                                                                              #
+    ################################################################################
     
-    PhEDEx data call
+    def data(dataset="", block="", file_name="", level="block", create_since="", format="json", instance="prod"):
+        """
+        _data_
+        
+        PhEDEx data call
+        
+        At least one of the arguments dataset, block, file have to be passed
+        
+        No checking is made for xml data
+        
+        Even if JSON data is returned no gaurantees are made for the structure
+        of it
+        
+        Keyword arguments:
+        dataset   -- Name of dataset to look up
+        block     -- Only return data for this block
+        file_name -- Data for file file_name returned
+        level     -- 
+        """
+        if ((not dataset) and (not block) and (not file_name)):
+            return 1, "Not enough parameters passed"
+        
+        values = { 'dataset' : dataset, 'block' : block, 'file' : file_name,  
+                   'level' : level, 'create_since' : create_since }
+        
+        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (format, instance))
+        check, response = PhEDExCall(data_url, values)
+        if check:
+            # An error occurred
+            return 1, response
+        if format == "json":
+            data = json.load(response)
+            if not data:
+                return 1, "No json data available"
+        else:
+            data = response
+        return 0, data
+
+
+    ################################################################################
+    #                                                                              #
+    #                   B L O C K   R E P L I C A   S U M M A R Y                  #
+    #                                                                              #
+    ################################################################################
     
-    At least one of the arguments dataset, block, file have to be passed.
-    No checking is made for xml data.
-    Even if JSON data is returned no gaurantees are made for the structure
-    of it.
-    
-    TODO: 1. Testing.
-             1. What is returned?
-             2. Keep in mind need to test for both json and xml.
-    """
-    if ((not dataset) and (not block) and (not file_name)):
-        return 1, "Not enough parameters passed"
-
-    values = { 'dataset' : dataset, 'block' : block, 'file' : file_name, 
-               'level' : level, 'create_since' : create_since }
-
-    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (format, instance))
-
-    check, response = PhEDExCall(data_url, values)
-    if check:
-        # An error occurred
-        return 1, response
-    if format == "json":
-        data = json.load(response)
-        if not data:
-            return 1, "No json data available"
-    else:
-        data = response
-
-    return 0, data
-
-################################################################################
-#                                                                              #
-#                   B L O C K   R E P L I C A   S U M M A R Y                  #
-#                                                                              #
-################################################################################
-
-def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
-    """
-    _blockReplicaSummary_
-
-    PhEDEx blockReplicaSummary call
-    
-    At least one of the arguments dataset, block, file have to be passed.
-    No checking is made for xml data.
-    Even if JSON data is returned no gaurantees are made for the structure
-    of it.
-
-    TODO: See data
-    """
-    if ((not dataset) and (not block) and (not file_name)):
-        return 1, "Not enough parameters passed"
-
-    values = { 'block' : block, 'dataset' : dataset, 'node' : node, 
-               'update_since' : update_since, 'create_since' : create_since 
-               'complete' : complete, 'dist_complete' : dist_complete, 
-               'subscribed' : subscribed, 'custodial' : custodial }
-
-    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
-
-    check, response = PhEDExCall(data_url, values)
-    if check:
-        # An error occurred
-        return 1, response
-    if format == "json":
-        data = json.load(response)
-        if not data:
-            return 1, "No json data available"
-    else:
-        data = response
-
-    return 0, data
+    def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
+        """
+        _blockReplicaSummary_
+        
+        PhEDEx blockReplicaSummary call
+        
+        At least one of the arguments dataset, block, file have to be passed.
+        No checking is made for xml data.
+        Even if JSON data is returned no gaurantees are made for the structure
+        of it.
+        
+        TODO: See data
+        """
+        if ((not dataset) and (not block) and (not file_name)):
+            return 1, "Not enough parameters passed"
+        
+        values = { 'block' : block, 'dataset' : dataset, 'node' : node, 
+                   'update_since' : update_since, 'create_since' : create_since 
+                   'complete' : complete, 'dist_complete' : dist_complete, 
+                   'subscribed' : subscribed, 'custodial' : custodial }
+        
+        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
+        check, response = PhEDExCall(data_url, values)
+        if check:
+            # An error occurred
+            return 1, response
+        if format == "json":
+            data = json.load(response)
+            if not data:
+                return 1, "No json data available"
+        else:
+            data = response
+        return 0, data
 
 ################################################################################
 #                                                                              #
@@ -407,6 +401,38 @@ def xmlData(dataset):
             xml = "%s</%s>" % (xml, k)
     xml_data = "%s</data>" % (xml,)
     return xml_data
+
+
+################################################################################
+#                                                                              #
+#                H T T P S   G R I D   A U T H   H A N D L E R                 #
+#                                                                              #
+################################################################################
+
+class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
+    """
+    _HTTPSGridAuthHandler_
+    
+    Set up certificate and proxy to get acces to PhEDEx API subscription and 
+    delete calls.
+    """
+    def __init__(self):
+        urllib2.HTTPSHandler.__init__(self)
+        self.key = self.getProxy()
+        self.cert = self.key
+
+    def https_open(self, req):
+        return self.do_open(self.getConnection, req)
+
+    def getProxy(self):
+        proxy = os.environ.get("X509_USER_PROXY")
+        if not proxy:
+            proxy = "/tmp/x509up_u%d" % (os.geteuid(),)
+        return proxy
+
+    def getConnection(self, host, timeout=300):
+        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+
 
 if __name__ == '__main__':
     """

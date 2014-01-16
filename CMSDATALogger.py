@@ -9,7 +9,8 @@ for CMSDATA (CMS Data Analyzer and Transfer Agent)
 Holland Computing Center - University of Nebraska-Lincoln
 """
 __author__ =  'Bjorn Barrefors'
-__version__ = '0.3'
+__organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
+__email__ = 'bbarrefo@cse.unl.edu'
 
 import sys
 import os
@@ -27,7 +28,8 @@ class CMSDATALogger:
     _CMSDATALogger_
     
     Print log and error messages from other modules to log file
-    Esceptions need to be caught by the caller, see the __main__
+    
+    Exceptions need to be caught by the caller, see the __main__
     function for implementation of error handling
 
     Class variables:
@@ -64,8 +66,16 @@ class CMSDATALogger:
 
         Function is fairly straight forward, name is the name of 
         module printing log message.
+
+        Keyword arguments:
+        name -- Module printing log message
+        msg  -- Message to be printed to log file
+
+        Return values:
+        void -- Nothing is returned
         """
         self.log_file.write("LOG: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
+        # Return a status if write failed?
 
 
     ################################################################################
@@ -79,8 +89,16 @@ class CMSDATALogger:
         _error_
 
         Identical to log but prints out error messages to the same file.
+
+        Keyword arguments:
+        name -- Module printing error message
+        msg  -- Message to be printed to log file
+
+        Return values:
+        void -- Nothing is returned
         """
         self.log_file.write("ERROR: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
+        # Return a status if write failed?
 
 
 ################################################################################
