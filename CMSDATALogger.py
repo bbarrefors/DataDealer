@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python -B
 
 """
 _CMSDATALogger_
@@ -35,7 +35,7 @@ class CMSDATALogger:
     Class variables:
     log_file -- File descriptor for log file
     """
-    def __init__(self, log_path='/home/barrefors/cmsdata/test/', file_name='cmsdata.log'):
+    def __init__(self, log_path='/home/bockelman/barrefors/logs/', file_name='cmsdata.log'):
         """
         Open log file filedescriptor
 
@@ -44,14 +44,21 @@ class CMSDATALogger:
         file_name -- Name of log file
         """
         # Alternative log paths:
-        # /home/barrefors/cmsdata/test/
-        # /grid_home/cmsphedex/
-        # /home/bockelman/barrefors/cmsdata/
-        # /root/test/cmsdata/
+        # /home/barrefors/cmsdata/logs/
+        # /home/bockelman/barrefors/logs/
 
-        if not os.path.isdir(log_path):
-            os.makedirs(log_path)
-        self.log_file = open(log_path + file_name, 'a')
+        try:
+            if not os.path.isdir(log_path):
+                os.makedirs(log_path)
+            self.log_file = open(log_path + file_name, 'a')
+        except IOError, e:
+            # Couldn't open file
+            print "Couldn\'t access log file. Reason: %s" % (e,)
+            sys.exit(1)
+        except OSError, e:
+            # Couldn't create path to log file
+            print "Couldn\'t create log file. Reason: %s" % (e,)
+            sys.exit(1)
 
 
     ################################################################################
@@ -113,15 +120,6 @@ if __name__ == '__main__':
     
     For testing purpose only.
     """
-    try:
-        my_logger = CMSDATALogger()
-        my_logger.error("Bjorn", "Test message 2")
-    except IOError, e:
-        # Couldn't open file
-        print "Couldn\'t access log file. Reason: %s" % (e,)
-        sys.exit(1)
-    except OSError, e:
-        # Couldn't create path to log file
-        print "Couldn\'t create log file. Reason: %s" % (e,)
-        sys.exit(1)
+    my_logger = CMSDATALogger()
+    my_logger.error("Bjorn", "Error test message")
     sys.exit(0)

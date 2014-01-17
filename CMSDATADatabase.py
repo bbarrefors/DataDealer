@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/python -B
+
 """
 _CMSDATADatabase_
 
