@@ -57,6 +57,8 @@ class PhEDExAPI:
     # COMMENTS = 'BjornBarrefors'
     def __init__(self):
         """
+        __init__
+        
         Set up class constants
         """
         self.logger = CMSDATALogger()
@@ -460,11 +462,17 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
         return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
+################################################################################
+#                                                                              #
+#                                  M A I N                                     #
+#                                                                              #
+################################################################################
+
 if __name__ == '__main__':
     """
     __main__
     
-    For testing purpose only.
+    For testing purpose only
     """
     phedex_api = PhEDExAPI()
     check, response = phedex_api.data(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')

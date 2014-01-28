@@ -3,18 +3,15 @@
 """
 _CMSDATADatabase_
 
-Manage the database keeping track of which datasets have been accessed and when.
-
 Created by Bjorn Barrefors on 22/9/2013
 for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-################################################################################
-#                                                                              #
-#                     C M S D A T A   D A T A B A S E                          #
-#                                                                              #
-################################################################################
+__author__ =  'Bjorn Barrefors'
+__organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
+__email__ = 'bbarrefo@cse.unl.edu'
+
 
 import sys
 import os.path
@@ -22,273 +19,253 @@ import datetime
 import urllib
 import sqlite3 as lite
 
-from CMSDATALogger import log, error
-from PhEDExAPI import findDataset
+from CMSDATALogger import CMSDATALogger
 
-SET_ACCESS = 500
-TIME_FRAME = 72
-BUDGET = 100000
-DB_PATH = '/grid_home/cmsphedex/'
-#DB_PATH = '/home/bockelman/barrefors/cmsdata/'
-#DB_PATH = '/home/barrefors/cmsdata/'
-DB_FILE = 'cmsdata.db'
 
 ################################################################################
 #                                                                              #
-#                                S E T U P                                     #
+#                     C M S D A T A   D A T A B A S E                          #
 #                                                                              #
 ################################################################################
 
-def setup():
+class CMSDATADatabase():
     """
-    _setup_
+    _CMSDATADatabase_
 
-    Set up sqlite3 database and create tables if not already exist.
-    Add dummy datasets to Ignore table.
+    Manage the database keeping track of which datasets have been accessed and when.
+
+    Class variables:
+    connection -- Established connection to the database
+    logger     -- Used to print log and error messages to log file
     """
-    name = "DatabaseSetup"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('CREATE TABLE IF NOT EXISTS Access (Dataset TEXT, Expiration TIMESTAMP)')
-        cur.execute('CREATE TABLE IF NOT EXISTS FileSet (File TEXT, Dataset TEXT)')
-        cur.execute('CREATE TABLE IF NOT EXISTS SetAccess (Dataset TEXT, Count INTEGER)')
-        cur.execute('CREATE TABLE IF NOT EXISTS Ignore (Dataset TEXT UNIQUE)')
-        dataset = "/GenericTTbar/SAM-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
-        cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
-        dataset = "/GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO"
-        cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
-        dataset = "UNKNOWN"
-        cur.execute('INSERT OR IGNORE INTO Ignore VALUES(?)', [dataset])
+    def __init__(self, db_path='/home/bockelman/barrefors/db/', db_file='cmsdata.db'):
+        """
+        __init__
 
-    connection.close()
-    #log(name, "Database initialized")
-    return 0
+        Establish database connection and set up database
 
-################################################################################
-#                                                                              #
-#                                I N S E R T                                   #
-#                                                                              #
-################################################################################
+        Keyword arguments:
+        db_path -- Path to database file
+        db_file -- File name of database
+        """
+        # Alternative db paths:
+        # /home/barrefors/cmsdata/db/
+        # /home/bockelman/barrefors/db/
+        
+        self.name = "CMSDATADatabase"
+        self.logger = CMSDATALogger()
+        try:
+            if not os.path.isdir(db_path):
+                os.makedirs(db_path)
+        except OSError, e:
+            # Couldn't create path to db file
+            self.logger.error(name, "Couldn\'t access db file. Reason: %s" % (e,))
+            sys.exit(1)
 
-def insert(dir, file_name):
-    """
-    _insert_
+        self.connection = lite.connect(db_path + db_file)
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                cur.execute('CREATE TABLE IF NOT EXISTS DirectoryDataset (Directory TEXT, Dataset TEXT, Expiration TIMESTAMP)')
+                cur.execute('CREATE TABLE IF NOT EXISTS DatasetAccess (Dataset TEXT, Expiration TIMESTAMP)')
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Couldn't initialize database")
+            sys.exit(1)
+
+    ################################################################################
+    #                                                                              #
+    #                                L O O K U P                                   #
+    #                                                                              #
+    ################################################################################
     
-    Insert values to table FileSet and update SetAccess.
-    If dataset can't be found add to Unknown.
-    Check cache first.
-    """
-    name = "DatabaseInsert"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        # Check if file is already in cache
-        # Technically we only check directory since this will decrease the size of cache
-        expiration = datetime.datetime.now() + datetime.timedelta(hours=TIME_FRAME)
-        cur.execute("SELECT EXISTS(SELECT * FROM FileSet WHERE File=?)", [dir])
-        test = cur.fetchone()[0]
-        if int(test) == int(1):
-            cur.execute('SELECT Dataset FROM FileSet WHERE File=?', [dir])
-            dataset = cur.fetchone()[0]
-        else:
-            dataset = findDataset(file_name)
-            cur.execute('INSERT INTO FileSet VALUES(?,?)', (dir, dataset))
-        cur.execute('INSERT INTO Access VALUES(?,?)', (dataset, expiration))
-        cur.execute("SELECT EXISTS(SELECT * FROM SetAccess WHERE Dataset=?)", [dataset])
-        test = cur.fetchone()[0]
-        if int(test) == int(1):
-            cur.execute('UPDATE SetAccess SET Count=Count+1 WHERE Dataset=?', [dataset])
-        else:
-            cur.execute('INSERT INTO SetAccess VALUES(?,?)', (dataset, 1))
-    connection.close()
-    return 0
+    def lookup(self, dir_name):
+        """
+        _lookup_
+        
+        Find which dataset files in a directory belongs to in cache if available
 
-################################################################################
-#                                                                              #
-#                                D E L E T E                                   #
-#                                                                              #
-################################################################################
+        If not return 1
 
-def clean():
-    """
-    _clean_
+        Arguments:
+        dir_name -- Base directory of file
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                cur.execute("SELECT Dataset FROM DirectoryDataset WHERE Directory=?", (dir_name,))
+                dataset = cur.fetchone()
+                if not dataset:
+                    return 1, "Not in db"
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while querying database")
+            return 1, "Error"
+        return 0, dataset
+
+    ################################################################################
+    #                                                                              #
+    #                        I N S E R T   D I R E C T O R Y                       #
+    #                                                                              #
+    ################################################################################
     
-    Delete expired entries from the database.
-    Update SetAccess.
-    """
-    name = "DatabaseClean"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('SELECT Dataset FROM SetAccess')
-        datasets = []
-        while True:
-            ds = cur.fetchone()
-            if ds == None:
-                break
-            datasets.append(ds)
-        for ds in datasets:
-            del_count = 0;
-            dataset = ds[0]
-            cur.execute('DELETE FROM Access WHERE Expiration<? AND Dataset=?', (datetime.datetime.now(),dataset))
-            del_count = cur.rowcount
-            cur.execute('UPDATE SetAccess SET Count=Count-? WHERE Dataset=?',(del_count, dataset))
-            
-        minCount = 1
-        cur.execute('DELETE FROM SetAccess WHERE Count<?', [minCount])
-    connection.close()
-    return 0
-
-################################################################################
-#                                                                              #
-#                           S E T   A C C E S S                                #
-#                                                                              #
-################################################################################
-
-def setAccess():
-    """
-    _setAccess_
+    def insertDirectory(self, dir_name, dataset):
+        """
+        _insertDirectory_
+        
+        Insert dir_name and dataset to FileSet table
+        Set an expiration time for the cache to avoid too much data in database
+        
+        Arguments:
+        dir_name -- Base director of file accessed
+        dataset  -- Name of datatset file belongs to
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                # Set cache expiration to 24h for now
+                expiration = datetime.datetime.now() + datetime.timedelta(hours=24)
+                cur.execute('INSERT INTO DirectoryDataset VALUES(?,?,?)', (dir_name, dataset, expiration))
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while inserting data")
     
-    Get all sets accessed more than SET_ACCESS times during the TIME_FRAME.
-    Sort from most to least accesses.
-    """
-    name = "DatabaseSetAccess"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('SELECT Dataset FROM SetAccess WHERE Count>=? ORDER BY Count', [SET_ACCESS])
-        datasets = []
-        while True:
-            ds = cur.fetchone()
-            if ds == None:
-                break
-            datasets.append(ds)
-        datasets.reverse()
-    connection.close()
-    return datasets
 
-################################################################################
-#                                                                              #
-#                           S E T   A C C E S S                                #
-#                                                                              #
-################################################################################
-
-def access(dataset):
-    """
-    _access_
+    ################################################################################
+    #                                                                              #
+    #                            C L E A N   C A C H E                             #
+    #                                                                              #
+    ################################################################################
     
-    Get the number of accesses for the given set.
-    """
-    name = "DatabaseAccess"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute('SELECT Count FROM SetAccess WHERE Dataset=?', [dataset])
-        ac = cur.fetchone()
-        if ac == None:
-            accesses = 0
-        else:
-            accesses = ac[0]
-    connection.close()
-    return int(accesses)
-
-################################################################################
-#                                                                              #
-#                                I G N O R E                                   #
-#                                                                              #
-################################################################################
-
-def ignore(dataset):
-    """
-    _ignore_
+    def cleanCache(self):
+        """
+        _cleanCache_
+        
+        Delete all entries in the cache which have expired
+        See insertDirectory for expiration time
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                cur.execute('DELETE FROM DirectoryDataset WHERE Expiration<?', (datetime.datetime.now(),))
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while deleting data")
     
-    Is the dataset on the ignore list?
-    Return bool
-    """
-    name = "DatabaseIgnore"
-    if not os.path.exists(DB_PATH):
-        error(name, "Database path %s does not exist" % DB_PATH)
-        return 1
-    connection = lite.connect(DB_PATH + DB_FILE)
-    with connection:
-        cur = connection.cursor()
-        cur.execute("SELECT EXISTS(SELECT * FROM Ignore WHERE Dataset=?)", [dataset])
-        test = cur.fetchone()[0]
-    connection.close()
-    if int(test) == int(1):
-        return True
-    else:
-        return False
-
-################################################################################
-#                                                                              #
-#                        S E T   S E T   A C C E S S                           #
-#                                                                              #
-################################################################################
-
-def setSetAccess(set_access):
-    """
-    _setAccess_
     
-    Set the SET_ACCESS variable.
-    """
-    name = "SetAccess"
-    global SET_ACCESS
-    SET_ACCESS = set_access
+    ################################################################################
+    #                                                                              #
+    #                        I N S E R T   D A T A S E T                           #
+    #                                                                              #
+    ################################################################################
 
-################################################################################
-#                                                                              #
-#                        S E T   T I M E   F R A M E                           #
-#                                                                              #
-################################################################################
+    def insertDataset(self, dataset):
+        """
+        _insertDataset_
+        
+        Insert dataset with expiration time to the dataset
+        Expiration time is based on how long we want to keep track of # accesses
 
-def setTimeFrame(time_frame):
-    """
-    _timeFrame_
+        For now the expiration is set to 3 days
+        
+        Arguments:
+        dataset -- Name of datatset that was accessed
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                # Set time window to 72h for now
+                expiration = datetime.datetime.now() + datetime.timedelta(hours=72)
+                cur.execute('INSERT INTO DatasetAccess VALUES(?,?)', (dataset, expiration))
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while inserting data")
     
-    Set the TIME_FRAME variable.
-    """
-    name = "TimeFrame"
-    global TIME_FRAME
-    TIME_FRAME = time_frame
-
-################################################################################
-#                                                                              #
-#                           S E T    B U D G E T                               #
-#                                                                              #
-################################################################################
-
-def setBudget(budget):
-    """
-    _budget_
     
-    Set the BUDGET variable.
-    """
-    name = "Budget"
-    global BUDGET
-    BUDGET = budget
+    ################################################################################
+    #                                                                              #
+    #                              D A T A S E T S                                 #
+    #                                                                              #
+    ################################################################################
+    
+    def datasets(self):
+        """
+        _datasets_
+        
+        Get all unique datasets in database
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                cur.execute("SELECT DISTINCT Dataset FROM DatasetAccess")
+                datasets = []
+                for dataset in cur:
+                    datasets.append(dataset[0])
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while querying database")
+            return 1, []
+        return 0, datasets
+
+
+    ################################################################################
+    #                                                                              #
+    #                          A C C E S S   C O U N T                             #
+    #                                                                              #
+    ################################################################################
+    
+    def accessCount(self, dataset):
+        """
+        _accessCount_
+        
+        Get the number of accesses for the given set
+        
+        Arguments:
+        dataset -- Name of dataset
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                cur.execute("SELECT Dataset FROM DatasetAccess WHERE Dataset=?", (dataset,))
+                count = len(cur.fetchall())
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while querying database")
+            return 0
+        return count
+
+
+    ################################################################################
+    #                                                                              #
+    #                           C L E A N   A C C E S S                            #
+    #                                                                              #
+    ################################################################################
+    
+    def cleanAccess(self):
+        """
+        _cleanAccess_
+        
+        Delete all entries in the DatasetAccess table which have expired
+        See insertDataset for expiration time
+        """
+        try:
+            with self.connection:
+                cur = self.connection.cursor()
+                cur.execute('DELETE FROM DatasetAccess WHERE Expiration<?', (datetime.datetime.now(),))
+        except lite.IntegrityError:
+            self.logger.error(self.name, "Exception while deleting data")
+
+\
+################################################################################
+#                                                                              #
+#                                  M A I N                                     #
+#                                                                              #
+################################################################################
 
 if __name__ == '__main__':
     """
     __main__
 
-    For testing purpose only.
+    For testing purpose only
     """
-    #sys.exit(setup())
-    sys.exit(insert("/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/204BD8FD-2D09-E011-A254-00304879BAB2.root"))
+    db = CMSDATADatabase()
+    #db.insertDataset("SET2")
+    check, datasets = db.datasets()
+    for dataset in datasets:
+        print dataset
+        count = db.accessCount(dataset)
+        print count
+    sys.exit(0)

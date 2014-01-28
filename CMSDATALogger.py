@@ -33,15 +33,17 @@ class CMSDATALogger:
     function for implementation of error handling
 
     Class variables:
-    log_file -- File descriptor for log file
+    log_fd -- File descriptor for log file
     """
-    def __init__(self, log_path='/home/bockelman/barrefors/logs/', file_name='cmsdata.log'):
+    def __init__(self, log_path='/home/bockelman/barrefors/logs/', log_file='cmsdata.log'):
         """
+        __init__
+        
         Open log file filedescriptor
 
         Keyword arguments:
-        log_path  -- Path to log file
-        file_name -- Name of log file
+        log_path -- Path to log file
+        log_file -- Name of log file
         """
         # Alternative log paths:
         # /home/barrefors/cmsdata/logs/
@@ -50,7 +52,7 @@ class CMSDATALogger:
         try:
             if not os.path.isdir(log_path):
                 os.makedirs(log_path)
-            self.log_file = open(log_path + file_name, 'a')
+            self.log_fd = open(log_path + log_file, 'a')
         except IOError, e:
             # Couldn't open file
             print "Couldn\'t access log file. Reason: %s" % (e,)
@@ -77,12 +79,8 @@ class CMSDATALogger:
         Keyword arguments:
         name -- Module printing log message
         msg  -- Message to be printed to log file
-
-        Return values:
-        void -- Nothing is returned
         """
-        self.log_file.write("LOG: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
-        # Return a status if write failed?
+        self.log_fd.write("LOG: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
 
 
     ################################################################################
@@ -100,11 +98,8 @@ class CMSDATALogger:
         Keyword arguments:
         name -- Module printing error message
         msg  -- Message to be printed to log file
-
-        Return values:
-        void -- Nothing is returned
         """
-        self.log_file.write("ERROR: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
+        self.log_fd.write("ERROR: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
         # Return a status if write failed?
 
 
@@ -118,7 +113,7 @@ if __name__ == '__main__':
     """
     __main__
     
-    For testing purpose only.
+    For testing purpose only
     """
     my_logger = CMSDATALogger()
     my_logger.error("Bjorn", "Error test message")
