@@ -8,9 +8,9 @@ for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-__author__ =  'Bjorn Barrefors'
+__author__       = 'Bjorn Barrefors'
 __organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
-__email__ = 'bbarrefo@cse.unl.edu'
+__email__        = 'bbarrefo@cse.unl.edu'
 
 
 import sys
@@ -42,6 +42,7 @@ class CMSDATADatabase():
         """
         __init__
 
+        Create logger object
         Establish database connection and set up database
 
         Keyword arguments:
@@ -72,6 +73,7 @@ class CMSDATADatabase():
             self.logger.error(self.name, "Couldn't initialize database")
             sys.exit(1)
 
+
     ################################################################################
     #                                                                              #
     #                                L O O K U P                                   #
@@ -99,7 +101,8 @@ class CMSDATADatabase():
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while querying database")
             return 1, "Error"
-        return 0, dataset
+        return 0, dataset[0]
+
 
     ################################################################################
     #                                                                              #
@@ -126,7 +129,7 @@ class CMSDATADatabase():
                 cur.execute('INSERT INTO DirectoryDataset VALUES(?,?,?)', (dir_name, dataset, expiration))
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while inserting data")
-    
+        return 0
 
     ################################################################################
     #                                                                              #
@@ -147,6 +150,7 @@ class CMSDATADatabase():
                 cur.execute('DELETE FROM DirectoryDataset WHERE Expiration<?', (datetime.datetime.now(),))
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while deleting data")
+        return 0
     
     
     ################################################################################
@@ -175,6 +179,7 @@ class CMSDATADatabase():
                 cur.execute('INSERT INTO DatasetAccess VALUES(?,?)', (dataset, expiration))
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while inserting data")
+        return 0
     
     
     ################################################################################
@@ -198,8 +203,7 @@ class CMSDATADatabase():
                     datasets.append(dataset[0])
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while querying database")
-            return 1, []
-        return 0, datasets
+        return datasets
 
 
     ################################################################################
@@ -247,8 +251,9 @@ class CMSDATADatabase():
                 cur.execute('DELETE FROM DatasetAccess WHERE Expiration<?', (datetime.datetime.now(),))
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while deleting data")
+        return 0
 
-\
+
 ################################################################################
 #                                                                              #
 #                                  M A I N                                     #
@@ -263,9 +268,10 @@ if __name__ == '__main__':
     """
     db = CMSDATADatabase()
     #db.insertDataset("SET2")
-    check, datasets = db.datasets()
-    for dataset in datasets:
-        print dataset
-        count = db.accessCount(dataset)
-        print count
+    #db.insertDirectory("DIR1", "SET2")
+    #check, datasets = db.datasets()
+    #for dataset in datasets:
+    #    print dataset
+    #    count = db.accessCount(dataset)
+    #    print count
     sys.exit(0)

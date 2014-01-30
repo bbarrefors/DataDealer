@@ -8,9 +8,9 @@ for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-__author__ =  'Bjorn Barrefors'
+__author__       = 'Bjorn Barrefors'
 __organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
-__email__ = 'bbarrefo@cse.unl.edu'
+__email__        = 'bbarrefo@cse.unl.edu'
 
 import sys
 import os
@@ -98,7 +98,7 @@ class PhEDExAPI:
             self.logger.error(name, e.read())
             return 1, "Error"
         except urllib2.URLError, e:
-            self.logger.error(e.args)
+            self.logger.error(name, e.args)
             return 1, "Error"
         return 0, response
 
@@ -475,9 +475,11 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, response = phedex_api.data(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
+    check, response = phedex_api.data(file_name='/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/5C987763-D109-E011-B1CE-0030487CD6E6.root', instance='dev', level='file')
     if (not check):
         print response
-        sys.exit(1)
+        data = response.get('phedex').get('dbs')
+        dataset = data[0].get('dataset')[0].get('name')
+        print dataset
+        sys.exit(0)
     sys.exit(0)
-    

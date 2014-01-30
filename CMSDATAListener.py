@@ -1,99 +1,155 @@
 #!/usr/bin/python -B
+
 """
 _CMSDATAListener_
-
-Listen for UDP packets.
-Packets contain information of files that have been accessed.
-Store information in a local database and analyzed to
-make decisions on when to subscribe a dataset.
 
 Created by Bjorn Barrefors on 11/9/2013
 for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-################################################################################
-#                                                                              #
-#                       C M S D A T A   L I S T E N E R                        #
-#                                                                              #
-################################################################################
+__author__       = 'Bjorn Barrefors'
+__organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
+__email__        = 'bbarrefo@cse.unl.edu'
 
 import sys
 import os
 import time
 import re
 import socket
-import traceback
+
 from multiprocessing import Manager, Process, Pool
+from operator        import itemgetter
+from email.mime.text import MIMEText
+from subprocess      import Popen, PIPE
 
-from CMSDATALogger import log, error, LOG_PATH, LOG_FILE
-from CMSDATADatabase import setup, insert, setTimeFrame, setSetAccess, setBudget
-from CMSDATARoutine import janitor, analyze, summary
+from CMSDATALogger   import CMSDATALogger
+from CMSDATADatabase import CMSDATADatabase
+from PhEDExAPI       import PhEDExAPI
 
-CONFIG_FILE = 'cmsdata.config'
 
 ################################################################################
 #                                                                              #
-#                                 R O U T I N E                                #
+#                       C M S D A T A   L I S T E N E R                        #
 #                                                                              #
 ################################################################################
 
-def routine():
+class CMSDATAListener():
     """
-    _routine_
+    _CMSDATAListener_
+
+    Listen for UDP packets.
+    Packets contain information of files that have been accessed.
+    Store information in a local database, analyze to
+    make decisions on when to subscribe or delete a dataset.
     
-    Run the janitor and analyzer once every hour. 
-    The janitor is in charge of cleaning out expired 
-    entries in the database and the analyzer suggests subscriptions.
+    Class variables:
+    logger   -- Used to print log and error messages to log file
+    phedex   -- Query PhEDEx API
     """
-    # Run every hour
-    while True:
-        summary()
-        for i in range(24):
-            time.sleep(3600)
-            # Update database, delete entries older than 12h
-            janitor()
-            # Check if should make subscriptions
-            analyze()
-    return 1
+    def __init__(self):
+        """
+        __init__
 
-################################################################################
-#                                                                              #
-#                           D A T A   H A N D L E R                            #
-#                                                                              #
-################################################################################
+        Initialize database, logger, phedex objects
+        """
+        self.name     = "CMSDATAListener"
+        self.logger   = CMSDATALogger()
+        self.phedex   = PhEDExAPI()
+        #self.sender   = "bbarrefo@cse.unl.edu"
+        #self.receiver = "bbarrefo@cse.unl.edu"
+        self.sender   = "barrefors@gmail.com"
+        self.receiver = "barrefors@gmail.com"
 
-def dataHandler(d):
-    """
-    _dataHandler_
+    ################################################################################
+    #                                                                              #
+    #                                 R O U T I N E                                #
+    #                                                                              #
+    ################################################################################
 
-    Analyze dictionary extracted from UDP packet
-    to insert dataset accesses in database.
-    Dataset may not exist, record this as unknown.
-    """
-    lfn = str(d['file_lfn'])
-    dir = lfn.rsplit('/',2)[0]
-    insert(dir, lfn)
+    def routine(self):
+        """
+        _routine_
+        
+        Run the janitor and analyzer once every hour. 
+        The janitor is in charge of cleaning out expired 
+        entries in the database and the analyzer suggests subscriptions.
+        """
+        database = CMSDATADatabase()
+        # Run once a day
+        while True:
+            time.sleep(60)
+            #time.sleep(86400)
+            # Clear entries
+            database.cleanAccess()
+            datasets = database.datasets()
+            set_count = []
+            for dataset in datasets:
+                count = database.accessCount(dataset)
+                set_count.append((count, dataset))
+            # Sort set_count and print out the top N sets w accesses
+            set_count = sorted(set_count, key=itemgetter(0))
+            msg = MIMEText(str(set_count))
+            msg['Subject'] = "Dataset report from CMSDATA"
+            msg['From'] = self.sender
+            msg['To'] = self.receiver
+            p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
+            p.communicate(msg.as_string())
+            print "Email sent"
+            database.cleanCache()
+        return 1
 
-################################################################################
-#                                                                              #
-#                                P A R S E                                     #
-#                                                                              #
-################################################################################
-
-def parse(data):
-    """
-    _parse_
+    ################################################################################
+    #                                                                              #
+    #                           D A T A   H A N D L E R                            #
+    #                                                                              #
+    ################################################################################
     
-    Extract data from UDP packet and insert into dictionary.
-    """
-    d = {}
-    for line in data.split('\n'):
-        if '=' in line:
-            k, v = line.strip().split('=',1)
-            if v:
-                d[k] = v
-    return d
+    def dataHandler(self, d, database):
+        """
+        _dataHandler_
+        
+        Analyze dictionary extracted from UDP packet
+        to insert dataset accesses in database.
+        Dataset may not exist, record this as unknown.
+        """
+        lfn = str(d['file_lfn'])
+        directory = lfn.rsplit('/',2)[0]
+        # Check if dir is in cache
+        check, dataset = database.lookup(directory)
+        if check:
+            # If not call PhEDExAPI
+            check, data = self.phedex.data(file_name=lfn, level='file')
+            if check:
+                self.logger.log(name, lfn)
+                return 1
+            data = data.get('phedex').get('dbs')
+            if not data:
+                return 1
+            dataset = data[0].get('dataset')[0].get('name')
+            database.insertDirectory(directory, dataset)
+        # update access (insertDataset)
+        database.insertDataset(dataset)
+
+    ################################################################################
+    #                                                                              #
+    #                                P A R S E                                     #
+    #                                                                              #
+    ################################################################################
+    
+    def parse(self, data):
+        """
+        _parse_
+        
+        Extract data from UDP packet and insert into dictionary.
+        """
+        d = {}
+        for line in data.split('\n'):
+            if '=' in line:
+                k, v = line.strip().split('=',1)
+                if v:
+                    d[k] = v
+        return d
 
 ################################################################################
 #                                                                              #
@@ -107,45 +163,52 @@ def work(q):
     
     Distribute data handling of UDP packets to worker processes.
     """
+    global listener
+    database = CMSDATADatabase()
+
     while True:
         data = q.get()
-        dataHandler(parse(data))
+        listener.dataHandler(listener.parse(data), database)
+
 
 ################################################################################
 #                                                                              #
-#                               C O N F I G                                    #
+#                                 L I S T E N                                  #
 #                                                                              #
 ################################################################################
 
-def config():
+def listen():
     """
-    _config_
+    _listen_
     
-    Parse input file listener.conf for values.
-    If file not found, use default values.
+    Spawn worker processes.
+    Listen for UDP packets and send to parser and then distribute to workers.
     """
-    name = "Config"
+    # Spawn worker processes that will parse data and insert into database
+    pool = Pool(processes=4)
+    manager = Manager()
+    queue = manager.Queue()
     
-    if os.path.isfile(CONFIG_FILE):
-        config_f = open(CONFIG_FILE, 'r')
-    else:
-        error(name, "Config file %s does not exist, will use default values" % (CONFIG_FILE,))
-        return 1
-    for line in config_f:
-        if re.match("set_access", line):
-            value = re.split(" = ", line)
-            set_access = int(value[1].rstrip())
-            setSetAccess(set_access)
-        elif re.match("time _frame", line):
-            value = re.split(" = ", line)
-            time_frame = int(value[1].rstrip())
-            setTimeFrame(time_frame)
-        elif re.match("budget", line):
-            value = re.split(" = ", line)
-            budget = int(value[1].rstrip())
-            setBudget(budget)
-    config_f.close()
-    return 0
+    # Spawn process o clean out database and make reports every 1h
+    process = Process(target=listener.routine, args=())
+    process.start()
+    workers = pool.apply_async(work, (queue,))
+    
+    # UDP packets containing information about file access
+    UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+    listen_addr = ("0.0.0.0", 9345)
+    UDPSock.bind(listen_addr)
+    buf = 64*1024
+    # Listen for UDP packets
+    while True:
+        data,addr = UDPSock.recvfrom(buf)
+        queue.put(data)        
+    #finally:
+        #Close everything if program is interupted
+        #UDPSock.close()
+        #pool.close()
+        #process.join()
+    return 1
 
 ################################################################################
 #                                                                              #
@@ -153,59 +216,13 @@ def config():
 #                                                                              #
 ################################################################################
 
-def main():
-    """
-    __main__
+listener = CMSDATAListener()
 
-    Spawn worker processes.
-    Listen for UDP packets and send to parser and then distribute to workers.
-    """
-    # Initialize
-    name = "Main"
-    config()
-
-    if setup():
-        return 1
-
-    try:
-        # Spawn worker processes that will parse data and insert into database
-        pool = Pool(processes=4)
-        manager = Manager()
-        queue = manager.Queue()
-        
-        # Spawn process o clean out database and make reports every 1h
-        process = Process(target=routine, args=())
-        process.start()
-        workers = pool.apply_async(work, (queue,))
-        
-        # UDP packets containing information about file access
-        UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-        listen_addr = ("0.0.0.0", 9345)
-        UDPSock.bind(listen_addr)
-        buf = 64*1024
-        # Listen for UDP packets
-        while True:
-            data,addr = UDPSock.recvfrom(buf)
-            queue.put(data)
-    except:
-        # Print out raised exception to log file
-        if os.path.exists(LOG_PATH):
-            log_file = open(LOG_PATH + LOG_FILE, 'a')
-        else:
-            return 1
-        traceback.print_exc(file=log_file)
-        log_file.close()
-        
-    finally:
-        #Close everything if program is interupted
-        UDPSock.close()
-        pool.close()
-        process.join()
-    
 if __name__ == '__main__':
     """
     __main__
 
     This is where it all starts.
     """
-    sys.exit(main())
+    sys.exit(listen())
+    

@@ -8,9 +8,9 @@ for CMSDATA (CMS Data Analyzer and Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-__author__ =  'Bjorn Barrefors'
+__author__       = 'Bjorn Barrefors'
 __organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
-__email__ = 'bbarrefo@cse.unl.edu'
+__email__        = 'bbarrefo@cse.unl.edu'
 
 import sys
 import os
