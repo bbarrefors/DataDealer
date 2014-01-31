@@ -44,14 +44,17 @@ class CMSDATAListener():
     make decisions on when to subscribe or delete a dataset.
     
     Class variables:
-    logger   -- Used to print log and error messages to log file
-    phedex   -- Query PhEDEx API
+    name      -- ID used when logging
+    logger    -- Used to print log and error messages to log file
+    phedex    -- Query PhEDEx API
+    sender    -- Email address of sender for daily reports
+    receivers -- Recipient email addresses for daily reports
     """
     def __init__(self):
         """
         __init__
 
-        Initialize database, logger, phedex objects
+        Initialize class variables
         """
         self.name      = "CMSDATAListener"
         self.logger    = CMSDATALogger()
@@ -69,9 +72,8 @@ class CMSDATAListener():
         """
         _routine_
         
-        Run the janitor and analyzer once every hour. 
-        The janitor is in charge of cleaning out expired 
-        entries in the database and the analyzer suggests subscriptions.
+        Ran once a day to identify the 100 most popular datasets
+        and clean out old entries in the database
         """
         database = CMSDATADatabase()
         # Run once a day
@@ -114,9 +116,10 @@ class CMSDATAListener():
         """
         _dataHandler_
         
-        Analyze dictionary extracted from UDP packet
-        to insert dataset accesses in database.
-        Dataset may not exist, record this as unknown.
+        Look up dataset of accessed file, first look in database cache, if not
+        found query PhEDEx
+
+        Dataset might not exist in PhEDEx
         """
         lfn = str(d['file_lfn'])
         directory = lfn.rsplit('/',2)[0]
@@ -126,11 +129,9 @@ class CMSDATAListener():
             # If not call PhEDExAPI
             check, data = self.phedex.data(file_name=lfn, level='file')
             if check:
-                self.logger.log(self.name, lfn)
                 return 1
             data = data.get('phedex').get('dbs')
             if not data:
-                self.logger.log(self.name, lfn)
                 return 1
             dataset = data[0].get('dataset')[0].get('name')
             database.insertDirectory(directory, dataset)
