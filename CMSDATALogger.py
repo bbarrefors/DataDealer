@@ -117,4 +117,5 @@ if __name__ == '__main__':
     """
     my_logger = CMSDATALogger()
     my_logger.error("Bjorn", "Error test message")
+    my_logger.log("Bjorn", "Log test message")
     sys.exit(0)

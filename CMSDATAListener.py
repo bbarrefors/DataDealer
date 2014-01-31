@@ -53,13 +53,11 @@ class CMSDATAListener():
 
         Initialize database, logger, phedex objects
         """
-        self.name     = "CMSDATAListener"
-        self.logger   = CMSDATALogger()
-        self.phedex   = PhEDExAPI()
-        #self.sender   = "bbarrefo@cse.unl.edu"
-        #self.receiver = "bbarrefo@cse.unl.edu"
-        self.sender   = "barrefors@gmail.com"
-        self.receiver = "barrefors@gmail.com"
+        self.name      = "CMSDATAListener"
+        self.logger    = CMSDATALogger()
+        self.phedex    = PhEDExAPI()
+        self.sender    = "bbarrefo@cse.unl.edu"
+        self.receivers = ["bbarrefo@cse.unl.edu", "bbockelm@cse.unl.edu"]
 
     ################################################################################
     #                                                                              #
@@ -78,8 +76,7 @@ class CMSDATAListener():
         database = CMSDATADatabase()
         # Run once a day
         while True:
-            time.sleep(60)
-            #time.sleep(86400)
+            time.sleep(86400)
             # Clear entries
             database.cleanAccess()
             datasets = database.datasets()
@@ -89,14 +86,22 @@ class CMSDATAListener():
                 set_count.append((count, dataset))
             # Sort set_count and print out the top N sets w accesses
             set_count = sorted(set_count, key=itemgetter(0))
-            msg = MIMEText(str(set_count))
+            set_count.reverse()
+            text = ""
+            i = 1
+            for dataset in set_count:
+                if i > 100:
+                    break
+                text = text + str(i) + ". " + str(dataset[1]) + "\t" + str(dataset[0]) + "\n"
+                i += 1
+            msg = MIMEText(text)
             msg['Subject'] = "Dataset report from CMSDATA"
             msg['From'] = self.sender
-            msg['To'] = self.receiver
+            msg['To'] = self.receivers
             p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
             p.communicate(msg.as_string())
-            print "Email sent"
             database.cleanCache()
+            #time.sleep(60)
         return 1
 
     ################################################################################
@@ -121,10 +126,11 @@ class CMSDATAListener():
             # If not call PhEDExAPI
             check, data = self.phedex.data(file_name=lfn, level='file')
             if check:
-                self.logger.log(name, lfn)
+                self.logger.log(self.name, lfn)
                 return 1
             data = data.get('phedex').get('dbs')
             if not data:
+                self.logger.log(self.name, lfn)
                 return 1
             dataset = data[0].get('dataset')[0].get('name')
             database.insertDirectory(directory, dataset)
@@ -169,7 +175,7 @@ def work(q):
     while True:
         data = q.get()
         listener.dataHandler(listener.parse(data), database)
-
+        
 
 ################################################################################
 #                                                                              #
@@ -184,6 +190,8 @@ def listen():
     Spawn worker processes.
     Listen for UDP packets and send to parser and then distribute to workers.
     """
+    global listener
+
     # Spawn worker processes that will parse data and insert into database
     pool = Pool(processes=4)
     manager = Manager()
