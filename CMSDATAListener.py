@@ -126,11 +126,9 @@ class CMSDATAListener():
             # If not call PhEDExAPI
             check, data = self.phedex.data(file_name=lfn, level='file')
             if check:
-                self.logger.log(self.name, lfn)
                 return 1
             data = data.get('phedex').get('dbs')
             if not data:
-                self.logger.log(self.name, lfn)
                 return 1
             dataset = data[0].get('dataset')[0].get('name')
             database.insertDirectory(directory, dataset)
