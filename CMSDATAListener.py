@@ -60,7 +60,7 @@ class CMSDATAListener():
         self.logger    = CMSDATALogger()
         self.phedex    = PhEDExAPI()
         self.sender    = "bbarrefo@cse.unl.edu"
-        self.receivers = ["bbarrefo@cse.unl.edu", "bbockelm@cse.unl.edu"]
+        self.receivers = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
 
     ################################################################################
     #                                                                              #
@@ -78,7 +78,7 @@ class CMSDATAListener():
         database = CMSDATADatabase()
         # Run once a day
         while True:
-            time.sleep(86400)
+            #time.sleep(86400)
             # Clear entries
             database.cleanAccess()
             datasets = database.datasets()
@@ -103,7 +103,7 @@ class CMSDATAListener():
             p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
             p.communicate(msg.as_string())
             database.cleanCache()
-            #time.sleep(60)
+            time.sleep(60)
         return 1
 
     ################################################################################
@@ -122,6 +122,9 @@ class CMSDATAListener():
         Dataset might not exist in PhEDEx
         """
         lfn = str(d['file_lfn'])
+        # Check for invalid sets
+        if ((lfn.find("/store", 0, 6) == -1) or (lfn.find("/store/user", 0, 11) == 0) or (lfn.count("/") < 3)):
+            return 1
         directory = lfn.rsplit('/',2)[0]
         # Check if dir is in cache
         check, dataset = database.lookup(directory)
