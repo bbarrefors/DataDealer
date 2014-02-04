@@ -78,7 +78,7 @@ class CMSDATAListener():
         database = CMSDATADatabase()
         # Run once a day
         while True:
-            #time.sleep(86400)
+            time.sleep(86400)
             # Clear entries
             database.cleanAccess()
             datasets = database.datasets()
@@ -103,7 +103,7 @@ class CMSDATAListener():
             p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
             p.communicate(msg.as_string())
             database.cleanCache()
-            time.sleep(60)
+            #time.sleep(60)
         return 1
 
     ################################################################################
