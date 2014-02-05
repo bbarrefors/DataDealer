@@ -56,11 +56,14 @@ class CMSDATAListener():
 
         Initialize class variables
         """
-        self.name      = "CMSDATAListener"
-        self.logger    = CMSDATALogger()
-        self.phedex    = PhEDExAPI()
-        self.sender    = "bbarrefo@cse.unl.edu"
-        self.receivers = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
+        self.name       = "CMSDATAListener"
+        self.logger     = CMSDATALogger()
+        self.phedex     = PhEDExAPI()
+        self.sender     = "bbarrefo@cse.unl.edu"
+        self.receivers  = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
+        self.graph_path = "/home/bockelman/barrefors/data/"
+        self.graph_file = "cmsdata.dat"
+
 
     ################################################################################
     #                                                                              #
@@ -77,6 +80,7 @@ class CMSDATAListener():
         """
         database = CMSDATADatabase()
         # Run once a day
+        graph_data = dict()
         while True:
             time.sleep(86400)
             # Clear entries
@@ -89,12 +93,20 @@ class CMSDATAListener():
             # Sort set_count and print out the top N sets w accesses
             set_count = sorted(set_count, key=itemgetter(0))
             set_count.reverse()
-            text = ""
+            # Get date
+            today = str(datetime.datetime.now().strftime("%Y%m%d"))
+            text = "The 100 most accessed datasets in the last 24h\n\n"
             i = 1
             for dataset in set_count:
-                if i > 100:
-                    break
-                text = text + str(i) + ". " + str(dataset[1]) + "\t" + str(dataset[0]) + "\n"
+                if i <= 100:
+                    text = text + str(i) + ". " + str(dataset[1]) + "\t" + str(dataset[0]) + "\n"
+                # Get previous entry is exist
+                try:
+                    old_data = graph_data[str(dataset[1])]
+                except KeyError:
+                    new_data = [(today, dataset[0])]
+                new_data = old_data.append((today, dataset[0]))
+                graph_data[dataset[1]] = new_data
                 i += 1
             msg = MIMEText(text)
             msg['Subject'] = "Dataset report from CMSDATA"
@@ -102,6 +114,23 @@ class CMSDATAListener():
             msg['To'] = self.receivers
             p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
             p.communicate(msg.as_string())
+            try:
+                if not os.path.isdir(self.graph_path):
+                    os.makedirs(self.graph_path)
+                graph_fd = open(self.graph_path + self.graph_file, 'w')
+            except IOError, e:
+                # Couldn't open file
+                self.logger.error(self.name, "Couldn\'t access graph file. Reason: %s" % (e,))
+                sys.exit(1)
+            except OSError, e:
+                # Couldn't create path to log file
+                self.logger.error(self.name, "Couldn\'t create graph file. Reason: %s" % (e,))
+                sys.exit(1)
+            for dataset, data in graph_data.iteritems():
+                graph_fd.write(dataset + "\n")
+                for dates in data:
+                    graph_fd.write(dates[0] + "\t" + dates[1] + "\n")
+                graph_fd.write("\n")
             database.cleanCache()
             #time.sleep(60)
         return 1

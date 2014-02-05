@@ -174,8 +174,8 @@ class CMSDATADatabase():
         try:
             with self.connection:
                 cur = self.connection.cursor()
-                # Set time window to 72h for now
-                expiration = datetime.datetime.now() + datetime.timedelta(hours=72)
+                # Set time window to 24h for now
+                expiration = datetime.datetime.now() + datetime.timedelta(hours=24)
                 cur.execute('INSERT INTO DatasetAccess VALUES(?,?)', (dataset, expiration))
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while inserting data")
