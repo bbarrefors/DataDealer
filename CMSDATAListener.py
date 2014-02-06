@@ -131,6 +131,7 @@ class CMSDATAListener():
                 for dates in data:
                     graph_fd.write(dates[0] + "\t" + dates[1] + "\n")
                 graph_fd.write("\n")
+            graph_fd.close()
             database.cleanCache()
             #time.sleep(60)
         return 1
