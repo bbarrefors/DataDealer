@@ -61,7 +61,7 @@ class PhEDExAPI:
         
         Set up class constants
         """
-        self.logger = CMSDATALogger()
+        self.logger      = CMSDATALogger()
         self.PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 
 
@@ -271,36 +271,6 @@ class PhEDExAPI:
 #        error(name, "Delete did not succeed")
 #        return 1
 
-################################################################################
-#                                                                              #
-#                         S U B S C R I P T I O N S                            #
-#                                                                              #
-################################################################################
-
-#def subscriptions(site, days):
-#    """
-#    _subscriptions_
-#
-#    Return all subscriptions made to UNL in the last week by group Jupiter.
-#    """
-#    name = "APISubscriptions"
-#    # Created since a week ago?
-#    past = datetime.datetime.now() - datetime.timedelta(days = days)
-#    create_since = time.mktime(past.utctimetuple())
-#    values = { 'node' : site, 'create_since' : create_since, 'group' : GROUP }
-#    subscriptions_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscriptions" % (DATA_TYPE, PHEDEX_INSTANCE))
-#    response = PhEDExCall(subscriptions_url, values)
-#    if not response:
-#        error(name, "Subscriptions did not succeed")
-#        return 1
-#    # TODO : Do stuff with data
-#    datasets = []
-#    data = response.get('dataset')
-#    if not data:
-#        return datasets
-#    for dataset in data:
-#        datasets.append(dataset.get('name'))
-#    return datasets
 
 ################################################################################
 #                                                                              #
@@ -332,6 +302,7 @@ class PhEDExAPI:
 #    size = size / 10**9
 #    #log(name, "Total size of dataset %s is %dGB" % (dataset, size))
 #    return int(size)
+
 
 ################################################################################
 #                                                                              #

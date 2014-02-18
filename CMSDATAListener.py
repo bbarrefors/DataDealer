@@ -27,6 +27,7 @@ from subprocess      import Popen, PIPE
 from CMSDATALogger   import CMSDATALogger
 from CMSDATADatabase import CMSDATADatabase
 from PhEDExAPI       import PhEDExAPI
+from PopDBAPI        import PopDBAPI
 
 
 ################################################################################
@@ -60,6 +61,7 @@ class CMSDATAListener():
         self.name       = "CMSDATAListener"
         self.logger     = CMSDATALogger()
         self.phedex     = PhEDExAPI()
+        self.popdb      = PopDBAPI()
         self.sender     = "bbarrefo@cse.unl.edu"
         self.receivers  = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
         self.graph_path = "/home/bockelman/barrefors/data/"
@@ -84,6 +86,7 @@ class CMSDATAListener():
         graph_data = dict()
         while True:
             time.sleep(86400)
+            self.popdb.renewSSOCookie()
             # Clear entries
             database.cleanAccess()
             datasets = database.datasets()
