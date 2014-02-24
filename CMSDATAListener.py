@@ -85,7 +85,7 @@ class CMSDATAListener():
         # Run once a day
         graph_data = dict()
         while True:
-            time.sleep(86400)
+            #time.sleep(86400)
             self.popdb.renewSSOCookie()
             # Clear entries
             database.cleanAccess()
@@ -137,7 +137,7 @@ class CMSDATAListener():
                 graph_fd.write("\n")
             graph_fd.close()
             database.cleanCache()
-            #time.sleep(60)
+            time.sleep(86400)
         return 1
 
     ################################################################################

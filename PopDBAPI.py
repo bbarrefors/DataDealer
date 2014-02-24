@@ -26,7 +26,7 @@ except ImportError:
     import simplejson as json
 from subprocess import call, Popen, PIPE
 
-from CMSDATALogger import log, error
+from CMSDATALogger import CMSDATALogger
 
 
 ################################################################################
@@ -61,7 +61,7 @@ class PopDBAPI():
         Set up class constants
         """
         self.logger      = CMSDATALogger()
-        self.PHEDEX_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
+        self.POP_DB_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
         self.CERT        = "/grid_home/cmsphedex/gridcert/myCert.pem"
         self.KEY         = "/grid_home/cmsphedex/gridcert/myCert.key"
         self.COOKIE      = "/grid_home/cmsphedex/gridcert/ssocookie.txt"
