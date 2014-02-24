@@ -62,9 +62,9 @@ class PopDBAPI():
         """
         self.logger      = CMSDATALogger()
         self.POP_DB_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
-        self.CERT        = "/grid_home/cmsphedex/gridcert/myCert.pem"
-        self.KEY         = "/grid_home/cmsphedex/gridcert/myCert.key"
-        self.COOKIE      = "/grid_home/cmsphedex/gridcert/ssocookie.txt"
+        self.CERT        = "/home/bockelman/barrefors/certs/myCert.pem"
+        self.KEY         = "/home/bockelman/barrefors/certs/myCert.key"
+        self.COOKIE      = "/home/bockelman/barrefors/certs/ssocookie.txt"
         
 
     def renewSSOCookie(self):
@@ -85,12 +85,12 @@ class PopDBAPI():
         data = urllib.urlencode(values)
         request = urllib2.Request(url, data)
         full_url = request.get_full_url() + request.get_data()
-        p1 = Popen(["curl", "-k", "-L", "--cookie", COOKIE, "--cookie-jar", COOKIE, full_url], stdout=PIPE)
+        p1 = Popen(["curl", "-k", "-L", "--cookie", self.COOKIE, "--cookie-jar", self.COOKIE, full_url], stdout=PIPE)
         try:
             response = p1.communicate()[0]
         except ValueError:
             return 1, "Error"
-        return 0, reponse
+        return 0, response
 
 
     def DSStatInTimeWindow(self, start, stop, site):
@@ -99,8 +99,8 @@ class PopDBAPI():
         sitename = site
         values = { 'tstart' : tstart, 'tstop' : tstop,
                    'sitename' : sitename }
-        dsstat_url = urllib.basejoin(POP_DB_BASE, "%s/?&" % ("DSStatInTimeWindow",))
-        check, response = PopDBCall(dsstat_url, values)
+        dsstat_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("DSStatInTimeWindow",))
+        check, response = self.PopDBCall(dsstat_url, values)
         
         nacc = 0
         cpuh = 0
@@ -117,8 +117,8 @@ class PopDBAPI():
         aggr = "year"
         values = { 'tstart' : tstart, 'tstop' : tstop, 'n' : n,
                    'aggr' : aggr, 'orderby' : orderby }
-        dsstat_url = urllib.basejoin(POP_DB_BASE, "%s/?&" % ("getDSdata",))
-        response = PopDBCall(dsstat_url, values)
+        dsstat_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
+        response = self.PopDBCall(dsstat_url, values)
         nacc = 0
         cpuh = 0
         sets = []
@@ -135,18 +135,10 @@ if __name__ == '__main__':
 
     For testing purpose only.
     """
-    #renewSSOCookie()
+    popdb = PopDBAPI()
+    #popdb.renewSSOCookie()
     today = datetime.date.today()
     tstart = today - datetime.timedelta(days=7)
     tstop = today
-    sets = getDSdata(tstart, tstop, "totcpu", "5")
-    for s in sets:
-        access, totcpu = DSStatInTimeWindow(tstart, tstop, "summary")
-        print ("%s have %d accesses and %d CPU hours from %s to %s" % (s, int(access), int(totcpu), str(tstart), str(tstop)))
-        for i in range(7):
-            tstart = tstart - datetime.timedelta(days=1)
-            tstop = tstart
-            access, totcpu = DSStatInTimeWindow(tstart, tstop, "summary")
-            print ("%s have %d accesses and %d CPU hours during %s" % (s, int(access), int(totcpu), str(tstart)))
-    print sets
-    sys.exit(1)
+    sets = popdb.getDSdata(tstart, tstop, "totcpu", "5")
+    sys.exit(0)

@@ -63,7 +63,8 @@ class CMSDATAListener():
         self.phedex     = PhEDExAPI()
         self.popdb      = PopDBAPI()
         self.sender     = "bbarrefo@cse.unl.edu"
-        self.receivers  = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
+        #self.receivers  = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
+        self.receivers  = "bbarrefo@cse.unl.edu"
         self.graph_path = "/home/bockelman/barrefors/data/"
         self.graph_file = "cmsdata.dat"
 
@@ -109,7 +110,8 @@ class CMSDATAListener():
                     old_data = graph_data[str(dataset[1])]
                 except KeyError:
                     new_data = [(today, dataset[0])]
-                new_data = old_data.append((today, dataset[0]))
+                else:
+                    new_data = old_data.append((today, dataset[0]))
                 graph_data[dataset[1]] = new_data
                 i += 1
             msg = MIMEText(text)
