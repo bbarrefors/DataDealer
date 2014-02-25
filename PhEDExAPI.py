@@ -165,44 +165,62 @@ class PhEDExAPI:
 
     ################################################################################
     #                                                                              #
-    #                   B L O C K   R E P L I C A   S U M M A R Y                  #
+    #                                 P A R S E                                    #
     #                                                                              #
     ################################################################################
     
-#    def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
-#        """
-#        _blockReplicaSummary_
-#        
-#        PhEDEx blockReplicaSummary call
-#        
-#        At least one of the arguments dataset, block, file have to be passed.
-#        No checking is made for xml data.
-#        Even if JSON data is returned no gaurantees are made for the structure
-#        of it.
-#        
-#        TODO: See data
-#        """
-#        if ((not dataset) and (not block) and (not file_name)):
-#            return 1, "Not enough parameters passed"
-#        
-#        values = { 'block' : block, 'dataset' : dataset, 'node' : node, 
-#                   'update_since' : update_since, 'create_since' : create_since 
-#                   'complete' : complete, 'dist_complete' : dist_complete, 
-#                   'subscribed' : subscribed, 'custodial' : custodial }
-#        
-#        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
-#        check, response = PhEDExCall(data_url, values)
-#        if check:
-#            # An error occurred
-#            return 1, response
-#        if format == "json":
-#            data = json.load(response)
-#            if not data:
-#                return 1, "No json data available"
-#        else:
-#            data = response
-#        return 0, data
+    def parse(data, xml):
+        """
+        _parse_
+        
+        Take data output from PhEDEx and parse it into  xml syntax corresponding to 
+        subscribe and delete calls.
+        """
+        for k, v in data.iteritems():
+            k = k.replace("_", "-")
+            if type(v) is list:
+                xml = "%s>" % (xml,)
+                for v1 in v:
+                    xml = "%s<%s" % (xml, k)
+                    xml = parse(v1, xml)
+                    if (k == "file"):
+                        xml = "%s/>" % (xml,)
+                    else:
+                        xml = "%s</%s>" % (xml, k)
+            else:
+                if k == "lfn":
+                    k = "name"
+                elif k == "size":
+                    k = "bytes"
+                xml = '%s %s="%s"' % (xml, k, v)
+        return xml
 
+    ################################################################################
+    #                                                                              #
+    #                             X M L   D A T A                                  #
+    #                                                                              #
+    ################################################################################
+    
+    def xmlData(dataset):
+        """
+        _xmlData_
+        
+        Return data information as xml structure complying with PhEDEx
+        subscribe and delete call.
+        """
+        check, response = data(dataset=dataset, format='xml')
+        if check:
+            return 1
+        xml = '<data version="2">'
+        for k, v in response.iteritems():
+            if k == "dbs":
+                xml = "%s<%s" % (xml, k)
+                xml = parse(v[0], xml)
+                xml = "%s</%s>" % (xml, k)
+        xml_data = "%s</data>" % (xml,)
+        return xml_data
+    
+    
 ################################################################################
 #                                                                              #
 #                             S U B S C R I B E                                #
@@ -272,6 +290,47 @@ class PhEDExAPI:
 #        return 1
 
 
+    ################################################################################
+    #                                                                              #
+    #                   B L O C K   R E P L I C A   S U M M A R Y                  #
+    #                                                                              #
+    ################################################################################
+    
+#    def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
+#        """
+#        _blockReplicaSummary_
+#        
+#        PhEDEx blockReplicaSummary call
+#        
+#        At least one of the arguments dataset, block, file have to be passed.
+#        No checking is made for xml data.
+#        Even if JSON data is returned no gaurantees are made for the structure
+#        of it.
+#        
+#        TODO: See data
+#        """
+#        if ((not dataset) and (not block) and (not file_name)):
+#            return 1, "Not enough parameters passed"
+#        
+#        values = { 'block' : block, 'dataset' : dataset, 'node' : node, 
+#                   'update_since' : update_since, 'create_since' : create_since 
+#                   'complete' : complete, 'dist_complete' : dist_complete, 
+#                   'subscribed' : subscribed, 'custodial' : custodial }
+#        
+#        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
+#        check, response = PhEDExCall(data_url, values)
+#        if check:
+#            # An error occurred
+#            return 1, response
+#        if format == "json":
+#            data = json.load(response)
+#            if not data:
+#                return 1, "No json data available"
+#        else:
+#            data = response
+#        return 0, data
+
+
 ################################################################################
 #                                                                              #
 #                        D A T A S E T   S I Z E                               #
@@ -336,69 +395,6 @@ class PhEDExAPI:
 
 ################################################################################
 #                                                                              #
-#                                 P A R S E                                    #
-#                                                                              #
-################################################################################
-
-#def parse(data, xml):
-#    """
-#    _parse_
-#    
-#    Take data output from PhEDEx and parse it into  xml syntax corresponding to 
-#    subscribe and delete calls.
-#    """
-#    for k, v in data.iteritems():
-#        k = k.replace("_", "-")
-#        if type(v) is list:
-#            xml = "%s>" % (xml,)
-#            for v1 in v:
-#                xml = "%s<%s" % (xml, k)
-#                xml = parse(v1, xml)
-#                if (k == "file"):
-#                    xml = "%s/>" % (xml,)
-#                else:
-#                    xml = "%s</%s>" % (xml, k)
-#        else:
-#            if k == "lfn":
-#                k = "name"
-#            elif k == "size":
-#                k = "bytes"
-#            xml = '%s %s="%s"' % (xml, k, v)
-#    return xml
-
-
-################################################################################
-#                                                                              #
-#                             X M L   D A T A                                  #
-#                                                                              #
-################################################################################
-
-#def xmlData(dataset):
-#    """
-#    _xmlData_
-#
-#    Return data information as xml structure complying with PhEDEx
-#    subscribe and delete call.
-#    """
-#    name = "APIXMLData"
-#    values = { 'dataset' : dataset }
-#    data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-#    response = PhEDExCall(data_url, values)
-#    if not response:
-#        error(name, "No data for dataset %s" % (dataset,))
-#        return 0
-#    xml = '<data version="2">'
-#    for k, v in response.iteritems():
-#        if k == "dbs":
-#            xml = "%s<%s" % (xml, k)
-#            xml = parse(v[0], xml)
-#            xml = "%s</%s>" % (xml, k)
-#    xml_data = "%s</data>" % (xml,)
-#    return xml_data
-
-
-################################################################################
-#                                                                              #
 #                H T T P S   G R I D   A U T H   H A N D L E R                 #
 #                                                                              #
 ################################################################################
@@ -446,11 +442,6 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, response = phedex_api.data(file_name='/store/data/GowdyTest10/BTau/RAW/Run2010Av3/000/142/132/5C987763-D109-E011-B1CE-0030487CD6E6.root', instance='dev', level='file')
-    if (not check):
-        print response
-        data = response.get('phedex').get('dbs')
-        dataset = data[0].get('dataset')[0].get('name')
-        print dataset
-        sys.exit(0)
+    response = phedex_api.xmlData("/BTau/GowdyTest10-Run2010Av3/RAW")
+    print response
     sys.exit(0)
