@@ -1,0 +1,12 @@
+<data version="2">
+	<dbs time-create="1209049420.37" name="https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet">
+		<dataset is-transient="n" name="/BTau/GowdyTest10-Run2010Av3/RAW" time-create="1290559553.03" time-update="None" is-open="y">
+			<block files="1" name="/BTau/GowdyTest10-Run2010Av3/RAW#20b3adf0-f764-11df-8225-001d09f2419b" time-create="1290559553.03" bytes="1473849076" time-update="1290559858.46" is-open="n"></block>
+			<block files="1" name="/BTau/GowdyTest10-Run2010Av3/RAW#cc17a724-092e-11e0-9e04-001d09f2419b" time-create="1292515763.23" bytes="12470095" time-update="1292516668.18" is-open="n"></block>
+			<block files="1" name="/BTau/GowdyTest10-Run2010Av3/RAW#772cd5b6-09bc-11e0-9e04-001d09f2419b" time-create="1292576606.82" bytes="347920943" time-update="1292576910.67" is-open="n"></block>
+			<block files="2" name="/BTau/GowdyTest10-Run2010Av3/RAW#3e271704-09d0-11e0-9e04-001d09f2419b" time-create="1292585102.68" bytes="689109331" time-update="1292586011.01" is-open="n"></block>
+			<block files="1" name="/BTau/GowdyTest10-Run2010Av3/RAW#784264ee-09d9-11e0-9e04-001d09f2419b" time-create="1292589063.84" bytes="343745412" time-update="1292589066.81" is-open="n"></block>
+			<block files="1" name="/BTau/GowdyTest10-Run2010Av3/RAW#767b2d0c-094e-11e0-9e04-001d09f2419b" time-create="1292529361.01" bytes="86682437" time-update="1292530265.88" is-open="n"></block>
+		</dataset>
+	</dbs>
+</data>
