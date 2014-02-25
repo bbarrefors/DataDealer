@@ -182,7 +182,7 @@ class PhEDExAPI:
                 xml = "%s>" % (xml,)
                 for v1 in v:
                     xml = "%s<%s" % (xml, k)
-                    xml = parse(v1, xml)
+                    xml = self.parse(v1, xml)
                     if (k == "file"):
                         xml = "%s/>" % (xml,)
                     else:
@@ -208,11 +208,12 @@ class PhEDExAPI:
         Return data information as xml structure complying with PhEDEx
         subscribe and delete call.
         """
-        check, response = self.data(dataset=dataset, format='xml')
+        check, response = self.data(dataset=dataset, instance='dev')
+        data = response.get('phedex')
         if check:
             return 1
         xml = '<data version="2">'
-        for k, v in response.iteritems():
+        for k, v in data.iteritems():
             if k == "dbs":
                 xml = "%s<%s" % (xml, k)
                 xml = self.parse(v[0], xml)
