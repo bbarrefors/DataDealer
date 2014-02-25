@@ -169,7 +169,7 @@ class PhEDExAPI:
     #                                                                              #
     ################################################################################
     
-    def parse(data, xml):
+    def parse(self, data, xml):
         """
         _parse_
         
@@ -201,21 +201,21 @@ class PhEDExAPI:
     #                                                                              #
     ################################################################################
     
-    def xmlData(dataset):
+    def xmlData(self, dataset):
         """
         _xmlData_
         
         Return data information as xml structure complying with PhEDEx
         subscribe and delete call.
         """
-        check, response = data(dataset=dataset, format='xml')
+        check, response = self.data(dataset=dataset, format='xml')
         if check:
             return 1
         xml = '<data version="2">'
         for k, v in response.iteritems():
             if k == "dbs":
                 xml = "%s<%s" % (xml, k)
-                xml = parse(v[0], xml)
+                xml = self.parse(v[0], xml)
                 xml = "%s</%s>" % (xml, k)
         xml_data = "%s</data>" % (xml,)
         return xml_data
