@@ -441,7 +441,7 @@ if __name__ == '__main__':
     if check:
         sys.exit(1)
     #check, response = phedex_api.subscribe(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
-    check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
+    check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, comments='This is just a test by Bjorn Barrefors, ignore.', instance='dev')
     if check:
         print response
         sys.exit(1)
