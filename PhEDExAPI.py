@@ -39,6 +39,7 @@ class PhEDExAPI:
     _PhEDExAPI_
 
     Interface to submit queries to the PhEDEx API
+    For specifications of calls see https://cmsweb.cern.ch/phedex/datasvc/doc
     
     Class variables:
     PHEDEX_BASE -- Base URL to the PhEDEx web API
@@ -132,10 +133,11 @@ class PhEDExAPI:
         instance     -- Which instance of PhEDEx to query, dev or prod
 
         Return values:
-        
+        check -- 0 if all went well, 1 if error occured
+        data  -- json structure if json format, xml structure if xml format
         """
         name = "data"
-        if ((not dataset) and (not block) and (not file_name)):
+        if not (dataset or block or file_name):
             self.logger.error(name, "Need to pass at least one of dataset/block/file_name")
             return 1, "Error"
         
@@ -159,7 +161,7 @@ class PhEDExAPI:
                 self.logger.error(name, "No json data available")
                 return 1, "Error"
         else:
-            data = response
+            data = response.read()
         return 0, data
 
 
@@ -201,17 +203,17 @@ class PhEDExAPI:
     #                                                                              #
     ################################################################################
     
-    def xmlData(self, dataset):
+    def xmlData(self, dataset='', instance='prod'):
         """
         _xmlData_
         
         Return data information as xml structure complying with PhEDEx
         subscribe and delete call.
         """
-        check, response = self.data(dataset=dataset, instance='dev')
-        data = response.get('phedex')
+        check, response = self.data(dataset=dataset, instance=instance)
         if check:
-            return 1
+            return 1, "Error"
+        data = response.get('phedex')
         xml = '<data version="2">'
         for k, v in data.iteritems():
             if k == "dbs":
@@ -219,76 +221,68 @@ class PhEDExAPI:
                 xml = self.parse(v[0], xml)
                 xml = "%s</%s>" % (xml, k)
         xml_data = "%s</data>" % (xml,)
-        return xml_data
+        return 0, xml_data
     
     
-################################################################################
-#                                                                              #
-#                             S U B S C R I B E                                #
-#                                                                              #
-################################################################################
+    ################################################################################
+    #                                                                              #
+    #                             S U B S C R I B E                                #
+    #                                                                              #
+    ################################################################################
 
-#def subscribe(site, dataset):
-#    """
-#    _subscribe_
-#
-#    Set up subscription call to PhEDEx API.
-#    """
-#    name = "APISubscribe"
-#    #log(name, "Subscribing %s to %s" % (dataset, site))
-#    sub_data = xmlData(dataset)
-#    if not sub_data:
-#        error(name, "Subscribe did not succeed")
-#        return 1
-#    level = 'dataset'
-#    priority = 'low'
-#    move = 'n'
-#    static = 'n'
-#    custodial = 'n'
-#    request_only = 'n'
-#    values = { 'node' : site, 'data' : sub_data, 'level' : level,
-#               'priority' : priority, 'move' : move, 'static' : static,
-#               'custodial' : custodial, 'request_only' : request_only,
-#               'group': GROUP, 'comments' : COMMENTS }
-#    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/subscribe" % (DATA_TYPE, PHEDEX_INSTANCE,))
-#    response = PhEDExCall(subscription_url, values)
-#    if response:
-#        #log(name, "Subscribe response %s" % (str(response),))
-#        return 0
-#    else:
-#        error(name, "Subscribe did not succeed")
-#        return 1
+    def subscribe(self, node='', data='', level='dataset', priority='low', move='n', static='n', custodial='n', group='local', time_start='', request_only='n', no_mail='n', comments='', format='json', instance='prod'):
+        """
+        _subscribe_
+        
+        Set up subscription call to PhEDEx API.
+        """
+        name = "subscribe"
+        if not (node and data):
+            self.logger.error(name, "Need to pass both node and data")
+            return 1, "Error"
+        
+        values = { 'node' : node, 'data' : data, 'level' : level,
+                   'priority' : priority, 'move' : move, 'static' : static,
+                   'custodial' : custodial, 'group' : group, 
+                   'time_start' : time_start, 'request_only' : request_only,
+                   'no_mail' : no_mail, 'comments' : comments }
+        
+        subscription_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/subscribe" % (format, instance))
+        check, response = self.phedexCall(subscription_url, values)
+        if check:
+            # An error occurred
+            self.logger.error(name, "Subscription call failed")
+            return 1, "Error"
+        return 0, response
+        
 
-################################################################################
-#                                                                              #
-#                                D E L E T E                                   #
-#                                                                              #
-################################################################################
+    ################################################################################
+    #                                                                              #
+    #                                D E L E T E                                   #
+    #                                                                              #
+    ################################################################################
 
-#def delete(site, dataset):
-#    """
-#    _delete_
-#
-#    Set up delete call to PhEDEx API.
-#    """
-#    name = "APIDelete"
-#    #log(name, "Deleting %s from %s" % (dataset, site))
-#    del_data = xmlData(dataset)
-#    if not del_data:
-#        error(name, "Delete did not succeed")
-#        return 1
-#    level = 'dataset'
-#    rm_subs = 'y'
-#    values = { 'node' : site, 'data' : del_data, 'level' : level,
-#               'rm_subscriptions' : rm_subs, 'comments' : COMMENTS }
-#    delete_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/delete" % (DATA_TYPE, PHEDEX_INSTANCE))
-#    response = PhEDExCall(delete_url, values)
-#    if response:
-#        #log(name, "Delete response %s" % (str(response),))
-#        return 0
-#    else:
-#        error(name, "Delete did not succeed")
-#        return 1
+    def delete(self, node='', data='', level='dataset', rm_subscriptions='y', comments='', format='json', instance='prod'):
+        """
+        _subscribe_
+        
+        Set up subscription call to PhEDEx API.
+        """
+        name = "delete"
+        if not (node and data):
+            self.logger.error(name, "Need to pass both node and data")
+            return 1, "Error"
+
+        values = { 'node' : node, 'data' : data, 'level' : level,
+                   'rm_subscriptions' : rm_subscriptions, 'comments' : comments }
+        
+        delete_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/delete" % (format, instance))
+        check, response = self.phedexCall(delete_url, values)
+        if check:
+            # An error occurred
+            self.logger.error(name, "Delete call failed")
+            return 1, "Error"
+        return 0, response
 
 
     ################################################################################
@@ -443,6 +437,9 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    response = phedex_api.xmlData("/BTau/GowdyTest10-Run2010Av3/RAW")
-    print response
+    check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
+    if check:
+        sys.exit(1)
+    check, response = phedex_api.subscribe(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
+    print response.read()
     sys.exit(0)
