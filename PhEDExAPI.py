@@ -440,6 +440,10 @@ if __name__ == '__main__':
     check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
     if check:
         sys.exit(1)
-    check, response = phedex_api.subscribe(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
+    #check, response = phedex_api.subscribe(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
+    check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
+    if check:
+        print response
+        sys.exit(1)
     print response.read()
     sys.exit(0)
