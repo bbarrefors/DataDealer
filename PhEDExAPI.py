@@ -56,13 +56,13 @@ class PhEDExAPI:
     # GROUP = 'local'
     # GROUP = 'Jupiter'
     # COMMENTS = 'BjornBarrefors'
-    def __init__(self):
+    def __init__(self, log_path='/home/bockelman/barrefors/logs/'):
         """
         __init__
         
         Set up class constants
         """
-        self.logger      = CMSDATALogger()
+        self.logger      = CMSDATALogger(log_path)
         self.PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 
 
@@ -440,7 +440,6 @@ if __name__ == '__main__':
     check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
     if check:
         sys.exit(1)
-    #check, response = phedex_api.subscribe(node='T2_US_Nebraska', data=data, group='Jupiter', comments='This is just a test by Bjorn Barrefors, he will deal with this request.', instance='dev')
     check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, comments='This is just a test by Bjorn Barrefors, ignore.', instance='dev')
     if check:
         print response
