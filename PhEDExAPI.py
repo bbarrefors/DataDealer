@@ -213,13 +213,13 @@ class PhEDExAPI:
         check, response = self.data(dataset=dataset, instance=instance)
         if check:
             return 1, "Error"
-        data = response.get('phedex')
+        data = response.get('phedex').get('dbs')
+        if not data:
+            return 1, "Error"            
         xml = '<data version="2">'
-        for k, v in data.iteritems():
-            if k == "dbs":
-                xml = "%s<%s" % (xml, k)
-                xml = self.parse(v[0], xml)
-                xml = "%s</%s>" % (xml, k)
+        xml = "%s<%s" % (xml, 'dbs')
+        xml = self.parse(data[0], xml)
+        xml = "%s</%s>" % (xml, 'dbs')
         xml_data = "%s</data>" % (xml,)
         return 0, xml_data
     
@@ -440,9 +440,10 @@ if __name__ == '__main__':
     check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
     if check:
         sys.exit(1)
-    check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, comments='This is just a test by Bjorn Barrefors, ignore.', instance='dev')
-    if check:
-        print response
-        sys.exit(1)
-    print response.read()
+    print data
+#check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, comments='This is just a test by Bjorn Barrefors, ignore.', instance='prod')
+    #if check:
+    #    print response
+    #    sys.exit(1)
+    #print response.read()
     sys.exit(0)
