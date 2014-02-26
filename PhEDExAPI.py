@@ -436,7 +436,7 @@ if __name__ == '__main__':
     
     For testing purpose only
     """
-    phedex_api = PhEDExAPI()
+    phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
     check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
     if check:
         sys.exit(1)
