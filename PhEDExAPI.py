@@ -183,6 +183,7 @@ class PhEDExAPI:
         Take data output from PhEDEx and parse it into  xml syntax
         corresponding to subscribe and delete calls.
         """
+        # @TODO: Change this to use .get instead of just traversing blindly
         for k, v in data.iteritems():
             k = k.replace("_", "-")
             if type(v) is list:
@@ -199,7 +200,8 @@ class PhEDExAPI:
                     k = "name"
                 elif k == "size":
                     k = "bytes"
-                xml = '%s %s="%s"' % (xml, k, v)
+                if (k == "name" or k == "is-open" or k == "is-transient" or k == "bytes" or k== "checksum"):
+                    xml = '%s %s="%s"' % (xml, k, v)
         return xml
 
     ############################################################################
@@ -215,7 +217,8 @@ class PhEDExAPI:
         Return data information as xml structure complying with PhEDEx
         subscribe and delete call.
         """
-        check, response = self.data(dataset=dataset, instance=instance)
+        # @TODO: Add Check for dataset passed
+        check, response = self.data(dataset=dataset, level='file', instance=instance)
         if check:
             return 1, "Error"
         data = response.get('phedex').get('dbs')
@@ -446,13 +449,13 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
-    check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='prod')
+    check, data = phedex_api.xmlData(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
     if check:
         sys.exit(1)
-    print data
-#check, response = phedex_api.delete(node='T2_US_Nebraska', data=data, comments='This is just a test by Bjorn Barrefors, ignore.', instance='prod')
-    #if check:
-    #    print response
-    #    sys.exit(1)
-    #print response.read()
+    #print data
+    check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Maxim.', instance='prod')
+    if check:
+        print response
+        sys.exit(1)
+    print response.read()
     sys.exit(0)
