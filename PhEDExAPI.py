@@ -40,7 +40,7 @@ class PhEDExAPI:
 
     Interface to submit queries to the PhEDEx API
     For specifications of calls see https://cmsweb.cern.ch/phedex/datasvc/doc
-    
+
     Class variables:
     PHEDEX_BASE -- Base URL to the PhEDEx web API
     logger      -- Used to print log and error messages to log file
@@ -59,32 +59,32 @@ class PhEDExAPI:
     def __init__(self, log_path='/home/bockelman/barrefors/logs/'):
         """
         __init__
-        
+
         Set up class constants
         """
         self.logger      = CMSDATALogger(log_path)
         self.PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 
 
-    ################################################################################
-    #                                                                              #
-    #                           P h E D E x   C A L L                              #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                           P h E D E x   C A L L                          #
+    #                                                                          #
+    ############################################################################
+
     def phedexCall(self, url, values):
         """
         _phedexCall_
-        
+
         Make http post call to PhEDEx API.
-        
+
         Function only gaurantees that something is returned,
         the caller need to check the response for correctness.
-        
+
         Keyword arguments:
         url    -- URL to make API call
         values -- Arguments to pass to the call
-        
+
         Return values:
         1 -- Status, 0 = everything went well, 1 = something went wrong
         2 -- IF status == 0 : HTTP response ELSE : Error message
@@ -109,20 +109,20 @@ class PhEDExAPI:
     #                                  D A T A                                     #
     #                                                                              #
     ################################################################################
-    
+
     def data(self, dataset='', block='', file_name='', level='block', create_since='', format='json', instance='prod'):
         """
         _data_
-        
+
         PhEDEx data call
-        
+
         At least one of the arguments dataset, block, file have to be passed
-        
+
         No checking is made for xml data
-        
+
         Even if JSON data is returned no gaurantees are made for the structure
         of it
-        
+
         Keyword arguments:
         dataset      -- Name of dataset to look up
         block        -- Only return data for this block
@@ -140,10 +140,10 @@ class PhEDExAPI:
         if not (dataset or block or file_name):
             self.logger.error(name, "Need to pass at least one of dataset/block/file_name")
             return 1, "Error"
-        
-        values = { 'dataset' : dataset, 'block' : block, 'file' : file_name,  
+
+        values = { 'dataset' : dataset, 'block' : block, 'file' : file_name,
                    'level' : level, 'create_since' : create_since }
-        
+
         data_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/data" % (format, instance))
         check, response = self.phedexCall(data_url, values)
         if check:
@@ -170,12 +170,12 @@ class PhEDExAPI:
     #                                 P A R S E                                    #
     #                                                                              #
     ################################################################################
-    
+
     def parse(self, data, xml):
         """
         _parse_
-        
-        Take data output from PhEDEx and parse it into  xml syntax corresponding to 
+
+        Take data output from PhEDEx and parse it into  xml syntax corresponding to
         subscribe and delete calls.
         """
         for k, v in data.iteritems():
@@ -202,11 +202,11 @@ class PhEDExAPI:
     #                             X M L   D A T A                                  #
     #                                                                              #
     ################################################################################
-    
+
     def xmlData(self, dataset='', instance='prod'):
         """
         _xmlData_
-        
+
         Return data information as xml structure complying with PhEDEx
         subscribe and delete call.
         """
@@ -215,15 +215,15 @@ class PhEDExAPI:
             return 1, "Error"
         data = response.get('phedex').get('dbs')
         if not data:
-            return 1, "Error"            
+            return 1, "Error"
         xml = '<data version="2">'
         xml = "%s<%s" % (xml, 'dbs')
         xml = self.parse(data[0], xml)
         xml = "%s</%s>" % (xml, 'dbs')
         xml_data = "%s</data>" % (xml,)
         return 0, xml_data
-    
-    
+
+
     ################################################################################
     #                                                                              #
     #                             S U B S C R I B E                                #
@@ -233,20 +233,20 @@ class PhEDExAPI:
     def subscribe(self, node='', data='', level='dataset', priority='low', move='n', static='n', custodial='n', group='local', time_start='', request_only='n', no_mail='n', comments='', format='json', instance='prod'):
         """
         _subscribe_
-        
+
         Set up subscription call to PhEDEx API.
         """
         name = "subscribe"
         if not (node and data):
             self.logger.error(name, "Need to pass both node and data")
             return 1, "Error"
-        
+
         values = { 'node' : node, 'data' : data, 'level' : level,
                    'priority' : priority, 'move' : move, 'static' : static,
-                   'custodial' : custodial, 'group' : group, 
+                   'custodial' : custodial, 'group' : group,
                    'time_start' : time_start, 'request_only' : request_only,
                    'no_mail' : no_mail, 'comments' : comments }
-        
+
         subscription_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/subscribe" % (format, instance))
         check, response = self.phedexCall(subscription_url, values)
         if check:
@@ -254,7 +254,7 @@ class PhEDExAPI:
             self.logger.error(name, "Subscription call failed")
             return 1, "Error"
         return 0, response
-        
+
 
     ################################################################################
     #                                                                              #
@@ -265,7 +265,7 @@ class PhEDExAPI:
     def delete(self, node='', data='', level='dataset', rm_subscriptions='y', comments='', format='json', instance='prod'):
         """
         _subscribe_
-        
+
         Set up subscription call to PhEDEx API.
         """
         name = "delete"
@@ -275,7 +275,7 @@ class PhEDExAPI:
 
         values = { 'node' : node, 'data' : data, 'level' : level,
                    'rm_subscriptions' : rm_subscriptions, 'comments' : comments }
-        
+
         delete_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/delete" % (format, instance))
         check, response = self.phedexCall(delete_url, values)
         if check:
@@ -290,28 +290,28 @@ class PhEDExAPI:
     #                   B L O C K   R E P L I C A   S U M M A R Y                  #
     #                                                                              #
     ################################################################################
-    
+
 #    def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
 #        """
 #        _blockReplicaSummary_
-#        
+#
 #        PhEDEx blockReplicaSummary call
-#        
+#
 #        At least one of the arguments dataset, block, file have to be passed.
 #        No checking is made for xml data.
 #        Even if JSON data is returned no gaurantees are made for the structure
 #        of it.
-#        
+#
 #        TODO: See data
 #        """
 #        if ((not dataset) and (not block) and (not file_name)):
 #            return 1, "Not enough parameters passed"
-#        
-#        values = { 'block' : block, 'dataset' : dataset, 'node' : node, 
-#                   'update_since' : update_since, 'create_since' : create_since 
-#                   'complete' : complete, 'dist_complete' : dist_complete, 
+#
+#        values = { 'block' : block, 'dataset' : dataset, 'node' : node,
+#                   'update_since' : update_since, 'create_since' : create_since
+#                   'complete' : complete, 'dist_complete' : dist_complete,
 #                   'subscribed' : subscribed, 'custodial' : custodial }
-#        
+#
 #        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
 #        check, response = PhEDExCall(data_url, values)
 #        if check:
@@ -341,7 +341,7 @@ class PhEDExAPI:
 #    name = "APIdatasetSize"
 #    values = { 'dataset' : dataset }
 #    size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-#    response = PhEDExCall(size_url, values) 
+#    response = PhEDExCall(size_url, values)
 #    if not response:
 #        return 0
 #    dbs = response.get('dbs')
@@ -397,7 +397,7 @@ class PhEDExAPI:
 class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
     """
     _HTTPSGridAuthHandler_
-    
+
     Get  proxy to acces PhEDEx API
 
     Needed for subscribe and delete calls
@@ -433,7 +433,7 @@ class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
 if __name__ == '__main__':
     """
     __main__
-    
+
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
