@@ -133,9 +133,9 @@ class CMSDATAListener():
                 self.logger.error(self.name, "Couldn\'t create graph file. Reason: %s" % (e,))
                 sys.exit(1)
             for dataset, data in graph_data.iteritems():
-                graph_fd.write(dataset + "\n")
+                graph_fd.write(str(dataset) + "\n")
                 for dates in data:
-                    graph_fd.write(dates[0] + "\t" + dates[1] + "\n")
+                    graph_fd.write(str(dates[0]) + "\t" + str(dates[1]) + "\n")
                 graph_fd.write("\n")
             graph_fd.close()
             database.cleanCache()
