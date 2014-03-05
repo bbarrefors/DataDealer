@@ -97,20 +97,25 @@ class PhEDExAPI:
             response = opener.open(request)
         except urllib2.HTTPError, e:
             self.logger.error(name, e.read())
+            self.logger.error(name, "URL: %s" % (str(url),))
+            self.logger.error(name, "VALUES: %s" % (str(values),))
             return 1, "Error"
         except urllib2.URLError, e:
             self.logger.error(name, e.args)
+            self.logger.error(name, "URL: %s" % (str(url),))
+            self.logger.error(name, "VALUES: %s" % (str(values),))
             return 1, "Error"
         return 0, response
 
 
-    ################################################################################
-    #                                                                              #
-    #                                  D A T A                                     #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                                  D A T A                                 #
+    #                                                                          #
+    ############################################################################
 
-    def data(self, dataset='', block='', file_name='', level='block', create_since='', format='json', instance='prod'):
+    def data(self, dataset='', block='', file_name='', level='block',
+             create_since='', format='json', instance='prod'):
         """
         _data_
 
@@ -165,18 +170,18 @@ class PhEDExAPI:
         return 0, data
 
 
-    ################################################################################
-    #                                                                              #
-    #                                 P A R S E                                    #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                                 P A R S E                                #
+    #                                                                          #
+    ############################################################################
 
     def parse(self, data, xml):
         """
         _parse_
 
-        Take data output from PhEDEx and parse it into  xml syntax corresponding to
-        subscribe and delete calls.
+        Take data output from PhEDEx and parse it into  xml syntax
+        corresponding to subscribe and delete calls.
         """
         for k, v in data.iteritems():
             k = k.replace("_", "-")
@@ -197,11 +202,11 @@ class PhEDExAPI:
                 xml = '%s %s="%s"' % (xml, k, v)
         return xml
 
-    ################################################################################
-    #                                                                              #
-    #                             X M L   D A T A                                  #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                             X M L   D A T A                              #
+    #                                                                          #
+    ############################################################################
 
     def xmlData(self, dataset='', instance='prod'):
         """
@@ -224,13 +229,16 @@ class PhEDExAPI:
         return 0, xml_data
 
 
-    ################################################################################
-    #                                                                              #
-    #                             S U B S C R I B E                                #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                             S U B S C R I B E                            #
+    #                                                                          #
+    ############################################################################
 
-    def subscribe(self, node='', data='', level='dataset', priority='low', move='n', static='n', custodial='n', group='local', time_start='', request_only='n', no_mail='n', comments='', format='json', instance='prod'):
+    def subscribe(self, node='', data='', level='dataset', priority='low',
+                  move='n', static='n', custodial='n', group='local',
+                  time_start='', request_only='n', no_mail='n', comments='',
+                  format='json', instance='prod'):
         """
         _subscribe_
 
@@ -256,13 +264,14 @@ class PhEDExAPI:
         return 0, response
 
 
-    ################################################################################
-    #                                                                              #
-    #                                D E L E T E                                   #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                                D E L E T E                               #
+    #                                                                          #
+    ############################################################################
 
-    def delete(self, node='', data='', level='dataset', rm_subscriptions='y', comments='', format='json', instance='prod'):
+    def delete(self, node='', data='', level='dataset', rm_subscriptions='y',
+               comments='', format='json', instance='prod'):
         """
         _subscribe_
 
@@ -285,11 +294,11 @@ class PhEDExAPI:
         return 0, response
 
 
-    ################################################################################
-    #                                                                              #
-    #                   B L O C K   R E P L I C A   S U M M A R Y                  #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                   B L O C K   R E P L I C A   S U M M A R Y              #
+    #                                                                          #
+    ############################################################################
 
 #    def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
 #        """
@@ -326,11 +335,11 @@ class PhEDExAPI:
 #        return 0, data
 
 
-################################################################################
-#                                                                              #
-#                        D A T A S E T   S I Z E                               #
-#                                                                              #
-################################################################################
+    ############################################################################
+    #                                                                          #
+    #                        D A T A S E T   S I Z E                           #
+    #                                                                          #
+    ############################################################################
 
 #def datasetSize(dataset):
 #    """
@@ -358,11 +367,11 @@ class PhEDExAPI:
 #    return int(size)
 
 
-################################################################################
-#                                                                              #
-#                              R E P L I C A S                                 #
-#                                                                              #
-################################################################################
+    ############################################################################
+    #                                                                          #
+    #                              R E P L I C A S                             #
+    #                                                                          #
+    ############################################################################
 
 #def replicas(dataset):
 #    """
@@ -437,7 +446,7 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
-    check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
+    check, data = phedex_api.xmlData(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='prod')
     if check:
         sys.exit(1)
     print data

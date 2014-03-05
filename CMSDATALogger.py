@@ -26,9 +26,9 @@ import datetime
 class CMSDATALogger:
     """
     _CMSDATALogger_
-    
+
     Print log and error messages from other modules to log file
-    
+
     Exceptions need to be caught by the caller, see the __main__
     function for implementation of error handling
 
@@ -38,7 +38,7 @@ class CMSDATALogger:
     def __init__(self, log_path='/home/bockelman/barrefors/logs/', log_file='cmsdata.log'):
         """
         __init__
-        
+
         Open log file filedescriptor
 
         Keyword arguments:
@@ -63,17 +63,17 @@ class CMSDATALogger:
             sys.exit(1)
 
 
-    ################################################################################
-    #                                                                              #
-    #                                L O G                                         #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                                L O G                                     #
+    #                                                                          #
+    ############################################################################
 
     def log(self, name, msg):
         """
         _log_
 
-        Function is fairly straight forward, name is the name of 
+        Function is fairly straight forward, name is the name of
         module printing log message.
 
         Keyword arguments:
@@ -83,11 +83,11 @@ class CMSDATALogger:
         self.log_fd.write("LOG: %s %s: %s\n" % (str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")), str(name), str(msg)))
 
 
-    ################################################################################
-    #                                                                              #
-    #                                E R R O R                                     #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                                E R R O R                                 #
+    #                                                                          #
+    ############################################################################
 
     def error(self, name, msg):
         """
@@ -112,7 +112,7 @@ class CMSDATALogger:
 if __name__ == '__main__':
     """
     __main__
-    
+
     For testing purpose only
     """
     my_logger = CMSDATALogger()
