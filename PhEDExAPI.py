@@ -114,7 +114,7 @@ class PhEDExAPI:
     #                                                                          #
     ############################################################################
 
-    def data(self, datasets=[], block='', file_name='', level='block',
+    def data(self, dataset='', block='', file_name='', level='block',
              create_since='', format='json', instance='prod'):
         """
         _data_
@@ -147,10 +147,6 @@ class PhEDExAPI:
         if not (dataset or block or file_name):
             self.logger.error(name, "Need to pass at least one of dataset/block/file_name")
             return 1, "Error"
-
-        dataset = ""
-        for dset in datasets:
-            dataset = dataset + "&" + dset
 
         values = { 'dataset' : dataset, 'block' : block, 'file' : file_name,
                    'level' : level, 'create_since' : create_since }
@@ -542,14 +538,14 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
-    #check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
-    check, data = phedex_api.data(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
+    check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
+    #check, data = phedex_api.data(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
     if check:
         sys.exit(1)
-    print data
-    #check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Maxim.', instance='prod')
-    #if check:
-    #    print response
-    #    sys.exit(1)
-    #print response.read()
+    #print data
+    check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Max.', instance='prod')
+    if check:
+        print response
+        sys.exit(1)
+    print response.read()
     sys.exit(0)
