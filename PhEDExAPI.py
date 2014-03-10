@@ -182,8 +182,15 @@ class PhEDExAPI:
         """
         _parse_
 
-        Take data output from PhEDEx and parse it into  xml syntax
-        corresponding to subscribe and delete calls.
+        Trasverse a json structure and parse it into xml data structure
+        which complies with the PhEDEx delete/subscribe xml data structure
+
+        Keyword arguments:
+        data -- The remaining json data
+        xml  -- The current xml data
+
+        Return values:
+        xml -- The converted data now represented as an xml structure
         """
         for k, v in data.iteritems():
             k = k.replace("_", "-")
@@ -205,6 +212,7 @@ class PhEDExAPI:
                     xml = '%s %s="%s"' % (xml, k, v)
         return xml
 
+
     ############################################################################
     #                                                                          #
     #                             X M L   D A T A                              #
@@ -215,8 +223,16 @@ class PhEDExAPI:
         """
         _xmlData_
 
-        Return data information as xml structure complying with PhEDEx
-        subscribe and delete call.
+        Get json data from PhEDEx for all datasets and convert it to a xml
+        structure complient with the PhEDEx delete/subscribe call.
+
+        Keyword arguments:
+        datasets -- List of dataset names
+        instance -- The instance on which the datasets resides, prod/dev
+
+        Return values:
+        error -- 1 if an error occurred, 0 if everything went as expected
+        xml   -- The converted data now represented as an xml structure
         """
         name = "xmlData"
         # @CHANGED: Function now takes a list of datasets instead of only one
@@ -251,7 +267,31 @@ class PhEDExAPI:
         """
         _subscribe_
 
-        Set up subscription call to PhEDEx API.
+        PhEDEx subscribe call
+
+        Both node and data have to be passed
+
+        If the PhEDExCall fails an error will be returned.
+
+        Keyword arguments:
+        node         -- Node on which the datasets should be subscribed to
+        data         -- XML data structure for datasets to subscribe
+        level        -- Which granularity of dataset information to show
+        priority     -- Standard is low
+        move         -- If the sewt should be moved or replicated
+        static       -- Standard is no
+        custodial    -- Make this new copy custodial
+        group        -- The responsible group
+        time_start   -- When to start the subscription
+        request_only -- Decides if a decision is needed or not
+        no_mail      -- Send email to the data managers etc
+        comments     -- Any comments
+        format       -- Which format to return data as, XML or JSON
+        instance     -- Which instance of PhEDEx to query, dev or prod
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- Error message or the return message from PhEDEx
         """
         name = "subscribe"
         if not (node and data):
@@ -269,6 +309,7 @@ class PhEDExAPI:
         if check:
             # An error occurred
             self.logger.error(name, "Subscription call failed")
+            # @TODO : Print out better logging, url + values
             return 1, "Error"
         return 0, response
 
@@ -284,7 +325,24 @@ class PhEDExAPI:
         """
         _subscribe_
 
-        Set up subscription call to PhEDEx API.
+        PhEDEx delete call
+
+        Both node and data have to be passed
+
+        If the PhEDExCall fails an error will be returned.
+
+        Keyword arguments:
+        node             -- Node on which the datasets resides
+        data             -- XML data structure for datasets to subscribe
+        level            -- Which granularity of dataset information to show
+        rm_subscriptions -- Delete any pending subscriptions
+        comments         -- Any comments
+        format           -- Which format to return data as, XML or JSON
+        instance         -- Which instance of PhEDEx to query, dev or prod
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- Error message or the return message from PhEDEx
         """
         name = "delete"
         if not (node and data):
@@ -299,6 +357,7 @@ class PhEDExAPI:
         if check:
             # An error occurred
             self.logger.error(name, "Delete call failed")
+            # @TODO : Print out better logging, url + values
             return 1, "Error"
         return 0, response
 
@@ -309,39 +368,40 @@ class PhEDExAPI:
     #                                                                          #
     ############################################################################
 
-#    def blockReplicaSummary(block="", dataset="", node="", update_since="", create_since="", complete="", dist_complete="", subscribed="", custodial="", format="json", instance="prod"):
-#        """
-#        _blockReplicaSummary_
-#
-#        PhEDEx blockReplicaSummary call
-#
-#        At least one of the arguments dataset, block, file have to be passed.
-#        No checking is made for xml data.
-#        Even if JSON data is returned no gaurantees are made for the structure
-#        of it.
-#
-#        TODO: See data
-#        """
-#        if ((not dataset) and (not block) and (not file_name)):
-#            return 1, "Not enough parameters passed"
-#
-#        values = { 'block' : block, 'dataset' : dataset, 'node' : node,
-#                   'update_since' : update_since, 'create_since' : create_since
-#                   'complete' : complete, 'dist_complete' : dist_complete,
-#                   'subscribed' : subscribed, 'custodial' : custodial }
-#
-#        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
-#        check, response = PhEDExCall(data_url, values)
-#        if check:
-#            # An error occurred
-#            return 1, response
-#        if format == "json":
-#            data = json.load(response)
-#            if not data:
-#                return 1, "No json data available"
-#        else:
-#            data = response
-#        return 0, data
+    def blockReplicaSummary(block="", dataset="", node="", update_since="",
+                            create_since="", complete="", dist_complete="",
+                            subscribed="", custodial="", format="json",
+                            instance="prod"):
+        """
+        _blockReplicaSummary_
+
+        PhEDEx blockReplicaSummary call
+
+        At least one of the arguments dataset, block, file have to be passed.
+        No checking is made for xml data.
+        Even if JSON data is returned no gaurantees are made for the structure
+        of it.
+        """
+        if ((not dataset) and (not block) and (not file_name)):
+            return 1, "Not enough parameters passed"
+
+        values = { 'block' : block, 'dataset' : dataset, 'node' : node,
+                   'update_since' : update_since, 'create_since' : create_since
+                   'complete' : complete, 'dist_complete' : dist_complete,
+                   'subscribed' : subscribed, 'custodial' : custodial }
+
+        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
+        check, response = PhEDExCall(data_url, values)
+        if check:
+            # An error occurred
+            return 1, response
+        if format == "json":
+        data = json.load(response)
+            if not data:
+                return 1, "No json data available"
+        else:
+            data = response
+        return 0, data
 
 
     ############################################################################
