@@ -393,7 +393,6 @@ class PhEDExAPI:
         subscribed    --
         custodial     -- Make this new copy custodial
         group         -- The responsible groupe data managers etc
-        comments      -- Any comments
         format        -- Which format to return data as, XML or JSON
         instance      -- Which instance of PhEDEx to query, dev or prod
 
@@ -405,9 +404,11 @@ class PhEDExAPI:
             return 1, "Not enough parameters passed"
 
         values = { 'block' : block, 'dataset' : dataset, 'node' : node,
-                   'update_since' : update_since, 'create_since' : create_since
-                   'complete' : complete, 'dist_complete' : dist_complete,
-                   'subscribed' : subscribed, 'custodial' : custodial }
+                   'se' : se, 'update_since' : update_since, 
+                   'create_since' : create_since, 'complete' : complete, 
+                   'dist_complete' : dist_complete, 'subscribed' : subscribed, 
+                   'custodial' : custodial, 'group' : group, 
+                   'show_dataset' : show_dataset }
 
         data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
         check, response = PhEDExCall(data_url, values)
@@ -415,7 +416,7 @@ class PhEDExAPI:
             # An error occurred
             return 1, response
         if format == "json":
-        data = json.load(response)
+            data = json.load(response)
             if not data:
                 return 1, "No json data available"
         else:
