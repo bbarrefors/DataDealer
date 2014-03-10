@@ -130,6 +130,8 @@ class PhEDExAPI:
 
         Keyword arguments:
         dataset      -- Name of dataset to look up
+        block        -- Name of block to look up
+        file         -- Name of file to look up
         block        -- Only return data for this block
         file_name    -- Data for file file_name returned
         level        -- Which granularity of dataset information to show
@@ -183,7 +185,6 @@ class PhEDExAPI:
         Take data output from PhEDEx and parse it into  xml syntax
         corresponding to subscribe and delete calls.
         """
-        # @TODO: Change this to use .get instead of just traversing blindly
         for k, v in data.iteritems():
             k = k.replace("_", "-")
             if type(v) is list:
@@ -210,24 +211,29 @@ class PhEDExAPI:
     #                                                                          #
     ############################################################################
 
-    def xmlData(self, dataset='', instance='prod'):
+    def xmlData(self, datasets=[], instance='prod'):
         """
         _xmlData_
 
         Return data information as xml structure complying with PhEDEx
         subscribe and delete call.
         """
-        # @TODO: Add Check for dataset passed
-        check, response = self.data(dataset=dataset, level='file', instance=instance)
-        if check:
-            return 1, "Error"
-        data = response.get('phedex').get('dbs')
-        if not data:
+        name = "xmlData"
+        # @CHANGED: Function now takes a list of datasets instead of only one
+        if not dataset:
+            self.logger.error(name, "Need to pass at least one of dataset")
             return 1, "Error"
         xml = '<data version="2">'
-        xml = "%s<%s" % (xml, 'dbs')
-        xml = self.parse(data[0], xml)
-        xml = "%s</%s>" % (xml, 'dbs')
+        for dataset in datasets:
+            check, response = self.data(dataset=dataset, level='file', instance=instance)
+            if check:
+                return 1, "Error"
+            data = response.get('phedex').get('dbs')
+            if not data:
+                return 1, "Error"
+            xml = "%s<%s" % (xml, 'dbs')
+            xml = self.parse(data[0], xml)
+            xml = "%s</%s>" % (xml, 'dbs')
         xml_data = "%s</data>" % (xml,)
         return 0, xml_data
 
