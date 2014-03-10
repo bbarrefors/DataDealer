@@ -452,10 +452,10 @@ if __name__ == '__main__':
     check, data = phedex_api.xmlData(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
     if check:
         sys.exit(1)
-    #print data
-    check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Maxim.', instance='prod')
-    if check:
-        print response
-        sys.exit(1)
-    print response.read()
+    print data
+    #check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Maxim.', instance='prod')
+    #if check:
+    #    print response
+    #    sys.exit(1)
+    #print response.read()
     sys.exit(0)
