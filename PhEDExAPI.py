@@ -114,7 +114,7 @@ class PhEDExAPI:
     #                                                                          #
     ############################################################################
 
-    def data(self, dataset='', block='', file_name='', level='block',
+    def data(self, datasets=[], block='', file_name='', level='block',
              create_since='', format='json', instance='prod'):
         """
         _data_
@@ -147,6 +147,10 @@ class PhEDExAPI:
         if not (dataset or block or file_name):
             self.logger.error(name, "Need to pass at least one of dataset/block/file_name")
             return 1, "Error"
+
+        dataset = ""
+        for dset in datasets:
+            dataset = dataset + "&" + dset
 
         values = { 'dataset' : dataset, 'block' : block, 'file' : file_name,
                    'level' : level, 'create_since' : create_since }
@@ -240,6 +244,7 @@ class PhEDExAPI:
             self.logger.error(name, "Need to pass at least one of dataset")
             return 1, "Error"
         xml = '<data version="2">'
+        xml = '%s<%s name="https://cmsweb.cern.ch/dbs/%s/global/DBSReader">' % (xml, 'dbs', instance)
         for dataset in datasets:
             check, response = self.data(dataset=dataset, level='file', instance=instance)
             if check:
@@ -247,9 +252,11 @@ class PhEDExAPI:
             data = response.get('phedex').get('dbs')
             if not data:
                 return 1, "Error"
-            xml = "%s<%s" % (xml, 'dbs')
+            xml = "%s<%s" % (xml, 'dataset')
+            data = data[0].get('dataset')
             xml = self.parse(data[0], xml)
-            xml = "%s</%s>" % (xml, 'dbs')
+            xml = "%s</%s>" % (xml, 'dataset')
+        xml = "%s</%s>" % (xml, 'dbs')
         xml_data = "%s</data>" % (xml,)
         return 0, xml_data
 
@@ -404,10 +411,10 @@ class PhEDExAPI:
             return 1, "Not enough parameters passed"
 
         values = { 'block' : block, 'dataset' : dataset, 'node' : node,
-                   'se' : se, 'update_since' : update_since, 
-                   'create_since' : create_since, 'complete' : complete, 
-                   'dist_complete' : dist_complete, 'subscribed' : subscribed, 
-                   'custodial' : custodial, 'group' : group, 
+                   'se' : se, 'update_since' : update_since,
+                   'create_since' : create_since, 'complete' : complete,
+                   'dist_complete' : dist_complete, 'subscribed' : subscribed,
+                   'custodial' : custodial, 'group' : group,
                    'show_dataset' : show_dataset }
 
         data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
@@ -535,7 +542,8 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
-    check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
+    #check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
+    check, data = phedex_api.data(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
     if check:
         sys.exit(1)
     print data
