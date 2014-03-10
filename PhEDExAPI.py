@@ -236,7 +236,7 @@ class PhEDExAPI:
         """
         name = "xmlData"
         # @CHANGED: Function now takes a list of datasets instead of only one
-        if not dataset:
+        if not datasets:
             self.logger.error(name, "Need to pass at least one of dataset")
             return 1, "Error"
         xml = '<data version="2">'
@@ -278,7 +278,7 @@ class PhEDExAPI:
         data         -- XML data structure for datasets to subscribe
         level        -- Which granularity of dataset information to show
         priority     -- Standard is low
-        move         -- If the sewt should be moved or replicated
+        move         -- If the set should be moved or replicated
         static       -- Standard is no
         custodial    -- Make this new copy custodial
         group        -- The responsible group
@@ -368,19 +368,38 @@ class PhEDExAPI:
     #                                                                          #
     ############################################################################
 
-    def blockReplicaSummary(block="", dataset="", node="", update_since="",
-                            create_since="", complete="", dist_complete="",
-                            subscribed="", custodial="", format="json",
-                            instance="prod"):
+    def blockReplicas(block="", dataset="", node="", se="", update_since="",
+                      create_since="", complete="", dist_complete="",
+                      subscribed="", custodial="", group="", show_dataset="",
+                      format="json", instance="prod"):
         """
-        _blockReplicaSummary_
+        _blockReplicas_
 
-        PhEDEx blockReplicaSummary call
+        PhEDEx blockReplicas call
 
-        At least one of the arguments dataset, block, file have to be passed.
-        No checking is made for xml data.
-        Even if JSON data is returned no gaurantees are made for the structure
-        of it.
+        Both node and data have to be passed
+
+        If the PhEDExCall fails an error will be returned.
+
+        Keyword arguments:
+        block         -- Block name
+        dataset       -- Dataset name
+        node          -- Node name
+        se            -- Storage element name
+        update_since  -- I
+        create_since  -- Standard is no
+        complete      --
+        dist_complete --
+        subscribed    --
+        custodial     -- Make this new copy custodial
+        group         -- The responsible groupe data managers etc
+        comments      -- Any comments
+        format        -- Which format to return data as, XML or JSON
+        instance      -- Which instance of PhEDEx to query, dev or prod
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- Error message or the return message from PhEDEx
         """
         if ((not dataset) and (not block) and (not file_name)):
             return 1, "Not enough parameters passed"
@@ -515,13 +534,13 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
-    check, data = phedex_api.xmlData(dataset=['/MET/Run2012A-22Jan2013-v1/AOD'], instance='prod')
+    check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
     if check:
         sys.exit(1)
     print data
-    check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Maxim.', instance='prod')
-    if check:
-        print response
-        sys.exit(1)
-    print response.read()
+    #check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Maxim.', instance='prod')
+    #if check:
+    #    print response
+    #    sys.exit(1)
+    #print response.read()
     sys.exit(0)
