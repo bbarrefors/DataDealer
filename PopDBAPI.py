@@ -112,7 +112,7 @@ class PopDBAPI():
     #                                                                          #
     ############################################################################
 
-    def getDSdata(self, sitenamne='summary', tstart='', tstop='',
+    def getDSdata(self, sitename='summary', tstart='', tstop='',
                   aggr='', n='', orderby=''):
         """
         _getDSdata_
@@ -131,16 +131,17 @@ class PopDBAPI():
         check -- 0 if all went well, 1 if error occured
         data  -- List of tuples with set and value
         """
+        name = "getDSdata"
         values = { 'sitename' : sitename, 'tstart' : tstart, 'tstop' : tstop,
                    'aggr' : aggr, 'n' : n, 'orderby' : orderby }
         dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
-        response = self.PopDBCall(dsstat_url, values)
+        check, response = self.PopDBCall(dsdata_url, values)
         # @TODO : Get all vlaues and names returned, insert as tuple in list
-        data = []
-        if response:
-            data = response.get('data')
-            print data
-        return data
+        if check:
+            self.logger.error(name, "getDSdata call failed.")
+        json_data = json.loads(response)
+        data = json_data.get('data')
+        return 0, data
 
 
 ################################################################################
@@ -160,5 +161,8 @@ if __name__ == '__main__':
     today = datetime.date.today()
     tstart = today - datetime.timedelta(days=7)
     tstop = today
-    data = popdb.getDSdata(tstart=tstart, tstop=tstop, aggr='day', n=5, orderby='naccess')
+    check, data = popdb.getDSdata(tstart=tstart, tstop=tstop, aggr='day', n=5, orderby='naccess')
+    if check:
+        sys.exit(1)
+    print len(data)
     sys.exit(0)
