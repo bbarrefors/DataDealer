@@ -367,14 +367,14 @@ class PhEDExAPI:
 
     ############################################################################
     #                                                                          #
-    #                   B L O C K   R E P L I C A   S U M M A R Y              #
+    #                         B L O C K   R E P L I C A S                      #
     #                                                                          #
     ############################################################################
 
-    def blockReplicas(block="", dataset="", node="", se="", update_since="",
-                      create_since="", complete="", dist_complete="",
-                      subscribed="", custodial="", group="", show_dataset="",
-                      format="json", instance="prod"):
+    def blockReplicas(self, block="", dataset="", node="", se="", 
+                      update_since="", create_since="", complete="", 
+                      dist_complete="", subscribed="", custodial="", group="", 
+                      show_dataset="", format="json", instance="prod"):
         """
         _blockReplicas_
 
@@ -403,7 +403,7 @@ class PhEDExAPI:
         check -- 0 if all went well, 1 if error occured
         data  -- Error message or the return message from PhEDEx
         """
-        if ((not dataset) and (not block) and (not file_name)):
+        if (not (dataset or block)):
             return 1, "Not enough parameters passed"
 
         values = { 'block' : block, 'dataset' : dataset, 'node' : node,
@@ -413,8 +413,8 @@ class PhEDExAPI:
                    'custodial' : custodial, 'group' : group,
                    'show_dataset' : show_dataset }
 
-        data_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicasummary" % (format, instance))
-        check, response = PhEDExCall(data_url, values)
+        data_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/blockreplicas" % (format, instance))
+        check, response = self.phedexCall(data_url, values)
         if check:
             # An error occurred
             return 1, response
@@ -476,14 +476,15 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI(log_path='/home/bockelman/barrefors/logs/')
-    check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
+    #check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
     #check, data = phedex_api.data(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
+    check, data = phedex_api.blockReplicas(dataset='/BTau/GowdyTest10-Run2010Av3/RAW', instance='dev')
     if check:
         sys.exit(1)
-    #print data
-    check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Max.', instance='prod')
-    if check:
-        print response
-        sys.exit(1)
-    print response.read()
+    print data
+    #check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Max.', instance='prod')
+    #if check:
+    #    print response
+    #    sys.exit(1)
+    #print response.read()
     sys.exit(0)
