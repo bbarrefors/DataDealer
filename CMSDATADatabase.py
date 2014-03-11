@@ -52,7 +52,7 @@ class CMSDATADatabase():
         # Alternative db paths:
         # /home/barrefors/cmsdata/db/
         # /home/bockelman/barrefors/db/
-        
+
         self.name = "CMSDATADatabase"
         self.logger = CMSDATALogger()
         try:
@@ -74,16 +74,16 @@ class CMSDATADatabase():
             sys.exit(1)
 
 
-    ################################################################################
-    #                                                                              #
-    #                                L O O K U P                                   #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                                L O O K U P                               #
+    #                                                                          #
+    ############################################################################
+
     def lookup(self, dir_name):
         """
         _lookup_
-        
+
         Find which dataset files in a directory belongs to in cache if available
 
         If not return 1
@@ -104,19 +104,19 @@ class CMSDATADatabase():
         return 0, dataset[0]
 
 
-    ################################################################################
-    #                                                                              #
-    #                        I N S E R T   D I R E C T O R Y                       #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                        I N S E R T   D I R E C T O R Y                   #
+    #                                                                          #
+    ############################################################################
+
     def insertDirectory(self, dir_name, dataset):
         """
         _insertDirectory_
-        
+
         Insert dir_name and dataset to FileSet table
         Set an expiration time for the cache to avoid too much data in database
-        
+
         Arguments:
         dir_name -- Base director of file accessed
         dataset  -- Name of datatset file belongs to
@@ -131,16 +131,16 @@ class CMSDATADatabase():
             self.logger.error(self.name, "Exception while inserting data")
         return 0
 
-    ################################################################################
-    #                                                                              #
-    #                            C L E A N   C A C H E                             #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                            C L E A N   C A C H E                         #
+    #                                                                          #
+    ############################################################################
+
     def cleanCache(self):
         """
         _cleanCache_
-        
+
         Delete all entries in the cache which have expired
         See insertDirectory for expiration time
         """
@@ -151,23 +151,23 @@ class CMSDATADatabase():
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while deleting data")
         return 0
-    
-    
-    ################################################################################
-    #                                                                              #
-    #                        I N S E R T   D A T A S E T                           #
-    #                                                                              #
-    ################################################################################
+
+
+    ############################################################################
+    #                                                                          #
+    #                        I N S E R T   D A T A S E T                       #
+    #                                                                          #
+    ############################################################################
 
     def insertDataset(self, dataset):
         """
         _insertDataset_
-        
+
         Insert dataset with expiration time to the dataset
         Expiration time is based on how long we want to keep track of # accesses
 
         For now the expiration is set to 3 days
-        
+
         Arguments:
         dataset -- Name of datatset that was accessed
         """
@@ -180,18 +180,18 @@ class CMSDATADatabase():
         except lite.IntegrityError:
             self.logger.error(self.name, "Exception while inserting data")
         return 0
-    
-    
-    ################################################################################
-    #                                                                              #
-    #                              D A T A S E T S                                 #
-    #                                                                              #
-    ################################################################################
-    
+
+
+    ############################################################################
+    #                                                                          #
+    #                              D A T A S E T S                             #
+    #                                                                          #
+    ############################################################################
+
     def datasets(self):
         """
         _datasets_
-        
+
         Get all unique datasets in database
         """
         try:
@@ -206,18 +206,18 @@ class CMSDATADatabase():
         return datasets
 
 
-    ################################################################################
-    #                                                                              #
-    #                          A C C E S S   C O U N T                             #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                          A C C E S S   C O U N T                         #
+    #                                                                          #
+    ############################################################################
+
     def accessCount(self, dataset):
         """
         _accessCount_
-        
+
         Get the number of accesses for the given set
-        
+
         Arguments:
         dataset -- Name of dataset
         """
@@ -232,16 +232,16 @@ class CMSDATADatabase():
         return count
 
 
-    ################################################################################
-    #                                                                              #
-    #                           C L E A N   A C C E S S                            #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                           C L E A N   A C C E S S                        #
+    #                                                                          #
+    ############################################################################
+
     def cleanAccess(self):
         """
         _cleanAccess_
-        
+
         Delete all entries in the DatasetAccess table which have expired
         See insertDataset for expiration time
         """

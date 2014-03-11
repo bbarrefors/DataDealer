@@ -57,7 +57,7 @@ class PopDBAPI():
     def __init__(self):
         """
         __init__
-        
+
         Set up class constants
         """
         self.logger      = CMSDATALogger()
@@ -65,20 +65,33 @@ class PopDBAPI():
         self.CERT        = "/home/bockelman/barrefors/certs/myCert.pem"
         self.KEY         = "/home/bockelman/barrefors/certs/myCert.key"
         self.COOKIE      = "/home/bockelman/barrefors/certs/ssocookie.txt"
-        
+
+
+    ############################################################################
+    #                                                                          #
+    #                      R E N E W   S S O   C O O K I E                     #
+    #                                                                          #
+    ############################################################################
 
     def renewSSOCookie(self):
         """
         _renewSSOCookie_
-        
+
         Renew the SSO Cookie used for accessing popularity db
         """
         call(["cern-get-sso-cookie", "--cert", self.CERT, "--key", self.KEY, "-u", self.POP_DB_BASE, "-o", self.COOKIE])
 
+
+    ############################################################################
+    #                                                                          #
+    #                           P O P   D B   C A L L                          #
+    #                                                                          #
+    ############################################################################
+
     def PopDBCall(self, url, values):
         """
         _PopDBCall_
-        
+
         cURL PopDB API call.
         """
         name = "PopDBAPICall"
@@ -93,6 +106,12 @@ class PopDBAPI():
         return 0, response
 
 
+    ############################################################################
+    #                                                                          #
+    #                 D S   S T A T   I N   T I M E   W I N D O W              #
+    #                                                                          #
+    ############################################################################
+
     def DSStatInTimeWindow(self, start, stop, site):
         tstart = start
         tstop = stop
@@ -101,7 +120,7 @@ class PopDBAPI():
                    'sitename' : sitename }
         dsstat_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("DSStatInTimeWindow",))
         check, response = self.PopDBCall(dsstat_url, values)
-        
+
         nacc = 0
         cpuh = 0
         if response:
@@ -110,6 +129,13 @@ class PopDBAPI():
                 nacc += int(dset.get('NACC'))
                 cpuh += int(dset.get('TOTCPU'))
         return nacc, cpuh
+
+
+    ############################################################################
+    #                                                                          #
+    #                           G E T   D S   D A T A                          #
+    #                                                                          #
+    ############################################################################
 
     def getDSdata(self, start, stop, orderby, n):
         tstart = start
@@ -128,6 +154,13 @@ class PopDBAPI():
             for dset in data:
                 sets.append(dset.get('name'))
         return sets
+
+
+################################################################################
+#                                                                              #
+#                                  M A I N                                     #
+#                                                                              #
+################################################################################
 
 if __name__ == '__main__':
     """

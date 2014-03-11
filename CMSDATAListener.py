@@ -44,7 +44,7 @@ class CMSDATAListener():
     Packets contain information of files that have been accessed.
     Store information in a local database, analyze to
     make decisions on when to subscribe or delete a dataset.
-    
+
     Class variables:
     name      -- ID used when logging
     logger    -- Used to print log and error messages to log file
@@ -69,16 +69,78 @@ class CMSDATAListener():
         self.graph_file = "cmsdata.dat"
 
 
-    ################################################################################
-    #                                                                              #
-    #                                 R O U T I N E                                #
-    #                                                                              #
-    ################################################################################
+    ############################################################################
+    #                                                                          #
+    #                        D A T A S E T   S I Z E                           #
+    #                                                                          #
+    ############################################################################
+
+#def datasetSize(dataset):
+#    """
+#    _datasetSize_
+#
+#    Get total size of dataset in GB.
+#    """
+#    name = "APIdatasetSize"
+#    values = { 'dataset' : dataset }
+#    size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
+#    response = PhEDExCall(size_url, values)
+#    if not response:
+#        return 0
+#    dbs = response.get('dbs')
+#    if (not dbs):
+#        error(name, "No data for dataset %s" % (dataset,))
+#        return 0
+#    data = dbs[0].get('dataset')[0].get('block')
+#    size = float(0)
+#    for block in data:
+#        size += block.get('bytes')
+
+#    size = size / 10**9
+#    #log(name, "Total size of dataset %s is %dGB" % (dataset, size))
+#    return int(size)
+
+
+    ############################################################################
+    #                                                                          #
+    #                              R E P L I C A S                             #
+    #                                                                          #
+    ############################################################################
+
+#def replicas(dataset):
+#    """
+#    _replicas_
+#
+#    Set up blockreplicas call to PhEDEx API.
+#    """
+#    name = "APIExists"
+#    data = dataset
+#    complete = 'y'
+#    show_dataset = 'n'
+#    values = { 'dataset' : data, 'complete' : complete,
+#               'show_dataset' : show_dataset }
+#    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE))
+#    response = PhEDExCall(subscription_url, values)
+#    sites = []
+#    if response:
+#        block = response.get('block')
+#        replicas = block[0].get('replica')
+#        for replica in replicas:
+#            site = replica.get('node')
+#            sites.append(site)
+#    return sites
+
+
+    ############################################################################
+    #                                                                          #
+    #                                 R O U T I N E                            #
+    #                                                                          #
+    ############################################################################
 
     def routine(self):
         """
         _routine_
-        
+
         Ran once a day to identify the 100 most popular datasets
         and clean out old entries in the database
         """
@@ -142,16 +204,16 @@ class CMSDATAListener():
             #time.sleep(86400)
         return 1
 
-    ################################################################################
-    #                                                                              #
-    #                           D A T A   H A N D L E R                            #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                           D A T A   H A N D L E R                        #
+    #                                                                          #
+    ############################################################################
+
     def dataHandler(self, d, database):
         """
         _dataHandler_
-        
+
         Look up dataset of accessed file, first look in database cache, if not
         found query PhEDEx
 
@@ -177,16 +239,16 @@ class CMSDATAListener():
         # update access (insertDataset)
         database.insertDataset(dataset)
 
-    ################################################################################
-    #                                                                              #
-    #                                P A R S E                                     #
-    #                                                                              #
-    ################################################################################
-    
+    ############################################################################
+    #                                                                          #
+    #                                P A R S E                                 #
+    #                                                                          #
+    ############################################################################
+
     def parse(self, data):
         """
         _parse_
-        
+
         Extract data from UDP packet and insert into dictionary.
         """
         d = {}
@@ -206,7 +268,7 @@ class CMSDATAListener():
 def work(q):
     """
     _work_
-    
+
     Distribute data handling of UDP packets to worker processes.
     """
     global listener
@@ -215,7 +277,7 @@ def work(q):
     while True:
         data = q.get()
         listener.dataHandler(listener.parse(data), database)
-        
+
 
 ################################################################################
 #                                                                              #
@@ -226,7 +288,7 @@ def work(q):
 def listen():
     """
     _listen_
-    
+
     Spawn worker processes.
     Listen for UDP packets and send to parser and then distribute to workers.
     """
@@ -236,12 +298,12 @@ def listen():
     pool = Pool(processes=4)
     manager = Manager()
     queue = manager.Queue()
-    
+
     # Spawn process o clean out database and make reports every 1h
     process = Process(target=listener.routine, args=())
     process.start()
     workers = pool.apply_async(work, (queue,))
-    
+
     # UDP packets containing information about file access
     UDPSock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
     listen_addr = ("0.0.0.0", 9345)
@@ -250,7 +312,7 @@ def listen():
     # Listen for UDP packets
     while True:
         data,addr = UDPSock.recvfrom(buf)
-        queue.put(data)        
+        queue.put(data)
     #finally:
         #Close everything if program is interupted
         #UDPSock.close()
@@ -273,4 +335,4 @@ if __name__ == '__main__':
     This is where it all starts.
     """
     sys.exit(listen())
-    
+
