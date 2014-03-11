@@ -108,52 +108,39 @@ class PopDBAPI():
 
     ############################################################################
     #                                                                          #
-    #                 D S   S T A T   I N   T I M E   W I N D O W              #
-    #                                                                          #
-    ############################################################################
-
-    def DSStatInTimeWindow(self, start, stop, site):
-        tstart = start
-        tstop = stop
-        sitename = site
-        values = { 'tstart' : tstart, 'tstop' : tstop,
-                   'sitename' : sitename }
-        dsstat_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("DSStatInTimeWindow",))
-        check, response = self.PopDBCall(dsstat_url, values)
-
-        nacc = 0
-        cpuh = 0
-        if response:
-            data = response.get('DATA')
-            for dset in data:
-                nacc += int(dset.get('NACC'))
-                cpuh += int(dset.get('TOTCPU'))
-        return nacc, cpuh
-
-
-    ############################################################################
-    #                                                                          #
     #                           G E T   D S   D A T A                          #
     #                                                                          #
     ############################################################################
 
-    def getDSdata(self, start, stop, orderby, n):
-        tstart = start
-        tstop = stop
-        aggr = "year"
-        values = { 'tstart' : tstart, 'tstop' : tstop, 'n' : n,
-                   'aggr' : aggr, 'orderby' : orderby }
-        dsstat_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
+    def getDSdata(self, sitenamne='summary', tstart='', tstop='',
+                  aggr='', n='', orderby=''):
+        """
+        _getDSdata_
+
+        Get data from popularity DB for a specified time window
+
+        Keyword arguments:
+        sitename -- Name of site to get values from, default is summary (all)
+        tstart   -- Start date of time window
+        tstop    -- End data of time window
+        aggr     -- Aggregate results into intervals of day/week/quarter/year
+        n        -- Number of sets to return
+        orderby  -- Metric to use, totcpu/naccess/nusers
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- List of tuples with set and value
+        """
+        values = { 'sitename' : sitename, 'tstart' : tstart, 'tstop' : tstop,
+                   'aggr' : aggr, 'n' : n, 'orderby' : orderby }
+        dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
         response = self.PopDBCall(dsstat_url, values)
-        nacc = 0
-        cpuh = 0
-        sets = []
+        # @TODO : Get all vlaues and names returned, insert as tuple in list
+        data = []
         if response:
             data = response.get('data')
             print data
-            for dset in data:
-                sets.append(dset.get('name'))
-        return sets
+        return data
 
 
 ################################################################################
@@ -173,5 +160,5 @@ if __name__ == '__main__':
     today = datetime.date.today()
     tstart = today - datetime.timedelta(days=7)
     tstop = today
-    sets = popdb.getDSdata(tstart, tstop, "totcpu", "5")
+    data = popdb.getDSdata(tstart=tstart, tstop=tstop, aggr='day', n=5, orderby='naccess')
     sys.exit(0)
