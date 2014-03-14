@@ -13,6 +13,8 @@ __organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
 __email__        = 'bbarrefo@cse.unl.edu'
 
 import sys
+import time
+import datetime
 
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
@@ -80,19 +82,71 @@ from PopDBAPI import PopDBAPI
 #            sites.append(site)
 #    return sites
 
-
 ################################################################################
 #                                                                              #
 #                                  A G E N T                                   #
 #                                                                              #
 ################################################################################
 
-def agent():
+class DynDTA():
     """
-    _agent_
+    _DynDTA_
+
+    Run a daily agent which ranks sets based on popularity. Selection process is
+    done in a weighted random selection based on the ranking.
+
+    Class variables:
+    pop_db_api -- Used to make all popularity db calls
+    phedex_api -- Used to make all phedex calls
+    """
+    self.pop_db_api = PopDBAPI()
+    self.phedex_api = PhEDExAPI()
+    self.time_window = 3
 
 
-    """
+    ############################################################################
+    #                                                                          #
+    #                                A G E N T                                 #
+    #                                                                          #
+    ############################################################################
+
+    def agent(self):
+        """
+        _agent_
+
+        The daily agent routine.
+        """
+        while(True):
+            # Renew SSO Cookie for Popularity DB calls
+            self.pop_db_api.renewSSOCookie()
+            # Restart daily budget in TB
+            budget = 30.0
+            # @TODO : Find candidates. Top 200 accessed sets
+            check, candidates = self.candidates()
+            # @TODO : Get ganking data. n_access | n_replicas | size_TB
+            # @TODO : Calculate ranking
+            # @TODO : Keep track of daily budget
+            # @TODO : Do weighted random selection
+            # @TODO : Subscribe set
+            # @TODO : Subscribe on block level
+            time.sleep(86400)
+
+
+    ############################################################################
+    #                                                                          #
+    #                            C A N D I D A T E S                           #
+    #                                                                          #
+    ############################################################################
+    def candidates(self, n='200'):
+        tstop = datetime.date.today()
+        tstart = tstop - datetime.timedelta(days=self.time_window)
+        check, data = self.pop_db_api.getDSdata(tstart=tstart, tstop=tstop, aggr='week', n=n, orderby=naccess)
+        if check:
+            return check, data
+        datasets = []
+        for dataset in data:
+            datasets.append(dataset.get('name'))
+        return check, response
 
 
 ################################################################################
@@ -107,5 +161,10 @@ if __name__ == '__main__':
 
     This is where is all starts
     """
-
-    sys.exit(agent())
+    agent = DynDTA()
+    check, response = agent.candidates()
+    if check:
+        sys.exit(1)
+    else:
+        print response
+    sys.exit(0)

@@ -136,8 +136,8 @@ class PopDBAPI():
                    'aggr' : aggr, 'n' : n, 'orderby' : orderby }
         dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
         check, response = self.PopDBCall(dsdata_url, values)
-        # @TODO : Get all vlaues and names returned, insert as tuple in list
         if check:
+            return 1, "Error"
             self.logger.error(name, "getDSdata call failed.")
         json_data = json.loads(response)
         data = json_data.get('data')
@@ -164,5 +164,5 @@ if __name__ == '__main__':
     check, data = popdb.getDSdata(tstart=tstart, tstop=tstop, aggr='day', n=5, orderby='naccess')
     if check:
         sys.exit(1)
-    print len(data)
+    print data
     sys.exit(0)
