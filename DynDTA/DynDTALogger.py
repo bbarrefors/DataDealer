@@ -1,10 +1,10 @@
 #!/usr/bin/python -B
 
 """
-_CMSDATALogger_
+_DynDTALogger_
 
 Created by Bjorn Barrefors on 22/9/2013
-for CMSDATA (CMS Data Analyzer and Transfer Agent)
+for DynDTA (Dynamic DataTransfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
@@ -19,13 +19,13 @@ import datetime
 
 ################################################################################
 #                                                                              #
-#                       C M S D A T A   L O G G E R                            #
+#                         D Y N D T A   L O G G E R                            #
 #                                                                              #
 ################################################################################
 
-class CMSDATALogger:
+class DynDTALogger:
     """
-    _CMSDATALogger_
+    _DynDTALogger_
 
     Print log and error messages from other modules to log file
 
@@ -35,7 +35,7 @@ class CMSDATALogger:
     Class variables:
     log_fd -- File descriptor for log file
     """
-    def __init__(self, log_path='/home/bockelman/barrefors/logs/', log_file='cmsdata.log'):
+    def __init__(self, log_path='/home/bockelman/barrefors/logs/', log_file='dyndta.log'):
         """
         __init__
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
     For testing purpose only
     """
-    my_logger = CMSDATALogger()
+    my_logger = DynDTALogger()
     my_logger.error("Bjorn", "Error test message")
     my_logger.log("Bjorn", "Log test message")
     sys.exit(0)

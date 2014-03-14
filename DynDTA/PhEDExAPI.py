@@ -25,7 +25,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from CMSDATALogger import CMSDATALogger
+from DynDTALogger import DynDTALogger
 
 
 ################################################################################
@@ -367,13 +367,60 @@ class PhEDExAPI:
 
     ############################################################################
     #                                                                          #
+    #                       U P D A T E   R E Q U E S T                        #
+    #                                                                          #
+    ############################################################################
+
+    def updateRequest(self, decision='', request='', node='',
+                      comments='', format='json', instance='prod'):
+        """
+        _subscribe_
+
+        PhEDEx updateRequest call
+
+        Approve or dissapprove an existing PhEDEx request.
+
+        If the PhEDExCall fails an error will be returned.
+
+        Keyword arguments:
+        decision -- Approve or disapprove
+        request  -- ID of request to update
+        node     -- Destination node names
+        comments -- Any comments
+        format   -- Which format to return data as, XML or JSON
+        instance -- Which instance of PhEDEx to query, dev or prod
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- Error message or the return message from PhEDEx
+        """
+        name = "delete"
+        if not (request):
+            self.logger.error(name, "Need to pass a request ID")
+            return 1, "Error"
+
+        values = { 'decision' : decision, 'request' : request, 'node' : node,
+                   'comments' : comments }
+
+        update_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/updaterequest" % (format, instance))
+        check, response = self.phedexCall(update_url, values)
+        if check:
+            # An error occurred
+            self.logger.error(name, "UpdateREquest call failed")
+            # @TODO : Print out better logging, url + values
+            return 1, "Error"
+        return 0, response
+
+
+    ############################################################################
+    #                                                                          #
     #                         B L O C K   R E P L I C A S                      #
     #                                                                          #
     ############################################################################
 
-    def blockReplicas(self, block="", dataset="", node="", se="", 
-                      update_since="", create_since="", complete="", 
-                      dist_complete="", subscribed="", custodial="", group="", 
+    def blockReplicas(self, block="", dataset="", node="", se="",
+                      update_since="", create_since="", complete="",
+                      dist_complete="", subscribed="", custodial="", group="",
                       show_dataset="", format="json", instance="prod"):
         """
         _blockReplicas_

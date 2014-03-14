@@ -4,7 +4,7 @@
 _PopDBAPI_
 
 Created by Bjorn Barrefors on 4/11/2013
-for CMSDATA (CMS Data Analyzer and Transfer Agent)
+for DynDTA (Dynamic Data Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
@@ -26,7 +26,7 @@ except ImportError:
     import simplejson as json
 from subprocess import call, Popen, PIPE
 
-from CMSDATALogger import CMSDATALogger
+from DynDTALogger import DynDTALogger
 
 
 ################################################################################
@@ -60,7 +60,7 @@ class PopDBAPI():
 
         Set up class constants
         """
-        self.logger      = CMSDATALogger()
+        self.logger      = DynDTALogger()
         self.POP_DB_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
         self.CERT        = "/home/bockelman/barrefors/certs/myCert.pem"
         self.KEY         = "/home/bockelman/barrefors/certs/myCert.key"
@@ -136,8 +136,8 @@ class PopDBAPI():
                    'aggr' : aggr, 'n' : n, 'orderby' : orderby }
         dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
         check, response = self.PopDBCall(dsdata_url, values)
-        # @TODO : Get all vlaues and names returned, insert as tuple in list
         if check:
+            return 1, "Error"
             self.logger.error(name, "getDSdata call failed.")
         json_data = json.loads(response)
         data = json_data.get('data')
