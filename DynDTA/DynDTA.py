@@ -146,13 +146,13 @@ class DynDTA:
     def candidates(self, n='200'):
         tstop = datetime.date.today()
         tstart = tstop - datetime.timedelta(days=self.time_window)
-        check, data = self.pop_db_api.getDSdata(tstart=tstart, tstop=tstop, aggr='week', n=n, orderby=naccess)
+        check, data = self.pop_db_api.getDSdata(tstart=tstart, tstop=tstop, aggr='week', n=n, orderby='naccess')
         if check:
             return check, data
         datasets = []
         for dataset in data:
             datasets.append(dataset.get('name'))
-        return check, response
+        return check, datasets
 
 
 ################################################################################

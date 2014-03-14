@@ -62,7 +62,7 @@ class PhEDExAPI:
 
         Set up class constants
         """
-        self.logger      = CMSDATALogger(log_path)
+        self.logger      = DynDTALogger(log_path)
         self.PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 
 
