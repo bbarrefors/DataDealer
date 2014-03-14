@@ -88,7 +88,7 @@ from PopDBAPI import PopDBAPI
 #                                                                              #
 ################################################################################
 
-class DynDTA():
+class DynDTA:
     """
     _DynDTA_
 
@@ -99,9 +99,15 @@ class DynDTA():
     pop_db_api -- Used to make all popularity db calls
     phedex_api -- Used to make all phedex calls
     """
-    self.pop_db_api = PopDBAPI()
-    self.phedex_api = PhEDExAPI()
-    self.time_window = 3
+    def __init__(self):
+        """
+        __init__
+
+        Set up class constants
+        """
+        self.pop_db_api = PopDBAPI()
+        self.phedex_api = PhEDExAPI()
+        self.time_window = 3
 
 
     ############################################################################
