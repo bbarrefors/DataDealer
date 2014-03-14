@@ -25,7 +25,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from CMSDATALogger import CMSDATALogger
+from DynDTALogger import CMSDATALogger
 
 
 ################################################################################

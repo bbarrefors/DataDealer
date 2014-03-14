@@ -26,7 +26,7 @@ except ImportError:
     import simplejson as json
 from subprocess import call, Popen, PIPE
 
-from CMSDATALogger import CMSDATALogger
+from DynDTALogger import DynDTALogger
 
 
 ################################################################################
