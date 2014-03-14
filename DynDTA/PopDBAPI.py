@@ -4,7 +4,7 @@
 _PopDBAPI_
 
 Created by Bjorn Barrefors on 4/11/2013
-for CMSDATA (CMS Data Analyzer and Transfer Agent)
+for DynDTA (Dynamic Data Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
@@ -60,7 +60,7 @@ class PopDBAPI():
 
         Set up class constants
         """
-        self.logger      = CMSDATALogger()
+        self.logger      = DynDTALogger()
         self.POP_DB_BASE = "https://cms-popularity.cern.ch/popdb/popularity/"
         self.CERT        = "/home/bockelman/barrefors/certs/myCert.pem"
         self.KEY         = "/home/bockelman/barrefors/certs/myCert.key"
