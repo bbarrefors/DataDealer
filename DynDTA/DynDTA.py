@@ -14,7 +14,7 @@ __email__        = 'bbarrefo@cse.unl.edu'
 
 import sys
 
-from CMSDATALogger import CMSDATALogger
+from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
 from PopDBAPI import PopDBAPI
 
