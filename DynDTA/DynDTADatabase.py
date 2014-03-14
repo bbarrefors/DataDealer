@@ -1,10 +1,10 @@
 #!/usr/bin/python -B
 
 """
-_CMSDATADatabase_
+_DynDTADatabase_
 
 Created by Bjorn Barrefors on 22/9/2013
-for CMSDATA (CMS Data Analyzer and Transfer Agent)
+for DynDTA (Dynamic Data Transfer Agent)
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
@@ -19,18 +19,18 @@ import datetime
 import urllib
 import sqlite3 as lite
 
-from CMSDATALogger import CMSDATALogger
+from DynDTALogger import DynDTALogger
 
 
 ################################################################################
 #                                                                              #
-#                     C M S D A T A   D A T A B A S E                          #
+#                       D Y N D T A   D A T A B A S E                          #
 #                                                                              #
 ################################################################################
 
-class CMSDATADatabase():
+class DynDTADatabase():
     """
-    _CMSDATADatabase_
+    _DynDTADatabase_
 
     Manage the database keeping track of which datasets have been accessed and when.
 
@@ -53,8 +53,8 @@ class CMSDATADatabase():
         # /home/barrefors/cmsdata/db/
         # /home/bockelman/barrefors/db/
 
-        self.name = "CMSDATADatabase"
-        self.logger = CMSDATALogger()
+        self.name = "DynDTADatabase"
+        self.logger = DynDTALogger()
         try:
             if not os.path.isdir(db_path):
                 os.makedirs(db_path)
@@ -266,7 +266,7 @@ if __name__ == '__main__':
 
     For testing purpose only
     """
-    db = CMSDATADatabase()
+    db = DYNDTADatabase()
     #db.insertDataset("SET2")
     #db.insertDirectory("DIR1", "SET2")
     #check, datasets = db.datasets()
