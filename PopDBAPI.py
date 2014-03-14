@@ -157,12 +157,12 @@ if __name__ == '__main__':
     For testing purpose only.
     """
     popdb = PopDBAPI()
-    #popdb.renewSSOCookie()
+    popdb.renewSSOCookie()
     today = datetime.date.today()
     tstart = today - datetime.timedelta(days=7)
     tstop = today
     check, data = popdb.getDSdata(tstart=tstart, tstop=tstop, aggr='day', n=5, orderby='naccess')
     if check:
         sys.exit(1)
-    print len(data)
+    print data
     sys.exit(0)
