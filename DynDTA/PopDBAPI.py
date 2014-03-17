@@ -112,8 +112,7 @@ class PopDBAPI():
     #                                                                          #
     ############################################################################
 
-    def getDSdata(self, sitename='summary', tstart='', tstop='',
-                  aggr='', n='', orderby=''):
+    def getDSStatInTimeWindow(self, sitename='summary', tstart='', tstop=''):
         """
         _getDSdata_
 
@@ -132,15 +131,14 @@ class PopDBAPI():
         data  -- List of tuples with set and value
         """
         name = "getDSdata"
-        values = { 'sitename' : sitename, 'tstart' : tstart, 'tstop' : tstop,
-                   'aggr' : aggr, 'n' : n, 'orderby' : orderby }
-        dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("getDSdata",))
+        values = { 'sitename' : sitename, 'tstart' : tstart, 'tstop' : tstop }
+        dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("DSStatInTimeWindow",))
         check, response = self.PopDBCall(dsdata_url, values)
         if check:
             return 1, "Error"
-            self.logger.error(name, "getDSdata call failed.")
+            self.logger.error(name, "getDSStatInTimeWindow call failed.")
         json_data = json.loads(response)
-        data = json_data.get('data')
+        data = json_data.get('DATA')[0]
         return 0, data
 
 

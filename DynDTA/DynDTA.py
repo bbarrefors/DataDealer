@@ -16,72 +16,12 @@ import sys
 import time
 import datetime
 import math
+import iteritems
 
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
 from PopDBAPI import PopDBAPI
 
-
-    ############################################################################
-    #                                                                          #
-    #                        D A T A S E T   S I Z E                           #
-    #                                                                          #
-    ############################################################################
-
-#def datasetSize(dataset):
-#    """
-#    _datasetSize_
-#
-#    Get total size of dataset in GB.
-#    """
-#    name = "APIdatasetSize"
-#    values = { 'dataset' : dataset }
-#    size_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/data" % (DATA_TYPE, PHEDEX_INSTANCE))
-#    response = PhEDExCall(size_url, values)
-#    if not response:
-#        return 0
-#    dbs = response.get('dbs')
-#    if (not dbs):
-#        error(name, "No data for dataset %s" % (dataset,))
-#        return 0
-#    data = dbs[0].get('dataset')[0].get('block')
-#    size = float(0)
-#    for block in data:
-#        size += block.get('bytes')
-
-#    size = size / 10**9
-#    #log(name, "Total size of dataset %s is %dGB" % (dataset, size))
-#    return int(size)
-
-
-    ############################################################################
-    #                                                                          #
-    #                              R E P L I C A S                             #
-    #                                                                          #
-    ############################################################################
-
-#def replicas(dataset):
-#    """
-#    _replicas_
-#
-#    Set up blockreplicas call to PhEDEx API.
-#    """
-#    name = "APIExists"
-#    data = dataset
-#    complete = 'y'
-#    show_dataset = 'n'
-#    values = { 'dataset' : data, 'complete' : complete,
-#               'show_dataset' : show_dataset }
-#    subscription_url = urllib.basejoin(PHEDEX_BASE, "%s/%s/blockreplicas" % (DATA_TYPE, PHEDEX_INSTANCE))
-#    response = PhEDExCall(subscription_url, values)
-#    sites = []
-#    if response:
-#        block = response.get('block')
-#        replicas = block[0].get('replica')
-#        for replica in replicas:
-#            site = replica.get('node')
-#            sites.append(site)
-#    return sites
 
 ################################################################################
 #                                                                              #
@@ -123,6 +63,8 @@ class DynDTA:
 
         The daily agent routine.
         """
+        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH"]
+        site = 0
         while(True):
             # Renew SSO Cookie for Popularity DB calls
             self.pop_db_api.renewSSOCookie()
@@ -132,18 +74,43 @@ class DynDTA:
             check, candidates = self.candidates()
             if check:
                 continue
-            # @TODO : Get ganking data. n_access | n_replicas | size_TB
-            for dataset in candidates:
-                n_access_t = nAccess(dataset, self.time_window)
-                n_access_2t = nAccess(dataset, self.time_window*2)
+            # Get ganking data. n_access | n_replicas | size_TB
+            tstop = datetime.date.today()
+            tstart = tstop - datetime.timedelta(days=(2*self.time_window))
+            check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
+            access = {}
+            for dataset in data:
+                if dataset.get('COLLNAME') in candidates:
+                    accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
+            datasets = []
+            n_access_t = 1
+            n_access_2t = 1
+            n_replicas = 1
+            size_TB = 1
+            for dataset, access in candidates.iteritems():
+                n_access_t = access
+                n_access_2t = accesses[dataset]
                 n_replicas = nReplicas(dataset)
                 size_TB = size(dataset)
                 rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2)
-                dataset[1] = rank
-            # @TODO : Do weighted random
-            # @TODO : Keep track of daily budget
-            # @TODO : Subscribe set
+                datasets.append((dataset, rank))
+            # Do weighted random selection
+            subscriptions = []
+            while budget > 0:
+                dataset = weightedChoice(datasets)
+                print size_TB
+                if size_TB > budget:
+                    break
+                subscriptions.append(dataset)
+                # Keep track of daily budget
+                budget -= size_TB
+            # Subscribe sets
+            print subscriptions
+            #data = self.phedex_api.xmlData(datasets=subscriptions)
+            #check, response = self.phedex_api.subscribe(node=sites[site], data=data, comments='Dynamic data transfer --JUST A TEST--')
             # @TODO : Subscribe on block level
+            # Rotate through sites
+            site = (site + 1) % 3
             time.sleep(86400)
 
 
@@ -153,35 +120,85 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def candidates(self, n='200'):
+    def candidates(self):
         tstop = datetime.date.today()
         tstart = tstop - datetime.timedelta(days=self.time_window)
-        check, data = self.pop_db_api.getDSdata(tstart=tstart, tstop=tstop, aggr='week', n=n, orderby='naccess')
+        check, data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
         if check:
             return check, data
-        datasets = []
+        datasets = {}
+        i = 0
         for dataset in data:
-            datasets.append([dataset.get('name'), 1])
+            if i == 300:
+                break
+            datasets[dataset.get('COLLNAME')] = datasets.get('NACC')
+            i += 1
         return check, datasets
 
 
     ############################################################################
     #                                                                          #
-    #                              N A C C E S S                               #
+    #                            N   R E P L I C A S                           #
     #                                                                          #
     ############################################################################
 
-    def nAccess(self, dataset='', time_frame=''):
-        tstop = datetime.date.today()
-        tstart = tstop - datetime.timedelta(days=time_frame)
-        check, data = self.pop_db_api.getDSdata(tstart=tstart, tstop=tstop, aggr='week', n=n, orderby='naccess')
-        if check:
-            return check, data
-        datasets = []
-        for dataset in data:
-            datasets.append([dataset.get('name'), 1])
-        return check, datasets
+    def nReplicas(dataset):
+        """
+        _nReplicas_
 
+        Set up blockreplicas call to PhEDEx API.
+        """
+        check, response = self.phedex_api.blockReplicas(dataset=dataset, node="T2_US_Nebraska")
+        if check:
+            return 100
+        block = response.get('block')
+        replicas = block[0].get('replica')
+        n_replicas = len(replicas)
+        return n_replicas
+
+    ############################################################################
+    #                                                                          #
+    #                        D A T A S E T   S I Z E                           #
+    #                                                                          #
+    ############################################################################
+
+    def size(dataset):
+        """
+    _datasetSize_
+
+    Get total size of dataset in TB.
+    """
+    check, response = self.phedex_api.data(dataset=dataset)
+    if not response:
+        return 1000
+    data = reponse.get('dataset')[0].get('block')
+    size = float(0)
+    for block in data:
+        size += block.get('bytes')
+
+    size = size / 10**12
+    return size
+
+
+    ############################################################################
+    #                                                                          #
+    #                        D A T A S E T   S I Z E                           #
+    #                                                                          #
+    ############################################################################
+
+    def weightedChoice(choices):
+        """
+        _weightedChoice_
+
+        Return a weighted randomly selected dataset
+        """
+        total = sum(w for c, w in choices)
+        r = random.uniform(0, total)
+        upto = 0
+        for c, w in choices:
+            if upto + w > r:
+                return c
+            upto += w
 
 
 ################################################################################

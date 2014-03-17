@@ -53,8 +53,7 @@ class PhEDExAPI:
     # DATA_TYPE = "xml"
     # SITE = "T2_US_Nebraska"
     # DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
-    # GROUP = 'local'
-    # GROUP = 'Jupiter'
+    # GROUP = 'AnalysisOps'
     # COMMENTS = 'BjornBarrefors'
     def __init__(self, log_path='/home/bockelman/barrefors/logs/'):
         """
@@ -264,7 +263,7 @@ class PhEDExAPI:
     ############################################################################
 
     def subscribe(self, node='', data='', level='dataset', priority='low',
-                  move='n', static='n', custodial='n', group='local',
+                  move='n', static='n', custodial='n', group='AnalysisOps',
                   time_start='', request_only='n', no_mail='n', comments='',
                   format='json', instance='prod'):
         """
