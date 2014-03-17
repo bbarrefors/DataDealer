@@ -15,6 +15,7 @@ __email__        = 'bbarrefo@cse.unl.edu'
 import sys
 import time
 import datetime
+import math
 
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
@@ -127,12 +128,20 @@ class DynDTA:
             self.pop_db_api.renewSSOCookie()
             # Restart daily budget in TB
             budget = 30.0
-            # @TODO : Find candidates. Top 200 accessed sets
+            # Find candidates. Top 200 accessed sets
             check, candidates = self.candidates()
+            if check:
+                continue
             # @TODO : Get ganking data. n_access | n_replicas | size_TB
-            # @TODO : Calculate ranking
+            for dataset in candidates:
+                n_access_t = nAccess(dataset, self.time_window)
+                n_access_2t = nAccess(dataset, self.time_window*2)
+                n_replicas = nReplicas(dataset)
+                size_TB = size(dataset)
+                rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2)
+                dataset[1] = rank
+            # @TODO : Do weighted random
             # @TODO : Keep track of daily budget
-            # @TODO : Do weighted random selection
             # @TODO : Subscribe set
             # @TODO : Subscribe on block level
             time.sleep(86400)
@@ -143,6 +152,7 @@ class DynDTA:
     #                            C A N D I D A T E S                           #
     #                                                                          #
     ############################################################################
+
     def candidates(self, n='200'):
         tstop = datetime.date.today()
         tstart = tstop - datetime.timedelta(days=self.time_window)
@@ -151,8 +161,27 @@ class DynDTA:
             return check, data
         datasets = []
         for dataset in data:
-            datasets.append(dataset.get('name'))
+            datasets.append([dataset.get('name'), 1])
         return check, datasets
+
+
+    ############################################################################
+    #                                                                          #
+    #                              N A C C E S S                               #
+    #                                                                          #
+    ############################################################################
+
+    def nAccess(self, dataset='', time_frame=''):
+        tstop = datetime.date.today()
+        tstart = tstop - datetime.timedelta(days=time_frame)
+        check, data = self.pop_db_api.getDSdata(tstart=tstart, tstop=tstop, aggr='week', n=n, orderby='naccess')
+        if check:
+            return check, data
+        datasets = []
+        for dataset in data:
+            datasets.append([dataset.get('name'), 1])
+        return check, datasets
+
 
 
 ################################################################################
