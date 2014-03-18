@@ -92,7 +92,7 @@ class DynDTA:
                 n_access_2t = accesses[dataset]
                 n_replicas = nReplicas(dataset)
                 size_TB = size(dataset)
-                rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2)
+                rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
                 datasets.append((dataset, rank))
             # Do weighted random selection
             subscriptions = []
