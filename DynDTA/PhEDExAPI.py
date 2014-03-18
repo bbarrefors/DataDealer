@@ -55,13 +55,13 @@ class PhEDExAPI:
     # DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
     # GROUP = 'AnalysisOps'
     # COMMENTS = 'BjornBarrefors'
-    def __init__(self, log_path='/home/bockelman/barrefors/logs/'):
+    def __init__(self):
         """
         __init__
 
         Set up class constants
         """
-        self.logger      = DynDTALogger(log_path)
+        self.logger      = DynDTALogger()
         self.PHEDEX_BASE = "https://cmsweb.cern.ch/phedex/datasvc/"
 
 

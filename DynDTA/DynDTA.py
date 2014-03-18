@@ -46,6 +46,7 @@ class DynDTA:
 
         Set up class constants
         """
+        self.logger = DynDTALogger()
         self.pop_db_api = PopDBAPI()
         self.phedex_api = PhEDExAPI()
         self.time_window = 3
@@ -89,7 +90,10 @@ class DynDTA:
             size_TB = 1
             for dataset, access in candidates.iteritems():
                 n_access_t = access
-                n_access_2t = accesses[dataset]
+                try:
+                    n_access_2t = accesses[dataset]
+                except KeyError, e:
+                    n_access_2t = n_access_t
                 n_replicas = self.nReplicas(dataset)
                 size_TB = self.size(dataset)
                 if (size_TB == 1000 or n_replicas == 100):
@@ -97,24 +101,37 @@ class DynDTA:
                     continue
                 rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
                 datasets.append((dataset, rank))
+            subs = []
             # Do weighted random selection
-            subscriptions = []
+            dataset_block = ''
             while budget > 0:
                 dataset = self.weightedChoice(datasets)
                 size_TB = self.size(dataset)
                 if size_TB > budget:
+                    dataset_block = dataset
                     break
-                subscriptions.append(dataset)
+                subs.append(dataset)
                 # Keep track of daily budget
                 budget -= size_TB
+            # Check if set already exists at site(s)
+            i = 0
+            subscriptions = [[], [], []]
+            for dataset in subscriptions[site]:
+                current_site = site
+                while i < 3:
+                    if not self.replicas(dataset, sites[current_site]):
+                        subscriptions[current_site].append(dataset)
+                        break
+                    current_site = (current_site + 1) % 3
             # Subscribe sets
-            print subscriptions
-            # @TODO : Check if set already exists at site(s)
-            #data = self.phedex_api.xmlData(datasets=subscriptions)
-            #check, response = self.phedex_api.subscribe(node=sites[site], data=data, comments='Dynamic data transfer --JUST A TEST--')
+            for site in subscriptions:
+                data = self.phedex_api.xmlData(datasets=site)
+                check, response = self.phedex_api.subscribe(node=sites[site], data=data, comments='Dynamic data transfer --JUST A TEST--')
             # @TODO : Subscribe on block level
+            
             # Rotate through sites
             site = (site + 1) % 3
+            break
             time.sleep(86400)
 
 
@@ -168,6 +185,7 @@ class DynDTA:
         n_replicas = len(replicas)
         return n_replicas
 
+
     ############################################################################
     #                                                                          #
     #                        D A T A S E T   S I Z E                           #
@@ -212,12 +230,37 @@ class DynDTA:
         """
         total = sum(w for c, w in choices)
         r = random.uniform(0, total)
-        print r
         upto = 0
         for c, w in choices:
             if upto + w > r:
                 return c
             upto += w
+
+    ############################################################################
+    #                                                                          #
+    #                            N   R E P L I C A S                           #
+    #                                                                          #
+    ############################################################################
+
+    def replicas(self, dataset, node):
+        """
+        _replicas_
+
+        Return the sites at which dataset have replicas.
+        """
+        # Don't even bother querying phedex if it is a user dataset
+        if not (dataset.find("/USER") == -1):
+            return False
+        check, response = self.phedex_api.blockReplicas(dataset=dataset, node=node, group='AnalysisOps')
+        if check:
+            return False
+        data = response.get('phedex')
+        block = data.get('block')
+        try:
+            replicas = block[0].get('replica')
+        except IndexError, e:
+            return False
+        return True
 
 
 ################################################################################
@@ -230,7 +273,7 @@ if __name__ == '__main__':
     """
     __main__
 
-    This is where is all starts
+    This is where it all starts
     """
     agent = DynDTA()
     agent.agent()
