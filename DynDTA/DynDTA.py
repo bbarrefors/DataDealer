@@ -98,13 +98,10 @@ class DynDTA:
                 rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
                 datasets.append((dataset, rank))
             # Do weighted random selection
-            print datasets
             subscriptions = []
             while budget > 0:
                 dataset = self.weightedChoice(datasets)
-                print dataset
                 size_TB = self.size(dataset)
-                print size_TB
                 if size_TB > budget:
                     break
                 subscriptions.append(dataset)
@@ -180,12 +177,12 @@ class DynDTA:
     def size(self,dataset):
         """
         _datasetSize_
-        
+
         Get total size of dataset in TB.
         """
         # Don't even bother querying phedex if it is a user dataset
         if not (dataset.find("/USER") == -1):
-            return 100 
+            return 100
         check, response = self.phedex_api.data(dataset=dataset)
         if not response:
             return 1000
@@ -215,6 +212,7 @@ class DynDTA:
         """
         total = sum(w for c, w in choices)
         r = random.uniform(0, total)
+        print r
         upto = 0
         for c, w in choices:
             if upto + w > r:
@@ -235,5 +233,5 @@ if __name__ == '__main__':
     This is where is all starts
     """
     agent = DynDTA()
-    check, response = agent.agent()
+    agent.agent()
     sys.exit(0)
