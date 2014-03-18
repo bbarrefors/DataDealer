@@ -124,11 +124,19 @@ class DynDTA:
                         break
                     current_site = (current_site + 1) % 3
             # Subscribe sets
-            for site in subscriptions:
-                data = self.phedex_api.xmlData(datasets=site)
-                check, response = self.phedex_api.subscribe(node=sites[site], data=data, comments='Dynamic data transfer --JUST A TEST--')
+            i = 0
+            for sets in subscriptions:
+                if not sets:
+                    i += 1
+                    continue
+                check, data = self.phedex_api.xmlData(datasets=sets)
+                if check:
+                    i += 1
+                    continue
+                check, response = self.phedex_api.subscribe(node=sites[i], data=data, comments='Dynamic data transfer --JUST A TEST--')
+                self.logger.log("Agent", "The following subscription was made: " + str(response))
+                i += 1
             # @TODO : Subscribe on block level
-            
             # Rotate through sites
             site = (site + 1) % 3
             break

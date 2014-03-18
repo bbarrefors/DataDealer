@@ -236,7 +236,7 @@ class PhEDExAPI:
         name = "xmlData"
         # @CHANGED: Function now takes a list of datasets instead of only one
         if not datasets:
-            self.logger.error(name, "Need to pass at least one of dataset")
+            self.logger.error(name, "Need to pass at least one dataset")
             return 1, "Error"
         xml = '<data version="2">'
         xml = '%s<%s name="https://cmsweb.cern.ch/dbs/%s/global/DBSReader">' % (xml, 'dbs', instance)
