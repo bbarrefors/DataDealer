@@ -98,7 +98,7 @@ class PopDBAPI():
         data = urllib.urlencode(values)
         request = urllib2.Request(url, data)
         full_url = request.get_full_url() + request.get_data()
-        p1 = Popen(["curl", "-k", "-L", "--cookie", self.COOKIE, "--cookie-jar", self.COOKIE, full_url], stdout=PIPE)
+        p1 = Popen(["curl", "-k", "-s", "-L", "--cookie", self.COOKIE, "--cookie-jar", self.COOKIE, full_url], stdout=PIPE)
         try:
             response = p1.communicate()[0]
         except ValueError:
@@ -112,7 +112,7 @@ class PopDBAPI():
     #                                                                          #
     ############################################################################
 
-    def getDSStatInTimeWindow(self, sitename='summary', tstart='', tstop=''):
+    def getDSStatInTimeWindow(self, tstart='', tstop='', sitename='summary'):
         """
         _getDSdata_
 
@@ -135,10 +135,10 @@ class PopDBAPI():
         dsdata_url = urllib.basejoin(self.POP_DB_BASE, "%s/?&" % ("DSStatInTimeWindow",))
         check, response = self.PopDBCall(dsdata_url, values)
         if check:
-            return 1, "Error"
             self.logger.error(name, "getDSStatInTimeWindow call failed.")
+            return 1, "Error"
         json_data = json.loads(response)
-        data = json_data.get('DATA')[0]
+        data = json_data.get('DATA')
         return 0, data
 
 
@@ -156,11 +156,10 @@ if __name__ == '__main__':
     """
     popdb = PopDBAPI()
     popdb.renewSSOCookie()
-    today = datetime.date.today()
-    tstart = today - datetime.timedelta(days=7)
-    tstop = today
-    check, data = popdb.getDSdata(tstart=tstart, tstop=tstop, aggr='day', n=5, orderby='naccess')
+    tstop = datetime.date.today()
+    tstart = tstop - datetime.timedelta(days=3)
+    check, data = popdb.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
     if check:
         sys.exit(1)
-    print data
+        #print data
     sys.exit(0)

@@ -16,7 +16,7 @@ import sys
 import time
 import datetime
 import math
-import iteritems
+import random
 
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
@@ -78,8 +78,8 @@ class DynDTA:
             tstop = datetime.date.today()
             tstart = tstop - datetime.timedelta(days=(2*self.time_window))
             check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
-            access = {}
-            for dataset in data:
+            accesses = {}
+            for dataset in t2_data:
                 if dataset.get('COLLNAME') in candidates:
                     accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
             datasets = []
@@ -90,14 +90,20 @@ class DynDTA:
             for dataset, access in candidates.iteritems():
                 n_access_t = access
                 n_access_2t = accesses[dataset]
-                n_replicas = nReplicas(dataset)
-                size_TB = size(dataset)
-                rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2)
+                n_replicas = self.nReplicas(dataset)
+                size_TB = self.size(dataset)
+                if (size_TB == 1000 or n_replicas == 100):
+                    # Dataset does not exist in phedex
+                    continue
+                rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
                 datasets.append((dataset, rank))
             # Do weighted random selection
+            print datasets
             subscriptions = []
             while budget > 0:
-                dataset = weightedChoice(datasets)
+                dataset = self.weightedChoice(datasets)
+                print dataset
+                size_TB = self.size(dataset)
                 print size_TB
                 if size_TB > budget:
                     break
@@ -106,6 +112,7 @@ class DynDTA:
                 budget -= size_TB
             # Subscribe sets
             print subscriptions
+            # @TODO : Check if set already exists at site(s)
             #data = self.phedex_api.xmlData(datasets=subscriptions)
             #check, response = self.phedex_api.subscribe(node=sites[site], data=data, comments='Dynamic data transfer --JUST A TEST--')
             # @TODO : Subscribe on block level
@@ -126,12 +133,12 @@ class DynDTA:
         check, data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
         if check:
             return check, data
-        datasets = {}
+        datasets = dict()
         i = 0
         for dataset in data:
-            if i == 300:
+            if i == 200:
                 break
-            datasets[dataset.get('COLLNAME')] = datasets.get('NACC')
+            datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
         return check, datasets
 
@@ -142,17 +149,25 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def nReplicas(dataset):
+    def nReplicas(self, dataset):
         """
         _nReplicas_
 
         Set up blockreplicas call to PhEDEx API.
         """
-        check, response = self.phedex_api.blockReplicas(dataset=dataset, node="T2_US_Nebraska")
+        # Don't even bother querying phedex if it is a user dataset
+        if not (dataset.find("/USER") == -1):
+            return 100
+        check, response = self.phedex_api.blockReplicas(dataset=dataset)
         if check:
             return 100
-        block = response.get('block')
-        replicas = block[0].get('replica')
+        data = response.get('phedex')
+        block = data.get('block')
+        # @TODO : Check for exceptions
+        try:
+            replicas = block[0].get('replica')
+        except IndexError, e:
+            return 100
         n_replicas = len(replicas)
         return n_replicas
 
@@ -162,31 +177,37 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def size(dataset):
+    def size(self,dataset):
         """
-    _datasetSize_
-
-    Get total size of dataset in TB.
-    """
-    check, response = self.phedex_api.data(dataset=dataset)
-    if not response:
-        return 1000
-    data = reponse.get('dataset')[0].get('block')
-    size = float(0)
-    for block in data:
-        size += block.get('bytes')
-
-    size = size / 10**12
-    return size
+        _datasetSize_
+        
+        Get total size of dataset in TB.
+        """
+        # Don't even bother querying phedex if it is a user dataset
+        if not (dataset.find("/USER") == -1):
+            return 100 
+        check, response = self.phedex_api.data(dataset=dataset)
+        if not response:
+            return 1000
+        try:
+            data = response.get('phedex').get('dbs')[0]
+            data = data.get('dataset')[0].get('block')
+        except IndexError, e:
+            return 10000
+        size = float(0)
+        for block in data:
+            size += block.get('bytes')
+        size = size / 10**12
+        return size
 
 
     ############################################################################
     #                                                                          #
-    #                        D A T A S E T   S I Z E                           #
+    #                      W E I G H T E D   C H O I C E                       #
     #                                                                          #
     ############################################################################
 
-    def weightedChoice(choices):
+    def weightedChoice(self, choices):
         """
         _weightedChoice_
 
@@ -214,9 +235,5 @@ if __name__ == '__main__':
     This is where is all starts
     """
     agent = DynDTA()
-    check, response = agent.candidates()
-    if check:
-        sys.exit(1)
-    else:
-        print response
+    check, response = agent.agent()
     sys.exit(0)
