@@ -107,22 +107,25 @@ class DynDTA:
             while budget > 0:
                 dataset = self.weightedChoice(datasets)
                 size_TB = self.size(dataset)
-                if size_TB > budget:
+                if (size_TB > 30):
+                    continue
+                elif (size_TB > budget):
                     dataset_block = dataset
                     break
-                subs.append(dataset)
-                # Keep track of daily budget
-                budget -= size_TB
-            # Check if set already exists at site(s)
-            i = 0
-            subscriptions = [[], [], []]
-            for dataset in subscriptions[site]:
+                # Check if set already exists at site(s)
+                i = 0
+                subscriptions = [[], [], []]
                 current_site = site
                 while i < 3:
                     if not self.replicas(dataset, sites[current_site]):
                         subscriptions[current_site].append(dataset)
                         break
+                    i += 1
                     current_site = (current_site + 1) % 3
+                else:
+                    continue
+                # Keep track of daily budget
+                budget -= size_TB
             # Subscribe sets
             i = 0
             for sets in subscriptions:
@@ -133,13 +136,14 @@ class DynDTA:
                 if check:
                     i += 1
                     continue
-                check, response = self.phedex_api.subscribe(node=sites[i], data=data, comments='Dynamic data transfer --JUST A TEST--')
+                check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data transfer Agent')
+                if check:
+                    continue
                 self.logger.log("Agent", "The following subscription was made: " + str(response))
                 i += 1
             # @TODO : Subscribe on block level
             # Rotate through sites
             site = (site + 1) % 3
-            break
             time.sleep(86400)
 
 
