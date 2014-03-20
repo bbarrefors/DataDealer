@@ -79,6 +79,8 @@ class DynDTA:
             tstop = datetime.date.today()
             tstart = tstop - datetime.timedelta(days=(2*self.time_window))
             check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
+            if check:
+                continue
             accesses = {}
             for dataset in t2_data:
                 if dataset.get('COLLNAME') in candidates:
@@ -139,7 +141,7 @@ class DynDTA:
                 check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data transfer Agent')
                 if check:
                     continue
-                self.logger.log("Agent", "The following subscription was made: " + str(response))
+                self.logger.log("Agent", "The following subscription was made: " + str(response.read()))
                 i += 1
             # @TODO : Subscribe on block level
             # Rotate through sites
@@ -166,7 +168,7 @@ class DynDTA:
                 break
             datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
-        return check, datasets
+        return 0, datasets
 
 
     ############################################################################
@@ -214,13 +216,13 @@ class DynDTA:
         if not (dataset.find("/USER") == -1):
             return 100
         check, response = self.phedex_api.data(dataset=dataset)
-        if not response:
+        if check:
             return 1000
         try:
             data = response.get('phedex').get('dbs')[0]
             data = data.get('dataset')[0].get('block')
         except IndexError, e:
-            return 10000
+            return 1000
         size = float(0)
         for block in data:
             size += block.get('bytes')
@@ -262,16 +264,16 @@ class DynDTA:
         """
         # Don't even bother querying phedex if it is a user dataset
         if not (dataset.find("/USER") == -1):
-            return False
+            return True
         check, response = self.phedex_api.blockReplicas(dataset=dataset, node=node, group='AnalysisOps')
         if check:
-            return False
+            return True
         data = response.get('phedex')
         block = data.get('block')
         try:
             replicas = block[0].get('replica')
         except IndexError, e:
-            return False
+            return True
         return True
 
 
