@@ -73,18 +73,21 @@ class DynDTA:
             budget = 30.0
             # Find candidates. Top 200 accessed sets
             check, candidates = self.candidates()
+            print "Test 1"
             if check:
                 continue
             # Get ganking data. n_access | n_replicas | size_TB
             tstop = datetime.date.today()
             tstart = tstop - datetime.timedelta(days=(2*self.time_window))
             check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
+            print "Test 2"
             if check:
                 continue
             accesses = {}
             for dataset in t2_data:
                 if dataset.get('COLLNAME') in candidates:
                     accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
+            print "Test 3"
             datasets = []
             n_access_t = 1
             n_access_2t = 1
@@ -105,18 +108,16 @@ class DynDTA:
                 datasets.append((dataset, rank))
             subs = []
             # Do weighted random selection
+            subscriptions = [[], [], []]
             dataset_block = ''
             while budget > 0:
                 dataset = self.weightedChoice(datasets)
                 size_TB = self.size(dataset)
-                if (size_TB > 30):
-                    continue
-                elif (size_TB > budget):
+                if (size_TB > budget):
                     dataset_block = dataset
-                    break
+                    #break
                 # Check if set already exists at site(s)
                 i = 0
-                subscriptions = [[], [], []]
                 current_site = site
                 while i < 3:
                     if not self.replicas(dataset, sites[current_site]):
@@ -129,6 +130,7 @@ class DynDTA:
                 # Keep track of daily budget
                 budget -= size_TB
             # Subscribe sets
+            self.logger.log("Agent", "Subscription list: " + str(subscriptions))
             i = 0
             for sets in subscriptions:
                 if not sets:
@@ -138,11 +140,12 @@ class DynDTA:
                 if check:
                     i += 1
                     continue
-                check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data transfer Agent')
+                check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data Transfer Agent')
                 if check:
                     continue
                 self.logger.log("Agent", "The following subscription was made: " + str(response.read()))
                 i += 1
+            print "One round done"
             # @TODO : Subscribe on block level
             # Rotate through sites
             site = (site + 1) % 3
