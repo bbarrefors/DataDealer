@@ -524,7 +524,7 @@ if __name__ == '__main__':
     phedex_api = PhEDExAPI()
     #check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
     #check, data = phedex_api.data(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
-    check, data = phedex_api.blockReplicas(dataset='/TauPlusX/Run2012D-PromptReco-v1/AOD', node='T2_US_Nebraska', instance='prod')
+    check, data = phedex_api.blockReplicas(dataset='/TauPlusX/Run2012D-22Jan2013-v1/AOD', node='', instance='prod')
     if check:
         sys.exit(1)
     print data

@@ -73,21 +73,18 @@ class DynDTA:
             budget = 30.0
             # Find candidates. Top 200 accessed sets
             check, candidates = self.candidates()
-            print "Test 1"
             if check:
                 continue
             # Get ganking data. n_access | n_replicas | size_TB
             tstop = datetime.date.today()
             tstart = tstop - datetime.timedelta(days=(2*self.time_window))
             check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
-            print "Test 2"
             if check:
                 continue
             accesses = {}
             for dataset in t2_data:
                 if dataset.get('COLLNAME') in candidates:
                     accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
-            print "Test 3"
             datasets = []
             n_access_t = 1
             n_access_2t = 1
@@ -101,26 +98,30 @@ class DynDTA:
                     n_access_2t = n_access_t
                 n_replicas = self.nReplicas(dataset)
                 size_TB = self.size(dataset)
-                if (size_TB == 1000 or n_replicas == 100):
-                    # Dataset does not exist in phedex
-                    continue
                 rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
                 datasets.append((dataset, rank))
-            subs = []
             # Do weighted random selection
             subscriptions = [[], [], []]
             dataset_block = ''
+            budget = 30
+            selected_sets = []
             while budget > 0:
                 dataset = self.weightedChoice(datasets)
+                # Check if set was already selected
+                if dataset in selected_sets:
+                    continue
+                selected_sets.append(dataset)
                 size_TB = self.size(dataset)
-                if (size_TB > budget):
-                    dataset_block = dataset
+                if size_TB == 1000:
+                    continue
+                #if (size_TB > budget):
+                #    dataset_block = dataset
                     #break
                 # Check if set already exists at site(s)
                 i = 0
                 current_site = site
                 while i < 3:
-                    if not self.replicas(dataset, sites[current_site]):
+                    if not (self.replicas(dataset, sites[current_site])):
                         subscriptions[current_site].append(dataset)
                         break
                     i += 1
@@ -128,9 +129,9 @@ class DynDTA:
                 else:
                     continue
                 # Keep track of daily budget
+                self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
                 budget -= size_TB
             # Subscribe sets
-            self.logger.log("Agent", "Subscription list: " + str(subscriptions))
             i = 0
             for sets in subscriptions:
                 if not sets:
@@ -143,9 +144,8 @@ class DynDTA:
                 check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data Transfer Agent')
                 if check:
                     continue
-                self.logger.log("Agent", "The following subscription was made: " + str(response.read()))
+                #self.logger.log("Agent", "The following subscription was made: " + str(response.read()))
                 i += 1
-            print "One round done"
             # @TODO : Subscribe on block level
             # Rotate through sites
             site = (site + 1) % 3
@@ -167,8 +167,12 @@ class DynDTA:
         datasets = dict()
         i = 0
         for dataset in data:
-            if i == 200:
+            if i == 50:
                 break
+            if dataset['COLLNAME'] == 'unknown':
+                continue
+            elif (dataset['COLLNAME'].find("/USER") != -1):
+                continue
             datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
         return 0, datasets
@@ -187,14 +191,13 @@ class DynDTA:
         Set up blockreplicas call to PhEDEx API.
         """
         # Don't even bother querying phedex if it is a user dataset
-        if not (dataset.find("/USER") == -1):
+        if (dataset.find("/USER") != -1):
             return 100
         check, response = self.phedex_api.blockReplicas(dataset=dataset)
         if check:
             return 100
         data = response.get('phedex')
         block = data.get('block')
-        # @TODO : Check for exceptions
         try:
             replicas = block[0].get('replica')
         except IndexError, e:
@@ -216,8 +219,8 @@ class DynDTA:
         Get total size of dataset in TB.
         """
         # Don't even bother querying phedex if it is a user dataset
-        if not (dataset.find("/USER") == -1):
-            return 100
+        if (dataset.find("/USER") != -1):
+            return 1000
         check, response = self.phedex_api.data(dataset=dataset)
         if check:
             return 1000
@@ -266,7 +269,7 @@ class DynDTA:
         Return the sites at which dataset have replicas.
         """
         # Don't even bother querying phedex if it is a user dataset
-        if not (dataset.find("/USER") == -1):
+        if (dataset.find("/USER") != -1):
             return True
         check, response = self.phedex_api.blockReplicas(dataset=dataset, node=node, group='AnalysisOps')
         if check:
@@ -276,7 +279,7 @@ class DynDTA:
         try:
             replicas = block[0].get('replica')
         except IndexError, e:
-            return True
+            return False
         return True
 
 
