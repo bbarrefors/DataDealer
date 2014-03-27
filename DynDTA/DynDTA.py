@@ -65,94 +65,89 @@ class DynDTA:
         The daily agent routine.
         """
         sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH"]
-        site = 0
-        while(True):
-            # Renew SSO Cookie for Popularity DB calls
-            self.pop_db_api.renewSSOCookie()
-            # Restart daily budget in TB
-            budget = 30.0
-            # Find candidates. Top 200 accessed sets
-            check, candidates = self.candidates()
-            if check:
+        site = int(datetime.datetime.today().strftime("%d")) % len(sites)
+        # Renew SSO Cookie for Popularity DB calls
+        self.pop_db_api.renewSSOCookie()
+        # Restart daily budget in TB
+        budget = 30.0
+        # Find candidates. Top 200 accessed sets
+        check, candidates = self.candidates()
+        if check:
+            return 1
+        # Get ganking data. n_access | n_replicas | size_TB
+        tstop = datetime.date.today()
+        tstart = tstop - datetime.timedelta(days=(2*self.time_window))
+        check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
+        if check:
+            return 1
+        accesses = {}
+        for dataset in t2_data:
+            if dataset.get('COLLNAME') in candidates:
+                accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
+        datasets = []
+        n_access_t = 1
+        n_access_2t = 1
+        n_replicas = 1
+        size_TB = 1
+        for dataset, access in candidates.iteritems():
+            n_access_t = access
+            try:
+                n_access_2t = accesses[dataset]
+            except KeyError, e:
+                n_access_2t = n_access_t
+            n_replicas = self.nReplicas(dataset)
+            size_TB = self.size(dataset)
+            rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
+            datasets.append((dataset, rank))
+        # Do weighted random selection
+        subscriptions = [[], [], []]
+        dataset_block = ''
+        budget = 30
+        selected_sets = []
+        surrent_site = site
+        while budget > 0:
+            dataset = self.weightedChoice(datasets)
+            # Check if set was already selected
+            if dataset in selected_sets:
                 continue
-            # Get ganking data. n_access | n_replicas | size_TB
-            tstop = datetime.date.today()
-            tstart = tstop - datetime.timedelta(days=(2*self.time_window))
-            check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
-            if check:
+            selected_sets.append(dataset)
+            size_TB = self.size(dataset)
+            if size_TB == 1000:
                 continue
-            accesses = {}
-            for dataset in t2_data:
-                if dataset.get('COLLNAME') in candidates:
-                    accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
-            datasets = []
-            n_access_t = 1
-            n_access_2t = 1
-            n_replicas = 1
-            size_TB = 1
-            for dataset, access in candidates.iteritems():
-                n_access_t = access
-                try:
-                    n_access_2t = accesses[dataset]
-                except KeyError, e:
-                    n_access_2t = n_access_t
-                n_replicas = self.nReplicas(dataset)
-                size_TB = self.size(dataset)
-                rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
-                datasets.append((dataset, rank))
-            # Do weighted random selection
-            subscriptions = [[], [], []]
-            dataset_block = ''
-            budget = 30
-            selected_sets = []
-            surrent_site = site
-            while budget > 0:
-                dataset = self.weightedChoice(datasets)
-                # Check if set was already selected
-                if dataset in selected_sets:
-                    continue
-                selected_sets.append(dataset)
-                size_TB = self.size(dataset)
-                if size_TB == 1000:
-                    continue
-                # Check if set already exists at site(s)
-                i = 0
-                current_site = site
-                while i < 3:
-                    if not (self.replicas(dataset, sites[current_site])):
-                        break
-                    i += 1
-                    current_site = (current_site + 1) % 3
-                else:
-                    continue
-                if (size_TB > budget):
-                    dataset_block = dataset
-                    break
-                subscriptions[current_site].append(dataset)
-                # Keep track of daily budget
-                self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
-                budget -= size_TB
-            # Get blocks to subscribe
-            subscriptions = blockSubscription(dataset_block, budget, subscriptions, current_site)
-            # Subscribe sets
+            # Check if set already exists at site(s)
             i = 0
-            for sets in subscriptions:
-                if not sets:
-                    i += 1
-                    continue
-                check, data = self.phedex_api.xmlData(datasets=sets)
-                if check:
-                    i += 1
-                    continue
-                check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data Transfer Agent')
-                if check:
-                    continue
-                #self.logger.log("Agent", "The following subscription was made: " + str(response.read()))
+            current_site = site
+            while i < 3:
+                if not (self.replicas(dataset, sites[current_site])):
+                    break
                 i += 1
-            # @TODO : Subscribe on block level
-            # Rotate through sites
-            site = (site + 1) % 3
-            time.sleep(86400)
+                current_site = (current_site + 1) % 3
+            else:
+                continue
+            if (size_TB > budget):
+                dataset_block = dataset
+                break
+            subscriptions[current_site].append(dataset)
+            # Keep track of daily budget
+            self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
+            budget -= size_TB
+        # Get blocks to subscribe
+        subscriptions = blockSubscription(dataset_block, budget, subscriptions, current_site)
+        # Subscribe sets
+        i = 0
+        for sets in subscriptions:
+            if not sets:
+                i += 1
+                continue
+            check, data = self.phedex_api.xmlData(datasets=sets)
+            if check:
+                i += 1
+                continue
+            check, response = self.phedex_api.subscribe(node=sites[i], data=data, request_only='y', comments='Dynamic Data Transfer Agent')
+            if check:
+                continue
+            i += 1
+        return 0
 
 
     ############################################################################
@@ -334,5 +329,4 @@ if __name__ == '__main__':
     This is where it all starts
     """
     agent = DynDTA()
-    agent.agent()
-    sys.exit(0)
+    sys.exit(agent.agent())
