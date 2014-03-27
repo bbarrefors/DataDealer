@@ -105,6 +105,7 @@ class DynDTA:
             dataset_block = ''
             budget = 30
             selected_sets = []
+            surrent_site = site
             while budget > 0:
                 dataset = self.weightedChoice(datasets)
                 # Check if set was already selected
@@ -114,23 +115,25 @@ class DynDTA:
                 size_TB = self.size(dataset)
                 if size_TB == 1000:
                     continue
-                #if (size_TB > budget):
-                #    dataset_block = dataset
-                    #break
                 # Check if set already exists at site(s)
                 i = 0
                 current_site = site
                 while i < 3:
                     if not (self.replicas(dataset, sites[current_site])):
-                        subscriptions[current_site].append(dataset)
                         break
                     i += 1
                     current_site = (current_site + 1) % 3
                 else:
                     continue
+                if (size_TB > budget):
+                    dataset_block = dataset
+                    break
+                subscriptions[current_site].append(dataset)
                 # Keep track of daily budget
                 self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
                 budget -= size_TB
+            # Get blocks to subscribe
+            subscriptions = blockSubscription(dataset_block, budget, subscriptions, current_site)
             # Subscribe sets
             i = 0
             for sets in subscriptions:
@@ -212,7 +215,7 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def size(self,dataset):
+    def size(self, dataset):
         """
         _datasetSize_
 
@@ -281,6 +284,41 @@ class DynDTA:
         except IndexError, e:
             return False
         return True
+
+
+    ############################################################################
+    #                                                                          #
+    #                    B L O C K   S U B S C R I P T I O N                   #
+    #                                                                          #
+    ############################################################################
+
+    def blockSubscription(self, dataset_block, budget, subscriptions, current_site):
+        """
+        _datasetSize_
+
+        Get total size of dataset in TB.
+        """
+        # Don't even bother querying phedex if it is a user dataset
+        if (dataset.find("/USER") != -1):
+            return subscriptions
+        check, response = self.phedex_api.data(dataset=dataset)
+        if check:
+            return subscriptions
+        try:
+            data = response.get('phedex').get('dbs')[0]
+            data = data.get('dataset')[0].get('block')
+        except IndexError, e:
+            return subscriptions
+        size = float(0)
+        for block in data:
+            size = block.get('bytes')
+            size = size / 10**12
+            if size > budget:
+                break
+            block_name = block.get('name')
+            subscriptions.append(block_name)
+            budget -= size
+        return subscriptions
 
 
 ################################################################################

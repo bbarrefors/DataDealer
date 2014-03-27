@@ -241,10 +241,17 @@ class PhEDExAPI:
         xml = '<data version="2">'
         xml = '%s<%s name="https://cmsweb.cern.ch/dbs/%s/global/DBSReader">' % (xml, 'dbs', instance)
         for dataset in datasets:
-            check, response = self.data(dataset=dataset, level='file', instance=instance)
+            check = 1
+            response = {}
+            # Decide if the dataset name is a dataset or a block name
+            if (dataset.count("#") == 3):
+                check, response = self.data(block=dataset, level='file', instance=instance)
+            else:
+                check, response = self.data(dataset=dataset, level='file', instance=instance)
             if check:
                 return 1, "Error"
             data = response.get('phedex').get('dbs')
+            print response
             if not data:
                 return 1, "Error"
             xml = "%s<%s" % (xml, 'dataset')
@@ -524,7 +531,7 @@ if __name__ == '__main__':
     phedex_api = PhEDExAPI()
     #check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
     #check, data = phedex_api.data(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
-    check, data = phedex_api.blockReplicas(dataset='/TauPlusX/Run2012D-22Jan2013-v1/AOD', node='', instance='prod')
+    check, data = phedex_api.xmlData(datasets=['/TauPlusX/Run2012D-22Jan2013-v1/AOD#5044b654-8f01-11e2-9f41-00221959e69e'], instance='prod')
     if check:
         sys.exit(1)
     print data
