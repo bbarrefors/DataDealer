@@ -234,7 +234,6 @@ class PhEDExAPI:
         xml   -- The converted data now represented as an xml structure
         """
         name = "xmlData"
-        # @CHANGED: Function now takes a list of datasets instead of only one
         if not datasets:
             self.logger.error(name, "Need to pass at least one dataset")
             return 1, "Error"
@@ -528,15 +527,8 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    #check, data = phedex_api.xmlData(datasets=['/MET/Run2012A-22Jan2013-v1/AOD', '/DoubleMuParked/Run2012B-HZZ-22Jan2013-v1/AOD'], instance='prod')
-    #check, data = phedex_api.data(dataset='/MET/Run2012A-22Jan2013-v1/AOD', instance='prod')
     check, data = phedex_api.xmlData(datasets=['/TauPlusX/Run2012D-22Jan2013-v1/AOD#5044b654-8f01-11e2-9f41-00221959e69e'], instance='prod')
     if check:
         sys.exit(1)
     print data
-    #check, response = phedex_api.delete(node='T2_US_MIT', data=data, comments='This is just a test by Bjorn Barrefors for Max.', instance='prod')
-    #if check:
-    #    print response
-    #    sys.exit(1)
-    #print response.read()
     sys.exit(0)
