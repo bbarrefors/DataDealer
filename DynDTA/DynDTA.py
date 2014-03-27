@@ -258,7 +258,7 @@ class DynDTA:
 
     ############################################################################
     #                                                                          #
-    #                            N   R E P L I C A S                           #
+    #                            R E P L I C A S                              #
     #                                                                          #
     ############################################################################
 
@@ -271,7 +271,7 @@ class DynDTA:
         # Don't even bother querying phedex if it is a user dataset
         if (dataset.find("/USER") != -1):
             return True
-        check, response = self.phedex_api.blockReplicas(dataset=dataset, node=node, group='AnalysisOps')
+        check, response = self.phedex_api.blockReplicas(dataset=dataset, node=node)
         if check:
             return True
         data = response.get('phedex')
