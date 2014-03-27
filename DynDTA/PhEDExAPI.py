@@ -244,14 +244,13 @@ class PhEDExAPI:
             check = 1
             response = {}
             # Decide if the dataset name is a dataset or a block name
-            if (dataset.count("#") == 3):
+            if (dataset.count("#") == 1):
                 check, response = self.data(block=dataset, level='file', instance=instance)
             else:
                 check, response = self.data(dataset=dataset, level='file', instance=instance)
             if check:
                 return 1, "Error"
             data = response.get('phedex').get('dbs')
-            print response
             if not data:
                 return 1, "Error"
             xml = "%s<%s" % (xml, 'dataset')
