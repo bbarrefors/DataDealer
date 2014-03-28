@@ -132,7 +132,7 @@ class DynDTA:
             self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
             budget -= size_TB
         # Get blocks to subscribe
-        subscriptions = blockSubscription(dataset_block, budget, subscriptions, current_site)
+        subscriptions = self.blockSubscription(dataset_block, budget, subscriptions, current_site)
         # Subscribe sets
         i = 0
         for sets in subscriptions:
