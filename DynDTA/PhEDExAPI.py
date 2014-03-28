@@ -270,7 +270,7 @@ class PhEDExAPI:
 
     def subscribe(self, node='', data='', level='dataset', priority='low',
                   move='n', static='n', custodial='n', group='AnalysisOps',
-                  time_start='', request_only='n', no_mail='n', comments='',
+                  time_start='', request_only='y', no_mail='n', comments='',
                   format='json', instance='prod'):
         """
         _subscribe_
