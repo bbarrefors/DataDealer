@@ -54,6 +54,7 @@ class PhEDExAPI:
     # SITE = "T2_US_Nebraska"
     # DATASET = "/BTau/GowdyTest10-Run2010Av3/RAW"
     # GROUP = 'AnalysisOps'
+    # GROUP = 'Jupiter'
     # COMMENTS = 'BjornBarrefors'
     def __init__(self):
         """
@@ -318,7 +319,9 @@ class PhEDExAPI:
             self.logger.error(name, "Subscription call failed")
             # @TODO : Print out better logging, url + values
             return 1, "Error"
-        return 0, response
+        json_data = json.load(response)
+        request_id = json_data.get('phedex').get('request_created')[0].get('id')
+        return 0, request_id
 
 
     ############################################################################
@@ -366,7 +369,9 @@ class PhEDExAPI:
             self.logger.error(name, "Delete call failed")
             # @TODO : Print out better logging, url + values
             return 1, "Error"
-        return 0, response
+        json_data = json.load(response)
+        request_id = json_data.get('phedex').get('request_created')[0].get('id')
+        return 0, request_id
 
 
     ############################################################################
@@ -410,7 +415,7 @@ class PhEDExAPI:
         check, response = self.phedexCall(update_url, values)
         if check:
             # An error occurred
-            self.logger.error(name, "UpdateREquest call failed")
+            self.logger.error(name, "UpdateRequest call failed")
             # @TODO : Print out better logging, url + values
             return 1, "Error"
         return 0, response
@@ -527,8 +532,11 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, data = phedex_api.xmlData(datasets=['/TauPlusX/Run2012D-22Jan2013-v1/AOD#5044b654-8f01-11e2-9f41-00221959e69e'], instance='prod')
+    check, data = phedex_api.xmlData(datasets=['/QCD_Pt_80_170_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM'])
     if check:
         sys.exit(1)
-    print data
+    check, response = phedex_api.subscribe(node='T2_US_Nebraska', data=data, comments='--THIS IS ONLY A TEST--Dont approve')
+    if check:
+        sys.exit(1)
+    print response
     sys.exit(0)
