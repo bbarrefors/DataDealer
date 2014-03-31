@@ -105,12 +105,15 @@ class DynDTA:
         subscriptions = [[], [], []]
         datasets = sorted(datasets, key=itemgetter(1))
         datasets.reverse()
-        #y = 0
-        #for sets in datasets:
-        #    if y == 50:
-        #        break
-        #    print("%.3f \t %s" % (sets[1], sets[0]))
-        #    y += 1
+        print("%s \t %s \t %s \t %s" % ("Rank", "Access", "Replicas", "Dataset"))
+        y = 0
+        for sets in datasets:
+            if y == 50:
+                break
+            acc = candidates[sets[0]]
+            rep = self.nReplicas(sets[0])
+            print("%.3f \t %d \t %d \t %s" % (sets[1], acc, rep, sets[0]))
+            y += 1
         dataset_block = ''
         budget = 30
         selected_sets = []
