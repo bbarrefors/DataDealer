@@ -91,6 +91,7 @@ class DynDTA:
         n_access_2t = 1
         n_replicas = 1
         size_TB = 1
+        printing = []
         for dataset, access in candidates.iteritems():
             n_access_t = access
             try:
@@ -101,19 +102,20 @@ class DynDTA:
             size_TB = self.size(dataset)
             rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
             datasets.append((dataset, rank))
+            printing.append((rank, n_access_t, n_replicas, dataset))
         # Do weighted random selection
         subscriptions = [[], [], []]
         datasets = sorted(datasets, key=itemgetter(1))
         datasets.reverse()
-        print("%s \t %s \t %s \t %s" % ("Rank", "Access", "Replicas", "Dataset"))
-        y = 0
-        for sets in datasets:
-            if y == 50:
-                break
-            acc = candidates[sets[0]]
-            rep = self.nReplicas(sets[0])
-            print("%.3f \t %d \t %d \t %s" % (sets[1], acc, rep, sets[0]))
-            y += 1
+        printing = sorted(printing, key=itemgetter(0))
+        printing.reverse()
+        #print("%s \t %s \t %s \t %s" % ("Rank", "Acc", "Replicas", "Dataset"))
+        #y = 0
+        #for sets in printing:
+        #    if y == 50:
+        #        break
+        #    print("%.3f \t %d \t %d \t %s" % (sets[0], int(sets[1]), int(sets[2]), sets[3]))
+        #    y += 1
         dataset_block = ''
         budget = 30
         selected_sets = []
@@ -178,7 +180,7 @@ class DynDTA:
         datasets = dict()
         i = 0
         for dataset in data:
-            if i == 50:
+            if i == 200:
                 break
             if dataset['COLLNAME'] == 'unknown':
                 continue

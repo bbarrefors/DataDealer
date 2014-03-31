@@ -1,50 +1,51 @@
-49.261 	 /TTJets_SemiLeptMGDecays_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7C-v1/AODSIM
-39.529 	 /HTMHTParked/Run2012D-22Jan2013-v1/AOD
-33.267 	 /PAHighPt/HIRun2013-PromptReco-v1/RECO
-29.449 	 /MuOniaParked/Run2012D-22Jan2013-v1/AOD
-27.794 	 /MuOniaParked/Run2012B-22Jan2013-v1/AOD
-24.996 	 /SingleElectron/Run2012B-13Jul2012-v1/AOD
-24.186 	 /QCD_Pt_80_170_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-22.587 	 /MuOniaParked/Run2012C-22Jan2013-v1/AOD
-20.220 	 /TT_CT10_TuneZ2star_8TeV-powheg-tauola/Summer12_DR53X-PU_S10_START53_V7A-v2/AODSIM
-19.288 	 /SingleElectron/Run2012C-22Jan2013-v1/AOD
-18.731 	 /METParked/Run2012D-22Jan2013-v1/AOD
-18.707 	 /SingleElectron/Run2012C-PromptReco-v2/AOD
-18.392 	 /TTJets_SemiLeptMGDecays_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A_ext-v1/AODSIM
-18.229 	 /DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-PU_RD1_START53_V7N-v1/AODSIM
-17.347 	 /QCD_Pt_170_250_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-16.213 	 /SingleElectron/Run2012B-22Jan2013-v1/AOD
-16.116 	 /SingleMu/Run2012B-22Jan2013-v1/AOD
-15.339 	 /SingleElectron/Run2012D-22Jan2013-v1/AOD
-13.887 	 /JetHT/Run2012D-22Jan2013-v1/AOD
-12.354 	 /JetHT/Run2012B-22Jan2013-v1/AOD
-11.935 	 /SingleElectron/Run2012D-PromptReco-v1/AOD
-9.463 	 /QCD_Pt_250_350_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-9.284 	 /WJetsToLNu_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-PU_S10_START53_V7A-v2/AODSIM
-9.026 	 /SingleMu/Run2012B-13Jul2012-v1/AOD
-8.048 	 /DoubleMuParked/Run2012D-22Jan2013-v1/AOD
-6.776 	 /DoubleMuParked/Run2012C-22Jan2013-v1/AOD
-6.370 	 /SingleMu/Run2012D-PromptReco-v1/AOD
-6.306 	 /DoublePhoton/Run2012D-22Jan2013-v1/AOD
-5.946 	 /SingleMu/Run2012C-PromptReco-v2/AOD
-5.019 	 /MuOnia/Run2012C-PromptReco-v2/AOD
-4.626 	 /DoubleElectron/Run2012D-22Jan2013-v1/AOD
-3.133 	 /TauParked/Run2012C-22Jan2013-v1/AOD
-2.840 	 /SingleMu/Run2012C-22Jan2013-v1/AOD
-1.936 	 /JetHT/Run2012C-22Jan2013-v1/AOD
-1.058 	 /DoubleElectron/Run2012C-22Jan2013-v1/AOD
-0.254 	 /MuOnia/Run2012D-22Jan2013-v1/AOD
-0.009 	 /QCD_HT-1000ToInf_TuneZ2star_8TeV-madgraph-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.009 	 /W1JetsToLNu_TuneZ2Star_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.007 	 /W3JetsToLNu_TuneZ2Star_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.007 	 /ZZ_TuneZ2star_8TeV_pythia6_tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.007 	 /QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.006 	 /TTJets_MassiveBinDECAY_TuneZ2star_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.004 	 /QCD_HT-500To1000_TuneZ2star_8TeV-madgraph-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.004 	 /W2JetsToLNu_TuneZ2Star_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.004 	 /DY1JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.003 	 /GenericTTbar/HC-CMSSW_5_3_1_START53_V5-v1/GEN-SIM-RECO
-0.002 	 /SinglePhotonParked/Run2012D-22Jan2013-v1/AOD
-0.001 	 /MultiJet1Parked/Run2012C-part2_05Nov2012-v2/AOD
-0.001 	 /DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
-0.000 	 /SingleMu/Run2012D-22Jan2013-v1/AOD
+Rank 	 Acc 	 Replicas 	 Dataset
+217.499  1274 	 8 	 /DYJetsToLL_M-50_13TeV-pythia6/Fall13dr-tsg_PU20bx25_POSTLS162_V2-v1/AODSIM
+150.633  1600 	 4 	 /GJets_TuneZ2_40_HT_100_7TeV-madgraph/Summer11-PU_S4_START42_V11-v1/AODSIM
+103.982  8012 	 4 	 /QCD_Pt_30_80_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+97.707 	 1842 	 3 	 /MinimumBias/Run2010A-Apr21ReReco-v1/AOD
+88.546 	 9798 	 6 	 /TTJets_SemiLeptMGDecays_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V7C-v1/AODSIM
+74.898 	 2256 	 5 	 /QCD_TuneZ2_HT-100To250_7TeV-madgraph/Summer11-PU_S4_START42_V11-v2/AODSIM
+71.433 	 3129 	 6 	 /QCD_TuneZ2_HT-250To500_7TeV-madgraph/Summer11-PU_S4_START42_V11-v3/AODSIM
+63.145 	 2233 	 6 	 /QCD_TuneZ2_HT-500To1000_7TeV-madgraph/Summer11-PU_S4_START42_V11-v1/AODSIM
+44.777 	 9994 	 7 	 /QCD_Pt_80_170_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+41.055 	 3919 	 5 	 /MuOnia/Run2012B-22Jan2013-v1/AOD
+37.631 	 198 	 6 	 /SUSYBBHToTauTau_M-110_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+36.555 	 199 	 6 	 /SUSYBBHToTauTau_M-600_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+36.105 	 198 	 6 	 /SUSYBBHToTauTau_M-700_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+35.560 	 191 	 6 	 /SUSYBBHToTauTau_M-350_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+35.508 	 196 	 6 	 /SUSYBBHToTauTau_M-800_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+35.403 	 190 	 6 	 /SUSYBBHToTauTau_M-120_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+34.554 	 190 	 6 	 /SUSYBBHToTauTau_M-1000_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+34.470 	 183 	 6 	 /SUSYGluGluToHToTauTau_M-110_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+33.722 	 186 	 6 	 /SUSYBBHToTauTau_M-400_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+29.435 	 768 	 4 	 /TTJets_HadronicMGDecays_TuneP11_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V19-v1/AODSIM
+29.272 	 159 	 6 	 /SUSYGluGluToHToTauTau_M-100_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+29.166 	 807 	 5 	 /TTJets_HadronicMGDecays_TuneP11mpiHi_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V19-v1/AODSIM
+29.073 	 1172 	 9 	 /DYJetsToLL_M-50_13TeV-pythia6/Fall13dr-tsg_PU40bx25_POSTLS162_V2-v1/AODSIM
+28.273 	 528 	 4 	 /TTJets_HadronicMGDecays_TuneP11TeV_8TeV-madgraph-tauola/Summer12_DR53X-PU_S10_START53_V19-v1/AODSIM
+27.353 	 198 	 7 	 /SUSYGluGluToHToTauTau_M-160_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+26.119 	 3531 	 6 	 /DYJetsToLL_M-50_TuneZ2Star_8TeV-madgraph-tarball/Summer12_DR53X-PU_RD1_START53_V7N-v1/AODSIM
+24.440 	 1994 	 4 	 /HTMHTParked/Run2012B-22Jan2013-v1/AOD
+22.071 	 165 	 7 	 /SUSYGluGluToHToTauTau_M-180_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+21.041 	 940 	 6 	 /SingleElectron/Run2012A-13Jul2012-v1/AOD
+20.160 	 193 	 8 	 /SUSYBBHToTauTau_M-200_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+20.141 	 152 	 7 	 /SUSYGluGluToHToTauTau_M-200_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+18.707 	 7942 	 8 	 /SingleElectron/Run2012C-PromptReco-v2/AOD
+18.354 	 340 	 8 	 /DoubleElectron/Run2012C-24Aug2012-v1/AOD
+18.150 	 181 	 8 	 /SUSYBBHToTauTau_M-140_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+16.590 	 2313 	 8 	 /DoubleMu/Run2012B-13Jul2012-v4/AOD
+15.403 	 1933 	 6 	 /DYJetsToLL_M-10To50_TuneZ2Star_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+14.061 	 480 	 7 	 /TauPlusX/Run2012A-22Jan2013-v1/AOD
+13.974 	 1767 	 8 	 /DoubleElectron/Run2012B-13Jul2012-v1/AOD
+13.897 	 3377 	 10 	 /DoubleElectron/Run2012C-PromptReco-v2/AOD
+13.043 	 1280 	 8 	 /MultiJet/Run2012A-22Jan2013-v1/AOD
+13.005 	 133 	 8 	 /SUSYBBHToTauTau_M-180_8TeV-pythia6-tauola/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+12.163 	 3411 	 6 	 /SingleElectron/Run2012B-13Jul2012-v1/AOD
+11.823 	 9391 	 10 	 /SingleElectron/Run2012D-PromptReco-v1/AOD
+11.493 	 5196 	 13 	 /DoubleElectron/Run2012D-PromptReco-v1/AOD
+11.202 	 229 	 8 	 /G_Pt-1400to1800_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+11.042 	 589 	 10 	 /TTH_HToBB_M-125_8TeV-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+10.877 	 219 	 8 	 /G_Pt-1800_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+10.616 	 3922 	 13 	 /DoubleMu/Run2012C-PromptReco-v2/AOD
+10.456 	 917 	 7 	 /MET/Run2012B-22Jan2013-v1/AOD
+10.337 	 211 	 8 	 /G_Pt-800to1400_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
