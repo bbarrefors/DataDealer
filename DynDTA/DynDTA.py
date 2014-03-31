@@ -18,6 +18,8 @@ import datetime
 import math
 import random
 
+from operator import itemgetter
+
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
 from PopDBAPI import PopDBAPI
@@ -101,10 +103,18 @@ class DynDTA:
             datasets.append((dataset, rank))
         # Do weighted random selection
         subscriptions = [[], [], []]
+        datasets = sorted(datasets, key=itemgetter(1))
+        datasets.reverse()
+        #y = 0
+        #for sets in datasets:
+        #    if y == 50:
+        #        break
+        #    print("%.3f \t %s" % (sets[1], sets[0]))
+        #    y += 1
         dataset_block = ''
         budget = 30
         selected_sets = []
-        surrent_site = site
+        current_site = site
         while budget > 0:
             dataset = self.weightedChoice(datasets)
             # Check if set was already selected
@@ -129,7 +139,7 @@ class DynDTA:
                 break
             subscriptions[current_site].append(dataset)
             # Keep track of daily budget
-            self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
+            #self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
             budget -= size_TB
         # Get blocks to subscribe
         subscriptions = self.blockSubscription(dataset_block, budget, subscriptions, current_site)
@@ -294,9 +304,9 @@ class DynDTA:
         Get total size of dataset in TB.
         """
         # Don't even bother querying phedex if it is a user dataset
-        if (dataset.find("/USER") != -1):
+        if (dataset_block.find("/USER") != -1):
             return subscriptions
-        check, response = self.phedex_api.data(dataset=dataset)
+        check, response = self.phedex_api.data(dataset=dataset_block)
         if check:
             return subscriptions
         try:
@@ -311,7 +321,7 @@ class DynDTA:
             if size > budget:
                 break
             block_name = block.get('name')
-            subscriptions.append(block_name)
+            subscriptions[current_site].append(block_name)
             budget -= size
         return subscriptions
 
