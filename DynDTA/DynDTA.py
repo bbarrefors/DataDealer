@@ -66,10 +66,12 @@ class DynDTA:
 
         The daily agent routine.
         """
-        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH"]
-        site = int(datetime.datetime.today().strftime("%d")) % len(sites)
         # Renew SSO Cookie for Popularity DB calls
         self.pop_db_api.renewSSOCookie()
+        # Rank sites based on current popularity
+        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH"]
+        site = int(datetime.datetime.today().strftime("%d")) % len(sites)
+        #site = 0
         # Restart daily budget in TB
         budget = 30.0
         # Find candidates. Top 200 accessed sets
