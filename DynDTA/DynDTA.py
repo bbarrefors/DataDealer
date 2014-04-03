@@ -114,10 +114,10 @@ class DynDTA:
         #print("%s \t %s \t %s \t %s" % ("Rank", "Acc", "Replicas", "Dataset"))
         #y = 0
         #for sets in printing:
-        #    if y == 50:
-        #        break
-        #    print("%.3f \t %d \t %d \t %s" % (sets[0], int(sets[1]), int(sets[2]), sets[3]))
+        #    if (sets[3] == "/QCD_Pt_170_250_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM") or (sets[3] == "/TT_CT10_TuneZ2star_8TeV-powheg-tauola/Summer12_DR53X-PU_S10_START53_V7A-v2/AODSIM") or (sets[3] == "/MuOniaParked/Run2012C-22Jan2013-v1/AOD"):
+        #        print("%.3f \t %d \t %d \t %s" % (sets[0], int(sets[1]), int(sets[2]), sets[3]))
         #    y += 1
+        #return 0
         dataset_block = ''
         budget = 30
         selected_sets = []
