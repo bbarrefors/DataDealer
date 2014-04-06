@@ -131,6 +131,9 @@ class DynDTA:
             size_TB = self.size(dataset)
             if size_TB == 1000:
                 continue
+            # Check if set was deleted from any of the sites in the last 2 weeks
+            if deleted(dataset, sites):
+                continue
             # Check if set already exists at site(s)
             i = 0
             current_site = site
@@ -187,6 +190,8 @@ class DynDTA:
             if dataset['COLLNAME'] == 'unknown':
                 continue
             elif (dataset['COLLNAME'].find("/USER") != -1):
+                continue
+            elif (dataset['COLLNAME'].find("/AOD") == -1)):
                 continue
             datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
@@ -306,9 +311,9 @@ class DynDTA:
 
     def blockSubscription(self, dataset_block, budget, subscriptions, current_site):
         """
-        _datasetSize_
+        _blockSubscription_
 
-        Get total size of dataset in TB.
+        Add blocks to subscriptions.
         """
         # Don't even bother querying phedex if it is a user dataset
         if (dataset_block.find("/USER") != -1):
@@ -332,6 +337,25 @@ class DynDTA:
             budget -= size
         return subscriptions
 
+
+    ############################################################################
+    #                                                                          #
+    #                              D E L E T E D                               #
+    #                                                                          #
+    ############################################################################
+
+    def deleted(self, dataset, sites):
+        """
+        _deleted_
+
+        Check if dataset was deleted from any of the sites by AnalysisOps in the
+        last 2 weeks.
+        """
+        check, response = self.phedex_api.data(dataset=dataset_block)
+        if check:
+            return subscriptions
+        try:
+            data = response.get('phedex').get('dbs')[0]
 
 ################################################################################
 #                                                                              #
