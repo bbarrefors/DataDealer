@@ -459,7 +459,7 @@ class PhEDExAPI:
         check -- 0 if all went well, 1 if error occured
         data  -- Error message or the return message from PhEDEx
         """
-        if (not (dataset or block)):
+        if (not (dataset or block or node)):
             return 1, "Not enough parameters passed"
 
         values = { 'block' : block, 'dataset' : dataset, 'node' : node,

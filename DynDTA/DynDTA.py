@@ -373,18 +373,18 @@ class DynDTA:
         for site in sites:
             check, response = self.phedex_api.blockReplicas(node=site, group="AnalysisOps")
             if check:
-                site_rank.append(site, 0)
-            try:
-                data = response.get('phedex').get('dbs')[0]
-                print data
-                #data = data.get('dataset')[0].get('block')
-            except IndexError, e:
-                site_rank.append(site, 0)
-            #size = float(0)
-            #for block in data:
-            #size += block.get('bytes')
-            #size = size / 10**12
-       return site_rank
+                site_rank.append((site, 0))
+            blocks = response.get('phedex').get('block')
+            used_space = float(0)
+            for block in blocks:
+                bytes = block.get('bytes')
+                used_space += bytes
+            used_space = used_space / 10**12
+            site_rank.append((site, 250 - used_space))
+        return site_rank
+
+
+
 
 
 ################################################################################
