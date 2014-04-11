@@ -102,14 +102,12 @@ class DynDTA:
             n_replicas = self.nReplicas(dataset)
             size_TB = self.size(dataset)
             rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
-            datasets.append((dataset, rank))
+            datasets[dataset] = rank
             #printing.append((rank, n_access_t, n_replicas, dataset))
         # Do weighted random selection
         subscriptions = dict()
         for sit in sites:
             subscriptions[sit] = []
-        datasets = sorted(datasets, key=itemgetter(1))
-        datasets.reverse()
         #printing = sorted(printing, key=itemgetter(0))
         #printing.reverse()
         #print("%s \t %s \t %s \t %s" % ("Rank", "Acc", "Replicas", "Dataset"))
@@ -120,15 +118,11 @@ class DynDTA:
         #    y += 1
         #return 0
         dataset_block = ''
-        budget = 30
-        selected_sets = []
         block_site = ''
         while budget > 0:
             dataset = self.weightedChoice(datasets)
             # Check if set was already selected
-            if dataset in selected_sets:
-                continue
-            selected_sets.append(dataset)
+            del datasets[dataset]
             size_TB = self.size(dataset)
             if size_TB == 1000:
                 continue
@@ -147,6 +141,8 @@ class DynDTA:
                 block_site = selected_site
                 break
             subscriptions[selected_site].append(dataset)
+            # Update the ranking
+            site_rank[selected_site] = site_rank[selected_site] - size_TB
             # Keep track of daily budget
             #self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
             budget -= size_TB
@@ -160,7 +156,8 @@ class DynDTA:
             check, data = self.phedex_api.xmlData(datasets=sets)
             if check:
                 continue
-            check, response = self.phedex_api.subscribe(node=sit, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
+            #check, response = self.phedex_api.subscribe(node=sit, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
+            print str(sit) + " : " + str(sets)
         return 0
 
 
@@ -260,12 +257,13 @@ class DynDTA:
         """
         _weightedChoice_
 
-        Return a weighted randomly selected dataset
+        Return a weighted randomly selected object.
+        Expects a dictionary.
         """
-        total = sum(w for c, w in choices)
+        total = sum(w for c, w in choices.iteritems())
         r = random.uniform(0, total)
         upto = 0
-        for c, w in choices:
+        for c, w in choices.iteritems():
             if upto + w > r:
                 return c
             upto += w
@@ -364,10 +362,9 @@ class DynDTA:
 
     def siteRanking(self, sites):
         """
-        _deleted_
+        _siteRanking_
 
-        Check if dataset was deleted from any of the sites by AnalysisOps in the
-        last 2 weeks.
+        Rank the sites based on available storage
         """
         site_rank = []
         for site in sites:
@@ -384,7 +381,33 @@ class DynDTA:
         return site_rank
 
 
+    ############################################################################
+    #                                                                          #
+    #                   U N A V A I L A B L E   S I T E S                      #
+    #                                                                          #
+    ############################################################################
 
+    def unavailableSites(self, dataset, site_rank):
+        """
+        _unavailableSites_
+
+        Find all of our sites which already has the dataset
+        """
+        unavailable_sites = []
+        for site, rank in site_rank.iteritems()
+            check, response = self.phedex_api.blockReplicas(dataset=dataset, node=site)
+            if check:
+                unavailable_sites.append(site)
+                continue
+            data = response.get('phedex')
+            block = data.get('block')
+            try:
+                replicas = block[0].get('replica')
+            except IndexError, e:
+                continue
+            unavailable_sites.append(site)
+        print unavailable_sites
+        return unavailable_sites
 
 
 ################################################################################
@@ -400,6 +423,4 @@ if __name__ == '__main__':
     This is where it all starts
     """
     agent = DynDTA()
-    sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH"]
-    ranking = agent.siteRanking(sites)
-    sys.exit(0)
+    sys.exit(agent.agent())
