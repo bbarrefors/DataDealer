@@ -589,7 +589,7 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, data = phedex_api.deletions(node='T2_US_Nebraska', datasets='/HT/Run2012A-13Jul2012-v1/AOD', request_since='last_30days')
+    check, data = phedex_api.deletions(node='T2_US_Nebraska', dataset='/QCD_HT-500To1000_TuneZ2star_8TeV-madgraph-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM', request_since='last_30days')
     if check:
         sys.exit(1)
     print data

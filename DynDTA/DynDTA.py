@@ -185,7 +185,7 @@ class DynDTA:
                 continue
             elif (dataset['COLLNAME'].find("/USER") != -1):
                 continue
-            elif (dataset['COLLNAME'].find("/AOD") == -1)):
+            elif (dataset['COLLNAME'].find("/AOD") == -1):
                 continue
             datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
@@ -338,18 +338,22 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def deleted(self, dataset, sites):
+    def deleted(self, dataset, site):
         """
         _deleted_
 
         Check if dataset was deleted from any of the sites by AnalysisOps in the
         last 2 weeks.
         """
-        check, response = self.phedex_api.data(dataset=dataset_block)
+        check, response = self.phedex_api.deletions(node=site, dataset=dataset, request_since='last_30days')
         if check:
-            return subscriptions
+            return False
         try:
-            data = response.get('phedex').get('dbs')[0]
+            data = response.get('phedex').get('dataset')[0]
+        except IndexError, e:
+            return False
+        return True
+
 
 
     ############################################################################
