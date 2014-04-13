@@ -69,8 +69,8 @@ class DynDTA:
         # Renew SSO Cookie for Popularity DB calls
         self.pop_db_api.renewSSOCookie()
         # Rank sites based on current available space
-        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH"]
-        site_rank = siteRanking(sites)
+        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT", "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech"]
+        site_rank = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = 30.0
         # Find candidates. Top 200 accessed sets
@@ -87,12 +87,11 @@ class DynDTA:
         for dataset in t2_data:
             if dataset.get('COLLNAME') in candidates:
                 accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
-        datasets = []
+        datasets = dict()
         n_access_t = 1
         n_access_2t = 1
         n_replicas = 1
         size_TB = 1
-        #printing = []
         for dataset, access in candidates.iteritems():
             n_access_t = access
             try:
@@ -103,20 +102,10 @@ class DynDTA:
             size_TB = self.size(dataset)
             rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
             datasets[dataset] = rank
-            #printing.append((rank, n_access_t, n_replicas, dataset))
         # Do weighted random selection
         subscriptions = dict()
-        for sit in sites:
-            subscriptions[sit] = []
-        #printing = sorted(printing, key=itemgetter(0))
-        #printing.reverse()
-        #print("%s \t %s \t %s \t %s" % ("Rank", "Acc", "Replicas", "Dataset"))
-        #y = 0
-        #for sets in printing:
-        #    if (sets[3] == "/QCD_Pt_170_250_EMEnriched_TuneZ2star_8TeV_pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM") or (sets[3] == "/TT_CT10_TuneZ2star_8TeV-powheg-tauola/Summer12_DR53X-PU_S10_START53_V7A-v2/AODSIM") or (sets[3] == "/MuOniaParked/Run2012C-22Jan2013-v1/AOD"):
-        #        print("%.3f \t %d \t %d \t %s" % (sets[0], int(sets[1]), int(sets[2]), sets[3]))
-        #    y += 1
-        #return 0
+        for site in sites:
+            subscriptions[site] = []
         dataset_block = ''
         block_site = ''
         while budget > 0:
@@ -127,12 +116,16 @@ class DynDTA:
             if size_TB == 1000:
                 continue
             # Check if set was deleted from any of the sites in the last 2 weeks
-            if deleted(dataset, sites):
+            if self.deleted(dataset, sites):
                 continue
             # Select site
             # First remove sites which already have dataset
-            site_remove = unavailableSites(dataset, site_rank)
-            available_sites = site_rank - site_remove
+            available_sites = dict()
+            site_remove = self.unavailableSites(dataset, site_rank)
+            for k, v in site_rank.iteritems():
+                if k in site_remove:
+                    continue
+                available_sites[k] = v
             if not available_sites:
                 continue
             selected_site = self.weightedChoice(available_sites)
@@ -150,14 +143,13 @@ class DynDTA:
         subscriptions = self.blockSubscription(dataset_block, budget, subscriptions, block_site)
         # Subscribe sets
         i = 0
-        for sit, sets in subscriptions:
+        for site, sets in subscriptions.iteritems():
             if not sets:
                 continue
             check, data = self.phedex_api.xmlData(datasets=sets)
             if check:
                 continue
-            #check, response = self.phedex_api.subscribe(node=sit, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
-            print str(sit) + " : " + str(sets)
+            check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
         return 0
 
 
@@ -366,18 +358,18 @@ class DynDTA:
 
         Rank the sites based on available storage
         """
-        site_rank = []
+        site_rank = dict()
         for site in sites:
             check, response = self.phedex_api.blockReplicas(node=site, group="AnalysisOps")
             if check:
-                site_rank.append((site, 0))
+                site_rank[site] = 0
             blocks = response.get('phedex').get('block')
             used_space = float(0)
             for block in blocks:
                 bytes = block.get('bytes')
                 used_space += bytes
             used_space = used_space / 10**12
-            site_rank.append((site, 250 - used_space))
+            site_rank[site] = 250 - used_space
         return site_rank
 
 
@@ -393,11 +385,11 @@ class DynDTA:
 
         Find all of our sites which already has the dataset
         """
-        unavailable_sites = []
-        for site, rank in site_rank.iteritems()
+        unavailable_sites = dict()
+        for site, rank in site_rank.iteritems():
             check, response = self.phedex_api.blockReplicas(dataset=dataset, node=site)
             if check:
-                unavailable_sites.append(site)
+                unavailable_sites[site] = rank
                 continue
             data = response.get('phedex')
             block = data.get('block')
@@ -405,8 +397,7 @@ class DynDTA:
                 replicas = block[0].get('replica')
             except IndexError, e:
                 continue
-            unavailable_sites.append(site)
-        print unavailable_sites
+            unavailable_sites[site] = rank
         return unavailable_sites
 
 
