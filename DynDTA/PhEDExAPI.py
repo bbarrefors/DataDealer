@@ -242,12 +242,7 @@ class PhEDExAPI:
         xml = '%s<%s name="https://cmsweb.cern.ch/dbs/%s/global/DBSReader">' % (xml, 'dbs', instance)
         for dataset in datasets:
             check = 1
-            response = {}
-            # Decide if the dataset name is a dataset or a block name
-            if (dataset.count("#") == 1):
-                check, response = self.data(block=dataset, level='file', instance=instance)
-            else:
-                check, response = self.data(dataset=dataset, level='file', instance=instance)
+            check, response = self.data(dataset=dataset, level='file', instance=instance)
             if check:
                 return 1, "Error"
             data = response.get('phedex').get('dbs')
@@ -450,7 +445,7 @@ class PhEDExAPI:
         complete      -- Show only complete sets
         dist_complete -- Return only replicas which has at least one complete replica
         subscribed    -- Include sets subscribed
-        custodial     -- Make this new copy custodial
+        custodial     -- Return custodial datasets
         group         -- The responsible group data managers etc
         format        -- Which format to return data as, XML or JSON
         instance      -- Which instance of PhEDEx to query, dev or prod
@@ -589,8 +584,4 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, data = phedex_api.deletions(node='T2_US_Nebraska', dataset='/QCD_HT-500To1000_TuneZ2star_8TeV-madgraph-pythia6/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM', request_since='last_30days')
-    if check:
-        sys.exit(1)
-    print data
     sys.exit(0)

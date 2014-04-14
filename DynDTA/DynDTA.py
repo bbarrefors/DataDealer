@@ -103,6 +103,9 @@ class DynDTA:
             rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
             datasets[dataset] = rank
         # Do weighted random selection
+        for dataset, rank in datasets.iteritems():
+            print str(dataset) + "\t" + str(rank)
+        return 0
         subscriptions = dict()
         for site in sites:
             subscriptions[site] = []
@@ -130,17 +133,14 @@ class DynDTA:
                 continue
             selected_site = self.weightedChoice(available_sites)
             if (size_TB > budget):
-                dataset_block = dataset
-                block_site = selected_site
+                subscriptions[selected_site].append(dataset)
                 break
             subscriptions[selected_site].append(dataset)
             # Update the ranking
             site_rank[selected_site] = site_rank[selected_site] - size_TB
             # Keep track of daily budget
-            #self.logger.log("Agent", "A set of size %s selected" % (size_TB,))
             budget -= size_TB
         # Get blocks to subscribe
-        subscriptions = self.blockSubscription(dataset_block, budget, subscriptions, block_site)
         # Subscribe sets
         i = 0
         for site, sets in subscriptions.iteritems():
