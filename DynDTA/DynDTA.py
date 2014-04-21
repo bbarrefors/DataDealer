@@ -103,9 +103,11 @@ class DynDTA:
             rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
             datasets[dataset] = rank
         # Do weighted random selection
-        for dataset, rank in datasets.iteritems():
-            print str(dataset) + "\t" + str(rank)
-        return 0
+        sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
+        for rank in sorted_ranking:
+            self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
+            if rank[1] < 50:
+                del datasets[rank[0]]
         subscriptions = dict()
         for site in sites:
             subscriptions[site] = []
@@ -149,6 +151,8 @@ class DynDTA:
             check, data = self.phedex_api.xmlData(datasets=sets)
             if check:
                 continue
+            for dataset in sets:
+                self.logger.log("Subscription", str(site) + " : " + str(dataset))
             check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
         return 0
 
@@ -328,20 +332,21 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def deleted(self, dataset, site):
+    def deleted(self, dataset, sites):
         """
         _deleted_
 
         Check if dataset was deleted from any of the sites by AnalysisOps in the
         last 2 weeks.
         """
-        check, response = self.phedex_api.deletions(node=site, dataset=dataset, request_since='last_30days')
-        if check:
-            return False
-        try:
-            data = response.get('phedex').get('dataset')[0]
-        except IndexError, e:
-            return False
+        for site in sites:
+            check, response = self.phedex_api.deletions(node=site, dataset=dataset, request_since='last_30days')
+            if check:
+                return False
+            try:
+                data = response.get('phedex').get('dataset')[0]
+            except IndexError, e:
+                return False
         return True
 
 
