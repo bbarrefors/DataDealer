@@ -70,9 +70,9 @@ class DynDTA:
         self.pop_db_api.renewSSOCookie()
         # Rank sites based on current available space
         sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT", "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech"]
-        site_rank = self.siteRanking(sites)
+        site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
-        budget = 30.0
+        budget = min(30.0, max_budget)
         # Find candidates. Top 200 accessed sets
         check, candidates = self.candidates()
         if check:
@@ -106,14 +106,14 @@ class DynDTA:
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
         for rank in sorted_ranking:
             self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
-            if rank[1] < 50:
+            if rank[1] < 200:
                 del datasets[rank[0]]
         subscriptions = dict()
         for site in sites:
             subscriptions[site] = []
         dataset_block = ''
         block_site = ''
-        while budget > 0:
+        while ((budget > 0) and (datasets)):
             dataset = self.weightedChoice(datasets)
             # Check if set was already selected
             del datasets[dataset]
@@ -363,7 +363,9 @@ class DynDTA:
 
         Rank the sites based on available storage
         """
+        site_quotas = ["T2_US_Nebraska" : 250, "T2_US_MIT" : 250, "T2_DE_RWTH" : 200, "T2_ES_CIEMAT" : 200, "T2_US_Wisconsin" : 250, "T2_US_Florida" : 275, "T2_US_Caltech" : 250]
         site_rank = dict()
+        max_budget = 0
         for site in sites:
             check, response = self.phedex_api.blockReplicas(node=site, group="AnalysisOps")
             if check:
@@ -374,8 +376,13 @@ class DynDTA:
                 bytes = block.get('bytes')
                 used_space += bytes
             used_space = used_space / 10**12
-            site_rank[site] = 250 - used_space
-        return site_rank
+            #site_quota = siteQuota(site)
+            site_quota = site_quotas[site]
+            rank = (0.95*site_quota) - used_space
+            if (rank >= 30):
+              site_rank[site] = rank
+              max_budget += rank
+        return site_rank, max_budget
 
 
     ############################################################################
