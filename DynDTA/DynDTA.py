@@ -106,7 +106,7 @@ class DynDTA:
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
         for rank in sorted_ranking:
             self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
-            if rank[1] < 200:
+            if rank[1] < 100:
                 del datasets[rank[0]]
         subscriptions = dict()
         for site in sites:
