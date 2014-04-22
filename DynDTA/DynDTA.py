@@ -373,7 +373,11 @@ class DynDTA:
             blocks = response.get('phedex').get('block')
             used_space = float(0)
             for block in blocks:
-                bytes = block.get('bytes')
+                replica = block.get('replica')
+                if replica[0].get('subscribed') == 'y':
+                  bytes = block.get('bytes')
+                else:
+                  bytes = replica[0].get('bytes')
                 used_space += bytes
             used_space = used_space / 10**12
             #site_quota = siteQuota(site)

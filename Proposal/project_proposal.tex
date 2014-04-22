@@ -1,0 +1,45 @@
+\documentclass[11pt,a4page]{article}
+
+\usepackage{fullpage}
+\usepackage{url}
+\usepackage{helvet}
+
+\title{\textbf{\fontfamily{\sfdefault}\selectfont DynDTA: Proposal for a Dynamic Data Transfer Agent for the CMS Experiment}}
+\author{Bj\"{o}rn Barrefors\\
+  University of Nebraska-Lincoln\\
+  \texttt{bbarrefo@cse.unl.edu}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+	The CMS experiment is a world-wide physics collaboration storing almost around O(50PB) of data on more than 50 sites across 4 continents. Manage all this data manually to make sure the correct data is available at the right time and freeing up space as datasets are no longer need can be a challenge. We therefore suggest an automated and intelligent system to keep track of dataset activities, making decisions on when and where to replicate datasets and when to remove them when no longer needed. Our suggested solution is to treat this as a catching heavy-hitters on a sliding window problem [Braverman et. al], a problem for which space efficient approximation algorithms have been proven to exist for very large amounts of data [Alon et. al].
+
+\end{abstract}
+
+
+\section*{Introduction}
+
+The CMS experiment is a world-wide physics collaboration storing around O(50PB) of data on more than 100 sites across 4 continents. Data is organized into datasets where each dataset have some common properties making it likely to be completely used in analysis. Available storage at site is currently managed by data managers for different physics groups, if a dataset is needed for analysis a replica is subscribed to that site. Such a solution would perform very well on a system with infinite amount of bandwidth, storage, and CPU power. Since such a system doesn't exist we suggest a change in how the CMS experiment manages jobs and data. Instead of moving large amounts of data to where the job is submitted jobs can be pushed to sites where data is already available. If there are CPU's available at any site a submitted job should be able to run, an automatic dynamic data manager would be responsible for replicating popular datasets and removing unpopular datasets to fully utilize both storage and CPU's across the system. Such a manager consists of three major tasks, finding popular datasets early in the popularity period, selecting an optimal site for load balancing, and finding datasets which are no longer popular and can be removed. In this paper we will talk about possible algorithms for solving each of these tasks and what is needed in order to develop such algorithms. A similar project was done at the ATLAS experiment [PanDA] which is one of the other major experiments at CERN, similarly to our dynamic data placement their goal was to improve the efficiency of storage and reduce queue time. PanDA was developed as a dynamic data manager to fit data distribution with their dynamic job allocation. PanDA uses a fairly aggressive algorithm to quickly react on jobs in the global queue and is developed based on ATLAS requirements and data popularity distribution. There are a lot of useful information to be learned from the development of PanDA, building a picture of data popularity is important to understand how data management affects the system as a whole. Furthermore even though ATLAS have notice improvements since the deployment of ATLAS there have also been significant increase in network traffic. In our project we want to improve on PanDA's idea with even better data popularity projection and decrease in popularity.
+
+
+\section*{Goals}
+
+The ultimate goals for dynamic data placement are to decrease queue and execution time of CMS jobs while improving storage and CPU utilization, these are hard to measure goals so we have come up with other more specific and measurable goals to better test successfulness.
+\begin{itemize}
+	\item Minimize the fluctuation in replicas per user for each dataset, expressed in the following equation:
+		\begin{displaymath}
+		  
+		\end{displaymath}
+\end{itemize}
+
+\section{Methods}
+
+
+\bibliographystyle{plain}
+\bibliography{project_proposal.bib}
+
+\end{document}
