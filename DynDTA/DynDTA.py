@@ -60,7 +60,7 @@ class DynDTA:
     #                                                                          #
     ############################################################################
 
-    def agent(self):
+    def agent(self, test):
         """
         _agent_
 
@@ -152,8 +152,10 @@ class DynDTA:
             if check:
                 continue
             for dataset in sets:
-                self.logger.log("Subscription", str(site) + " : " + str(dataset))
-            check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
+                if not test:
+                    self.logger.log("Subscription", str(site) + " : " + str(dataset))
+            if not test:
+                check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
         return 0
 
 
@@ -429,5 +431,8 @@ if __name__ == '__main__':
 
     This is where it all starts
     """
+    test = 0
+    if len(sys.argv) == 2:
+        test = int(sys.argv[1])
     agent = DynDTA()
-    sys.exit(agent.agent())
+    sys.exit(agent.agent(test=test))
