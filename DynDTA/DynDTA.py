@@ -363,7 +363,7 @@ class DynDTA:
 
         Rank the sites based on available storage
         """
-        site_quotas = {"T2_US_Nebraska" : 250, "T2_US_MIT" : 250, "T2_DE_RWTH" : 200, "T2_ES_CIEMAT" : 200, "T2_US_Wisconsin" : 250, "T2_US_Florida" : 275, "T2_US_Caltech" : 250}
+        site_quotas = {"T2_US_Nebraska" : 450, "T2_US_MIT" : 250, "T2_DE_RWTH" : 200, "T2_ES_CIEMAT" : 200, "T2_US_Wisconsin" : 250, "T2_US_Florida" : 275, "T2_US_Caltech" : 250}
         site_rank = dict()
         max_budget = 0
         for site in sites:
