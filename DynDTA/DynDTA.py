@@ -49,10 +49,10 @@ class DynDTA:
 
         Set up class constants
         """
-        #self.logger = DynDTALogger()
-        #self.pop_db_api = PopDBAPI()
-        #self.phedex_api = PhEDExAPI()
-        #self.time_window = 3
+        self.logger = DynDTALogger()
+        self.pop_db_api = PopDBAPI()
+        self.phedex_api = PhEDExAPI()
+        self.time_window = 3
         self.mit_db = 0
 
     ############################################################################
@@ -459,5 +459,5 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         test = int(sys.argv[1])
     agent = DynDTA()
-    #sys.exit(agent.agent(test=test))
-    sys.exit(agent.connectDB())
+    sys.exit(agent.agent(test=test))
+    #sys.exit(agent.connectDB())
