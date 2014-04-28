@@ -423,18 +423,18 @@ class DynDTA:
         """
         # Get server, username, and password from file
         db_file = open('/home/bockelman/barrefors/db/login')
-        server = db_file.readline().strip()
+        host = db_file.readline().strip()
+        db = db_file.readline().strip()
         user = db_file.readline().strip()
         passwd = db_file.readline().strip()
         # Decode the address, username, and password
-        server = base64.b64decode(server)
+        host = base64.b64decode(host)
+        db = base64.b64decode(db)
         user = base64.b64decode(user)
         passwd = base64.b64decode(passwd)
 
         # Connect to DB
-        print server
-        print user
-        print passwd
+
         return 0
 
 ################################################################################
