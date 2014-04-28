@@ -67,8 +67,8 @@ class DynDTADatabase():
         try:
             with self.connection:
                 cur = self.connection.cursor()
-                cur.execute('CREATE TABLE IF NOT EXISTS DirectoryDataset (Directory TEXT, Dataset TEXT, Expiration TIMESTAMP)')
-                cur.execute('CREATE TABLE IF NOT EXISTS DatasetAccess (Dataset TEXT, Expiration TIMESTAMP)')
+                cur.execute('CREATE TABLE IF NOT EXISTS DatasetRanking (Dataset TEXT, Ranking REAL, n_Replicas INTEGER, size REAL, n_tUsers INTEGER, n_tAccesses INTEGER, n_2tUsers INTEGER, n_2tAccesses INTEGER)')EXT
+                cur.execute('CREATE TABLE IF NOT EXISTS DatasetAvailability (Dataset TEXT, Site T)')
         except lite.IntegrityError:
             self.logger.error(self.name, "Couldn't initialize database")
             sys.exit(1)

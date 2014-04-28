@@ -8,15 +8,16 @@ for Dynamic Data Transfer Agent
 
 Holland Computing Center - University of Nebraska-Lincoln
 """
-__author__       = 'Bjorn Barrefors'
+__author__ = 'Bjorn Barrefors'
 __organization__ = 'Holland Computing Center - University of Nebraska-Lincoln'
-__email__        = 'bbarrefo@cse.unl.edu'
+__email__ = 'bbarrefo@cse.unl.edu'
 
 import sys
-import time
 import datetime
 import math
 import random
+import re
+import base64
 
 from operator import itemgetter
 
@@ -30,7 +31,6 @@ from PopDBAPI import PopDBAPI
 #                                  A G E N T                                   #
 #                                                                              #
 ################################################################################
-
 class DynDTA:
     """
     _DynDTA_
@@ -53,13 +53,11 @@ class DynDTA:
         self.phedex_api = PhEDExAPI()
         self.time_window = 3
 
-
     ############################################################################
     #                                                                          #
     #                                A G E N T                                 #
     #                                                                          #
     ############################################################################
-
     def agent(self, test):
         """
         _agent_
@@ -69,7 +67,8 @@ class DynDTA:
         # Renew SSO Cookie for Popularity DB calls
         self.pop_db_api.renewSSOCookie()
         # Rank sites based on current available space
-        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT", "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech"]
+        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT",
+                 "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(30.0, max_budget)
@@ -80,7 +79,8 @@ class DynDTA:
         # Get ranking data. n_access | n_replicas | size_TB
         tstop = datetime.date.today()
         tstart = tstop - datetime.timedelta(days=(2*self.time_window))
-        check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
+        check, t2_data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart,
+                                                               tstop=tstop)
         if check:
             return 1
         accesses = {}
@@ -96,11 +96,12 @@ class DynDTA:
             n_access_t = access
             try:
                 n_access_2t = accesses[dataset]
-            except KeyError, e:
+            except KeyError:
                 n_access_2t = n_access_t
             n_replicas = self.nReplicas(dataset)
             size_TB = self.size(dataset)
-            rank = (math.log10(n_access_t)*max(2*n_access_t - n_access_2t, 1))/(size_TB*(n_replicas**2))
+            rank = (math.log10(n_access_t)*max(2*n_access_t
+                    - n_access_2t, 1))/(size_TB*(n_replicas**2))
             datasets[dataset] = rank
         # Do weighted random selection
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
@@ -111,8 +112,6 @@ class DynDTA:
         subscriptions = dict()
         for site in sites:
             subscriptions[site] = []
-        dataset_block = ''
-        block_site = ''
         while ((budget > 0) and (datasets)):
             dataset = self.weightedChoice(datasets)
             # Check if set was already selected
@@ -144,7 +143,6 @@ class DynDTA:
             budget -= size_TB
         # Get blocks to subscribe
         # Subscribe sets
-        i = 0
         for site, sets in subscriptions.iteritems():
             if not sets:
                 continue
@@ -153,22 +151,23 @@ class DynDTA:
                 continue
             for dataset in sets:
                 if not test:
-                    self.logger.log("Subscription", str(site) + " : " + str(dataset))
+                    self.logger.log("Subscription", str(site)
+                                    + " : " + str(dataset))
             if not test:
-                check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments='Dynamic Data Transfer Agent')
+                check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
+                                                            comments='Dynamic Data Transfer Agent')
         return 0
-
 
     ############################################################################
     #                                                                          #
     #                            C A N D I D A T E S                           #
     #                                                                          #
     ############################################################################
-
     def candidates(self):
         tstop = datetime.date.today()
         tstart = tstop - datetime.timedelta(days=self.time_window)
-        check, data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart, tstop=tstop)
+        check, data = self.pop_db_api.getDSStatInTimeWindow(tstart=tstart,
+                                                            tstop=tstop)
         if check:
             return check, data
         datasets = dict()
@@ -176,9 +175,9 @@ class DynDTA:
         for dataset in data:
             if i == 200:
                 break
-            if dataset['COLLNAME'] == 'unknown':
+            if not (dataset['COLLNAME'].count("/") == 3):
                 continue
-            elif (dataset['COLLNAME'].find("/USER") != -1):
+            elif not (re.match('/.+/.+/(MINI)?AOD(SIM)?', dataset['COLLNAME'])):
                 continue
             elif (dataset['COLLNAME'].find("/AOD") == -1):
                 continue
@@ -186,13 +185,11 @@ class DynDTA:
             i += 1
         return 0, datasets
 
-
     ############################################################################
     #                                                                          #
     #                            N   R E P L I C A S                           #
     #                                                                          #
     ############################################################################
-
     def nReplicas(self, dataset):
         """
         _nReplicas_
@@ -209,18 +206,16 @@ class DynDTA:
         block = data.get('block')
         try:
             replicas = block[0].get('replica')
-        except IndexError, e:
+        except IndexError:
             return 100
         n_replicas = len(replicas)
         return n_replicas
-
 
     ############################################################################
     #                                                                          #
     #                        D A T A S E T   S I Z E                           #
     #                                                                          #
     ############################################################################
-
     def size(self, dataset):
         """
         _datasetSize_
@@ -236,7 +231,7 @@ class DynDTA:
         try:
             data = response.get('phedex').get('dbs')[0]
             data = data.get('dataset')[0].get('block')
-        except IndexError, e:
+        except IndexError:
             return 1000
         size = float(0)
         for block in data:
@@ -244,13 +239,11 @@ class DynDTA:
         size = size / 10**12
         return size
 
-
     ############################################################################
     #                                                                          #
     #                      W E I G H T E D   C H O I C E                       #
     #                                                                          #
     ############################################################################
-
     def weightedChoice(self, choices):
         """
         _weightedChoice_
@@ -281,25 +274,25 @@ class DynDTA:
         # Don't even bother querying phedex if it is a user dataset
         if (dataset.find("/USER") != -1):
             return True
-        check, response = self.phedex_api.blockReplicas(dataset=dataset, node=node)
+        check, response = self.phedex_api.blockReplicas(dataset=dataset,
+                                                        node=node)
         if check:
             return True
         data = response.get('phedex')
         block = data.get('block')
         try:
-            replicas = block[0].get('replica')
-        except IndexError, e:
+            block[0].get('replica')
+        except IndexError:
             return False
         return True
-
 
     ############################################################################
     #                                                                          #
     #                    B L O C K   S U B S C R I P T I O N                   #
     #                                                                          #
     ############################################################################
-
-    def blockSubscription(self, dataset_block, budget, subscriptions, selected_site):
+    def blockSubscription(self, dataset_block, budget, subscriptions,
+                          selected_site):
         """
         _blockSubscription_
 
@@ -314,7 +307,7 @@ class DynDTA:
         try:
             data = response.get('phedex').get('dbs')[0]
             data = data.get('dataset')[0].get('block')
-        except IndexError, e:
+        except IndexError:
             return subscriptions
         size = float(0)
         for block in data:
@@ -327,13 +320,11 @@ class DynDTA:
             budget -= size
         return subscriptions
 
-
     ############################################################################
     #                                                                          #
     #                              D E L E T E D                               #
     #                                                                          #
     ############################################################################
-
     def deleted(self, dataset, sites):
         """
         _deleted_
@@ -342,34 +333,36 @@ class DynDTA:
         last 2 weeks.
         """
         for site in sites:
-            check, response = self.phedex_api.deletions(node=site, dataset=dataset, request_since='last_30days')
+            check, response = self.phedex_api.deletions(node=site, dataset=dataset,
+                                                        request_since='last_30days')
             if check:
                 return False
             try:
-                data = response.get('phedex').get('dataset')[0]
-            except IndexError, e:
+                response.get('phedex').get('dataset')[0]
+            except IndexError:
                 return False
         return True
-
-
 
     ############################################################################
     #                                                                          #
     #                        S I T E   R A N K I N G                           #
     #                                                                          #
     ############################################################################
-
     def siteRanking(self, sites):
         """
         _siteRanking_
 
         Rank the sites based on available storage
         """
-        site_quotas = {"T2_US_Nebraska" : 450, "T2_US_MIT" : 250, "T2_DE_RWTH" : 200, "T2_ES_CIEMAT" : 200, "T2_US_Wisconsin" : 250, "T2_US_Florida" : 275, "T2_US_Caltech" : 250}
+        site_quotas = {"T2_US_Nebraska": 450, "T2_US_MIT": 250,
+                       "T2_DE_RWTH": 200, "T2_ES_CIEMAT": 200,
+                       "T2_US_Wisconsin": 250, "T2_US_Florida": 275,
+                       "T2_US_Caltech": 250}
         site_rank = dict()
         max_budget = 0
         for site in sites:
-            check, response = self.phedex_api.blockReplicas(node=site, group="AnalysisOps")
+            check, response = self.phedex_api.blockReplicas(node=site,
+                                                            group="AnalysisOps")
             if check:
                 site_rank[site] = 0
             blocks = response.get('phedex').get('block')
@@ -377,26 +370,24 @@ class DynDTA:
             for block in blocks:
                 replica = block.get('replica')
                 if replica[0].get('subscribed') == 'y':
-                  bytes = block.get('bytes')
+                    bytes = block.get('bytes')
                 else:
-                  bytes = replica[0].get('bytes')
+                    bytes = replica[0].get('bytes')
                 used_space += bytes
             used_space = used_space / 10**12
             #site_quota = siteQuota(site)
             site_quota = site_quotas[site]
             rank = (0.95*site_quota) - used_space
             if (rank >= 30):
-              site_rank[site] = rank
-              max_budget += rank
+                site_rank[site] = rank
+                max_budget += rank
         return site_rank, max_budget
-
 
     ############################################################################
     #                                                                          #
     #                   U N A V A I L A B L E   S I T E S                      #
     #                                                                          #
     ############################################################################
-
     def unavailableSites(self, dataset, site_rank):
         """
         _unavailableSites_
@@ -405,19 +396,42 @@ class DynDTA:
         """
         unavailable_sites = dict()
         for site, rank in site_rank.iteritems():
-            check, response = self.phedex_api.blockReplicas(dataset=dataset, node=site)
+            check, response = self.phedex_api.blockReplicas(dataset=dataset,
+                                                            node=site)
             if check:
                 unavailable_sites[site] = rank
                 continue
             data = response.get('phedex')
             block = data.get('block')
             try:
-                replicas = block[0].get('replica')
-            except IndexError, e:
+                block[0].get('replica')
+            except IndexError:
                 continue
             unavailable_sites[site] = rank
         return unavailable_sites
 
+    ############################################################################
+    #                                                                          #
+    #                           C O N N E C T   D B                            #
+    #                                                                          #
+    ############################################################################
+    def connectDB(self):
+        """
+        _connectDB_
+
+        Connect to the MySQL DB at MIT
+        """
+        # Get server, username, and password from file
+        db_file = open('/home/bockelman/barrefors/db/login')
+        server = db_file.readline().strip()
+        user = db_file.readline().strip()
+        passwd = db_file.readline().strip()
+        # Decode the address, username, and password
+        server = base64.b64decode(server)
+        user = base64.b64decode(user)
+        passwd = base64.b64decode(passwd)
+
+        # Connect to DB
 
 ################################################################################
 #                                                                              #
