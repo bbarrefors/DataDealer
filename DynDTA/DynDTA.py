@@ -18,6 +18,7 @@ import math
 import random
 import re
 import base64
+import MySQLdb as msdb
 
 from operator import itemgetter
 
@@ -48,10 +49,11 @@ class DynDTA:
 
         Set up class constants
         """
-        self.logger = DynDTALogger()
-        self.pop_db_api = PopDBAPI()
-        self.phedex_api = PhEDExAPI()
-        self.time_window = 3
+        #self.logger = DynDTALogger()
+        #self.pop_db_api = PopDBAPI()
+        #self.phedex_api = PhEDExAPI()
+        #self.time_window = 3
+        self.mit_db = 0
 
     ############################################################################
     #                                                                          #
@@ -434,7 +436,11 @@ class DynDTA:
         passwd = base64.b64decode(passwd)
 
         # Connect to DB
-
+        self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
+        mit_db.query("""SELECT SizeTb FROM Quotas WHERE SiteName='T2_US_Nebraska' AND GroupName='AnalysisOps'""")
+        result = mit_db.store_result()
+        res = result.fetch_row()
+        print res
         return 0
 
 ################################################################################
@@ -454,4 +460,4 @@ if __name__ == '__main__':
         test = int(sys.argv[1])
     agent = DynDTA()
     #sys.exit(agent.agent(test=test))
-  sys.exit(agent.connectDB())
+    sys.exit(agent.connectDB())
