@@ -432,7 +432,10 @@ class DynDTA:
         passwd = base64.b64decode(passwd)
 
         # Connect to DB
-        
+        print server
+        print user
+        print passwd
+        return 0
 
 ################################################################################
 #                                                                              #
@@ -451,4 +454,4 @@ if __name__ == '__main__':
         test = int(sys.argv[1])
     agent = DynDTA()
     #sys.exit(agent.agent(test=test))
-    sys.exit(agent.connectDB())
+  sys.exit(agent.connectDB())
