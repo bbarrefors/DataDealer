@@ -447,10 +447,9 @@ class DynDTA:
 
         # Connect to DB
         self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
-        mit_db.query("""SELECT SizeTb FROM Quotas WHERE SiteName='T2_US_Nebraska' AND GroupName='AnalysisOps'""")
-        result = mit_db.store_result()
-        res = result.fetch_row()
-        print res
+        mit_db.execute("UPDATE Quotas set SizeTb = %d where SiteName = %s and GroupName = %s" , (450, 'T2_US_Nebraska', 'AnalysisOps'))
+        #res = result.fetch_row()
+        #print res
         return 0
 
 ################################################################################
@@ -469,5 +468,5 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         test = int(sys.argv[1])
     agent = DynDTA()
-    sys.exit(agent.agent(test=test))
-    #sys.exit(agent.connectDB())
+    #sys.exit(agent.agent(test=test))
+    sys.exit(agent.connectDB())
