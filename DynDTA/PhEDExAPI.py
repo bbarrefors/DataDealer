@@ -399,9 +399,6 @@ class PhEDExAPI:
         data  -- Error message or the return message from PhEDEx
         """
         name = "delete"
-        if not (request):
-            self.logger.error(name, "Need to pass a request ID")
-            return 1, "Error"
 
         values = { 'decision' : decision, 'request' : request, 'node' : node,
                    'comments' : comments }
@@ -454,9 +451,6 @@ class PhEDExAPI:
         check -- 0 if all went well, 1 if error occured
         data  -- Error message or the return message from PhEDEx
         """
-        if (not (dataset or block or node)):
-            return 1, "Not enough parameters passed"
-
         values = { 'block' : block, 'dataset' : dataset, 'node' : node,
                    'se' : se, 'update_since' : update_since,
                    'create_since' : create_since, 'complete' : complete,
@@ -510,9 +504,6 @@ class PhEDExAPI:
         check -- 0 if all went well, 1 if error occured
         data  -- Error message or the return message from PhEDEx
         """
-        if (not (dataset or block)):
-            return 1, "Not enough parameters passed"
-
         values = { 'node' : node, 'se' : se, 'block' : block,
                    'dataset' : dataset, 'id' : id, 'request' : request,
                    'request_since' : request_since, 'complete' : complete,
@@ -560,14 +551,57 @@ class PhEDExAPI:
         check -- 0 if all went well, 1 if error occured
         data  -- Error message or the return message from PhEDEx
         """
-        if (not (node)):
-            return 1, "Not enough parameters passed"
-
         values = { 'request' : request, 'node' : node,
                    'create_since' : create_since, 'limit' : limit,
                    'approval' : approval, 'requested_by' : requested_by }
 
         data_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/deleteRequests" % (format, instance))
+        check, response = self.phedexCall(data_url, values)
+        if check:
+            # An error occurred
+            return 1, response
+        if format == "json":
+            data = json.load(response)
+            if not data:
+                return 1, "No json data available"
+        else:
+            data = response
+        return 0, data
+
+    ############################################################################
+    #                                                                          #
+    #                    T R A N S F E R   R E Q U E S T S                     #
+    #                                                                          #
+    ############################################################################
+    def transferRequests(self, request="", node="", group="", create_since="", limit="",
+                         approval="", requested_by="", format="json", instance="prod"):
+        """
+        transferRequests
+
+        PhEDEx transferRequests call
+
+
+        If the PhEDExCall fails an error will be returned.
+
+        Keyword arguments:
+        request      -- Request ID
+        node         -- Site
+        create_since -- Requests created after this date
+        limit        -- Maximum number of records returned
+        approval     -- Approval state
+        requested_by -- Request ID
+        format       -- Which format to return data as, XML or JSON
+        instance     -- Which instance of PhEDEx to query, dev or prod
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- Error message or the return message from PhEDEx
+        """
+        values = { 'request' : request, 'node' : node, 'group' : group,
+                   'create_since' : create_since, 'limit' : limit,
+                   'approval' : approval, 'requested_by' : requested_by }
+
+        data_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/transferRequests" % (format, instance))
         check, response = self.phedexCall(data_url, values)
         if check:
             # An error occurred
@@ -628,4 +662,14 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
+    check, data = phedex_api.deleteRequests(node="T2_US_Nebraska", approval="pending", requested_by="Carl Lundstedt", instance="dev")
+    
+    if check:
+        print "Error"
+    else:
+        print data
+        requests = data.get('phedex').get('request')
+        for request in requests:
+            rid = request.get('id')
+            phedex_api.updateRequest(node='T2_US_Nebraska', decision='disapprove', request=rid, comments='Cleaning up old requests', instance="dev")
     sys.exit(0)
