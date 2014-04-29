@@ -483,7 +483,6 @@ class PhEDExAPI:
     #                           D E L E T I O N S                              #
     #                                                                          #
     ############################################################################
-
     def deletions(self, node="", se="", block="", dataset="",
                   id="", request="", request_since="", complete="",
                   complete_since="", format="json", instance="prod"):
@@ -491,8 +490,6 @@ class PhEDExAPI:
         _deletions_
 
         PhEDEx deletions call
-
-        No data needed but very much recommended.
 
         If the PhEDExCall fails an error will be returned.
 
@@ -534,13 +531,60 @@ class PhEDExAPI:
             data = response
         return 0, data
 
+    ############################################################################
+    #                                                                          #
+    #                      D E L E T E   R E Q U E S T S                       #
+    #                                                                          #
+    ############################################################################
+    def deleteRequests(self, request="", node="", create_since="", limit="",
+                  approval="", requested_by="", format="json", instance="prod"):
+        """
+        deleteRequests
+
+        PhEDEx deleteRequests call
+
+
+        If the PhEDExCall fails an error will be returned.
+
+        Keyword arguments:
+        request      -- Request ID
+        node         -- Site
+        create_since -- Requests created after this date
+        limit        -- Maximum number of records returned
+        approval     -- Approval state
+        requested_by -- Request ID
+        format       -- Which format to return data as, XML or JSON
+        instance     -- Which instance of PhEDEx to query, dev or prod
+
+        Return values:
+        check -- 0 if all went well, 1 if error occured
+        data  -- Error message or the return message from PhEDEx
+        """
+        if (not (node)):
+            return 1, "Not enough parameters passed"
+
+        values = { 'request' : request, 'node' : node,
+                   'create_since' : create_since, 'limit' : limit,
+                   'approval' : approval, 'requested_by' : requested_by }
+
+        data_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/deleteRequests" % (format, instance))
+        check, response = self.phedexCall(data_url, values)
+        if check:
+            # An error occurred
+            return 1, response
+        if format == "json":
+            data = json.load(response)
+            if not data:
+                return 1, "No json data available"
+        else:
+            data = response
+        return 0, data
 
 ################################################################################
 #                                                                              #
 #                H T T P S   G R I D   A U T H   H A N D L E R                 #
 #                                                                              #
 ################################################################################
-
 class HTTPSGridAuthHandler(urllib2.HTTPSHandler):
     """
     _HTTPSGridAuthHandler_
