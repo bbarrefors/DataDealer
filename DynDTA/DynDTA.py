@@ -70,7 +70,11 @@ class DynDTA:
         self.pop_db_api.renewSSOCookie()
         # Rank sites based on current available space
         sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT",
-                 "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech"]
+                 "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech",
+                 "T2_AT_Vienna", "T2_BR_SPRACE", "T2_CH_CSCS", "T2_DE_DESY",
+                 "T2_ES_IFCA", "T2_FR_IPHC", "T2_FR_GRIF_LLR", "T2_IT_Pisa",
+                 "T2_IT_Bari", "T2_IT_Rome", "T2_RU_JINR", "T2_UK_London_IC",
+                 "T2_US_Purdue"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(30.0, max_budget)
@@ -359,7 +363,13 @@ class DynDTA:
         site_quotas = {"T2_US_Nebraska": 450, "T2_US_MIT": 250,
                        "T2_DE_RWTH": 200, "T2_ES_CIEMAT": 200,
                        "T2_US_Wisconsin": 250, "T2_US_Florida": 275,
-                       "T2_US_Caltech": 250}
+                       "T2_US_Caltech": 250, "T2_AT_Vienna" : 50,
+                       "T2_BR_SPRACE" : 200, "T2_CH_CSCS" : 100,
+                       "T2_DE_DESY" : 250, "T2_ES_IFCA" : 200,
+                       "T2_FR_IPHC" : 150, "T2_FR_GRIF_LLR" : 150,
+                       "T2_IT_Pisa" : 200, "T2_IT_Bari" : 200,
+                       "T2_IT_Rome" : 200, "T2_RU_JINR" : 100,
+                       "T2_UK_London_IC" : 250, "T2_US_Purdue" : 250}
         site_rank = dict()
         max_budget = 0
         for site in sites:
