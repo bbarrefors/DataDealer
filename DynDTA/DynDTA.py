@@ -53,7 +53,7 @@ class DynDTA:
         self.pop_db_api = PopDBAPI()
         self.phedex_api = PhEDExAPI()
         self.time_window = 3
-        self.mit_db = 0
+        self.mit_db = self.connectDB()
 
     ############################################################################
     #                                                                          #
@@ -80,7 +80,7 @@ class DynDTA:
                  "T2_UA_KIPT", "T2_UK_London_Brunel"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
-        budget = min(30.0, max_budget)
+        budget = min(10.0, max_budget)
         # Find candidates. Top 200 accessed sets
         check, candidates = self.candidates()
         if check:
@@ -165,6 +165,7 @@ class DynDTA:
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
                                                             comments='Dynamic Data Transfer Agent')
+        self.mit_db.close()
         return 0
 
     ############################################################################
@@ -450,9 +451,6 @@ class DynDTA:
 
         # Connect to DB
         self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
-        mit_db.execute("UPDATE Quotas set SizeTb = %d where SiteName = %s and GroupName = %s" , (450, 'T2_US_Nebraska', 'AnalysisOps'))
-        #res = result.fetch_row()
-        #print res
         return 0
 
 ################################################################################
@@ -471,5 +469,5 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         test = int(sys.argv[1])
     agent = DynDTA()
-    #sys.exit(agent.agent(test=test))
-    sys.exit(agent.connectDB())
+    sys.exit(agent.agent(test=test))
+    #sys.exit(agent.connectDB())
