@@ -77,7 +77,7 @@ class DynDTA:
                  "T2_US_Purdue"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
-        budget = min(30.0, max_budget)
+        budget = min(10.0, max_budget)
         # Find candidates. Top 200 accessed sets
         check, candidates = self.candidates()
         if check:
