@@ -74,7 +74,10 @@ class DynDTA:
                  "T2_AT_Vienna", "T2_BR_SPRACE", "T2_CH_CSCS", "T2_DE_DESY",
                  "T2_ES_IFCA", "T2_FR_IPHC", "T2_FR_GRIF_LLR", "T2_IT_Pisa",
                  "T2_IT_Bari", "T2_IT_Rome", "T2_RU_JINR", "T2_UK_London_IC",
-                 "T2_US_Purdue"]
+                 "T2_US_Purdue", "T2_BE_IIHE", "T2_BE_UCL", "T2_CN_Beijing",
+                 "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", "T2_FR_GRIF_IRFU",
+                 "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU", "T2_RU_IHEP",
+                 "T2_UA_KIPT", "T2_UK_London_Brunel"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(30.0, max_budget)
@@ -113,7 +116,7 @@ class DynDTA:
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
         for rank in sorted_ranking:
             self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
-            if rank[1] < 100:
+            if rank[1] < 200:
                 del datasets[rank[0]]
         subscriptions = dict()
         for site in sites:
