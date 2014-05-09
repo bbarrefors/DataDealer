@@ -77,8 +77,13 @@ class DynDTA:
                  "T2_US_Purdue", "T2_BE_IIHE", "T2_BE_UCL", "T2_CN_Beijing",
                  "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", "T2_FR_GRIF_IRFU",
                  "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU", "T2_RU_IHEP",
-                 "T2_UA_KIPT", "T2_UK_London_Brunel"]
-        site_rank, max_budget = self.siteRanking(sites)
+                 "T2_UA_KIPT", "T2_UK_London_Brunel", "T2_BE_IIHE", "T2_BE_UCL",
+                 "T2_CN_Beijing", "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", 
+                 "T2_FR_GRIF_IRFU", "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU",
+                 "T2_RU_IHEP", "T2_UA_KIPT", "T2_UK_London_Brunel"]
+        #site_rank, max_budget = self.siteRanking(sites)
+        self.siteRanking(sites)
+        return 0
         # Restart daily budget in TB
         budget = min(10.0, max_budget)
         # Find candidates. Top 200 accessed sets
@@ -163,6 +168,7 @@ class DynDTA:
                     self.logger.log("Subscription", str(site)
                                     + " : " + str(dataset))
             if not test:
+                #site_quota = cur.execute("SELECT Replicas FROM Replicas r INNER JOIN Datasets d ON q.dataset_id = d.DatasetId WHERE q.Dataset = %s" % (dataset,))
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
                                                             comments='Dynamic Data Transfer Agent')
         self.mit_db.close()
@@ -373,35 +379,28 @@ class DynDTA:
 
         Rank the sites based on available storage
         """
-        site_quotas = {"T2_US_Nebraska": 450, "T2_US_MIT": 250,
-                       "T2_DE_RWTH": 200, "T2_ES_CIEMAT": 200,
-                       "T2_US_Wisconsin": 250, "T2_US_Florida": 275,
-                       "T2_US_Caltech": 250, "T2_AT_Vienna" : 50,
-                       "T2_BR_SPRACE" : 200, "T2_CH_CSCS" : 100,
-                       "T2_DE_DESY" : 250, "T2_ES_IFCA" : 200,
-                       "T2_FR_IPHC" : 150, "T2_FR_GRIF_LLR" : 150,
-                       "T2_IT_Pisa" : 200, "T2_IT_Bari" : 200,
-                       "T2_IT_Rome" : 200, "T2_RU_JINR" : 100,
-                       "T2_UK_London_IC" : 250, "T2_US_Purdue" : 250}
+        # Get quotas
+        cur = self.mit_db.cursor();
         site_rank = dict()
         max_budget = 0
         for site in sites:
-            check, response = self.phedex_api.blockReplicas(node=site,
-                                                            group="AnalysisOps")
-            if check:
-                site_rank[site] = 0
-            blocks = response.get('phedex').get('block')
-            used_space = float(0)
-            for block in blocks:
-                replica = block.get('replica')
-                if replica[0].get('subscribed') == 'y':
-                    bytes = block.get('bytes')
-                else:
-                    bytes = replica[0].get('bytes')
-                used_space += bytes
-            used_space = used_space / 10**12
-            #site_quota = siteQuota(site)
-            site_quota = site_quotas[site]
+            # check, response = self.phedex_api.blockReplicas(node=site,
+            #                                                 group="AnalysisOps")
+            # if check:
+            #     site_rank[site] = 0
+            # blocks = response.get('phedex').get('block')
+            # used_space = float(0)
+            # for block in blocks:
+            #     replica = block.get('replica')
+            #     if replica[0].get('subscribed') == 'y':
+            #         bytes = block.get('bytes')
+            #     else:
+            #         bytes = replica[0].get('bytes')
+            #     used_space += bytes
+            # used_space = used_space / 10**12
+            site_quota = cur.execute("SELECT SizeTb FROM Quotas WHERE Site = %s" % (site,))
+            print site_quota
+            return 0
             rank = (0.95*site_quota) - used_space
             if (rank >= 30):
                 site_rank[site] = rank
