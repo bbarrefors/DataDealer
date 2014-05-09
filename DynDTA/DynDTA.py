@@ -52,7 +52,7 @@ class DynDTA:
         self.logger = DynDTALogger()
         self.pop_db_api = PopDBAPI()
         self.phedex_api = PhEDExAPI()
-        self.time_window = 3
+        self.time_window = 1
         self.mit_db = self.connectDB()
 
     ############################################################################
@@ -74,7 +74,10 @@ class DynDTA:
                  "T2_AT_Vienna", "T2_BR_SPRACE", "T2_CH_CSCS", "T2_DE_DESY",
                  "T2_ES_IFCA", "T2_FR_IPHC", "T2_FR_GRIF_LLR", "T2_IT_Pisa",
                  "T2_IT_Bari", "T2_IT_Rome", "T2_RU_JINR", "T2_UK_London_IC",
-                 "T2_US_Purdue"]
+                 "T2_US_Purdue", "T2_BE_IIHE", "T2_BE_UCL", "T2_CN_Beijing",
+                 "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", "T2_FR_GRIF_IRFU",
+                 "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU", "T2_RU_IHEP",
+                 "T2_UA_KIPT", "T2_UK_London_Brunel"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(10.0, max_budget)
@@ -187,6 +190,15 @@ class DynDTA:
             elif not (re.match('/.+/.+/(MINI)?AOD(SIM)?', dataset['COLLNAME'])):
                 continue
             elif (dataset['COLLNAME'].find("/AOD") == -1):
+                continue
+            check, response = self.phedex_api.blockReplicas(dataset=dataset['COLLNAME'], group='AnalysisOps')
+            if check:
+                continue
+            data = response.get('phedex')
+            block = data.get('block')
+            try:
+                replicas = block[0].get('replica')
+            except IndexError:
                 continue
             datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
