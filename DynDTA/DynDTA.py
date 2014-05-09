@@ -53,7 +53,7 @@ class DynDTA:
         self.pop_db_api = PopDBAPI()
         self.phedex_api = PhEDExAPI()
         self.time_window = 1
-        self.mit_db = self.connectDB()
+        self.connectDB()
 
     ############################################################################
     #                                                                          #
@@ -456,7 +456,6 @@ class DynDTA:
         db = base64.b64decode(db)
         user = base64.b64decode(user)
         passwd = base64.b64decode(passwd)
-
         # Connect to DB
         self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
         return 0
