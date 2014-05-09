@@ -52,7 +52,7 @@ class DynDTA:
         self.logger = DynDTALogger()
         self.pop_db_api = PopDBAPI()
         self.phedex_api = PhEDExAPI()
-        self.time_window = 3
+        self.time_window = 1
         self.mit_db = self.connectDB()
 
     ############################################################################
@@ -190,6 +190,15 @@ class DynDTA:
             elif not (re.match('/.+/.+/(MINI)?AOD(SIM)?', dataset['COLLNAME'])):
                 continue
             elif (dataset['COLLNAME'].find("/AOD") == -1):
+                continue
+            check, response = self.phedex_api.blockReplicas(dataset=dataset['COLLNAME'], group='AnalysisOps')
+            if check:
+                continue
+            data = response.get('phedex')
+            block = data.get('block')
+            try:
+                replicas = block[0].get('replica')
+            except IndexError:
                 continue
             datasets[dataset['COLLNAME']] = dataset['NACC']
             i += 1
