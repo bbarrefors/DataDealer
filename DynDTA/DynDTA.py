@@ -19,6 +19,7 @@ import random
 import re
 import base64
 import MySQLdb as msdb
+import MySQLdb.converters
 
 from operator import itemgetter
 
@@ -82,8 +83,7 @@ class DynDTA:
                  "T2_FR_GRIF_IRFU", "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU",
                  "T2_RU_IHEP", "T2_UA_KIPT", "T2_UK_London_Brunel"]
         #site_rank, max_budget = self.siteRanking(sites)
-        self.siteRanking(sites)
-        return 0
+        site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(10.0, max_budget)
         # Find candidates. Top 200 accessed sets
@@ -384,23 +384,23 @@ class DynDTA:
         site_rank = dict()
         max_budget = 0
         for site in sites:
-            # check, response = self.phedex_api.blockReplicas(node=site,
-            #                                                 group="AnalysisOps")
-            # if check:
-            #     site_rank[site] = 0
-            # blocks = response.get('phedex').get('block')
-            # used_space = float(0)
-            # for block in blocks:
-            #     replica = block.get('replica')
-            #     if replica[0].get('subscribed') == 'y':
-            #         bytes = block.get('bytes')
-            #     else:
-            #         bytes = replica[0].get('bytes')
-            #     used_space += bytes
-            # used_space = used_space / 10**12
-            site_quota = cur.execute("SELECT SizeTb FROM Quotas WHERE Site = %s" % (site,))
-            print site_quota
-            return 0
+            check, response = self.phedex_api.blockReplicas(node=site,
+                                                            group="AnalysisOps")
+            if check:
+                site_rank[site] = 0
+            blocks = response.get('phedex').get('block')
+            used_space = float(0)
+            for block in blocks:
+                replica = block.get('replica')
+                if replica[0].get('subscribed') == 'y':
+                    bytes = block.get('bytes')
+                else:
+                    bytes = replica[0].get('bytes')
+                used_space += bytes
+            used_space = used_space / 10**12
+            cur.execute("SELECT SizeTb FROM Quotas WHERE SiteName=%s and GroupName=%s", (site, "AnalysisOps"))
+            site_quota = cur.fetchone()
+            site_quota = int(site_quota[0])
             rank = (0.95*site_quota) - used_space
             if (rank >= 30):
                 site_rank[site] = rank
