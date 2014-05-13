@@ -79,13 +79,16 @@ class DynDTA:
                  "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", "T2_FR_GRIF_IRFU",
                  "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU", "T2_RU_IHEP",
                  "T2_UA_KIPT", "T2_UK_London_Brunel", "T2_BE_IIHE", "T2_BE_UCL",
-                 "T2_CN_Beijing", "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", 
+                 "T2_CN_Beijing", "T2_FI_HIP", "T2_FR_CCIN2P3",
                  "T2_FR_GRIF_IRFU", "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU",
-                 "T2_RU_IHEP", "T2_UA_KIPT", "T2_UK_London_Brunel"]
-        #site_rank, max_budget = self.siteRanking(sites)
+                 "T2_RU_IHEP", "T2_UA_KIPT", "T2_US_Vanderbilt", "T2_UK_SGrid_RALPP",
+                 "T2_HU_Budapest", "T2_PT_NCG_Lisbon", "T2_RU_ITEP",
+                 "T2_TR_METU", "T2_TW_Taiwan", "T2_US_UCSD"]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(10.0, max_budget)
+        # Update replicas
+        self.updateReplicas()
         # Find candidates. Top 200 accessed sets
         check, candidates = self.candidates()
         if check:
@@ -165,10 +168,10 @@ class DynDTA:
                 continue
             for dataset in sets:
                 if not test:
+                    # Print to log
                     self.logger.log("Subscription", str(site)
                                     + " : " + str(dataset))
             if not test:
-                #site_quota = cur.execute("SELECT Replicas FROM Replicas r INNER JOIN Datasets d ON q.dataset_id = d.DatasetId WHERE q.Dataset = %s" % (dataset,))
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
                                                             comments='Dynamic Data Transfer Agent')
         self.mit_db.close()
@@ -405,6 +408,7 @@ class DynDTA:
             if (rank >= 30):
                 site_rank[site] = rank
                 max_budget += rank
+        cur.close()
         return site_rank, max_budget
 
     ############################################################################
@@ -433,6 +437,43 @@ class DynDTA:
                 continue
             unavailable_sites[site] = rank
         return unavailable_sites
+
+    ############################################################################
+    #                                                                          #
+    #                       U P D A T E   R E P L I C A                        #
+    #                                                                          #
+    ############################################################################
+    def updateReplicas(self):
+        """
+        addReplica
+
+        Add new replicas entry in the db
+        """
+        # Get all datasets from phedex
+        check, datasets = self.phedex_api.blockReplicas(group="AnalysisOps", show_dataset="y")
+        data = response.get('phedex').get('dataset')
+        datasets = []
+        for d in data:
+            datasets.append(d.get('name'))
+        cur = self.mit_db.cursor();
+        for dataset in datasets:
+            n_replicas = nReplicas(dataset)
+            cur.execute("SELECT DatasetId FROM Datasets WHERE Dataset=%s", (dataset,))
+            dataset_id = cur.fetchone()
+            if not dataset_id:
+                cur.execute("INSERT INTO Datasets (%s) VALUES (%s)", ("Dataset", dataset))
+                cur.execute("SELECT DatasetId FROM Datasets WHERE Dataset=%s", (dataset,))
+                dataset_id = cur.fetchone()
+            dataset_id = int(dataset_id[0])
+            cur.execute("SELECT Replicas FROM Replicas WHERE DatasetId=%s", (dataset_id,))
+            replicas = cur.fetchone()
+            if (not replicas):
+                cur.execute("INSERT INTO Replicas (%s, %s) VALUES (%s, %s)", ("DatasetId", "Replicas", dataset_id, n_replicas))
+            else:
+                replicas = int(replicas[0])
+                if not (replicas == n_replicas):
+                    cur.execute("INSERT INTO Replicas (%s, %s) VALUES (%s, %s)", ("DatasetId", "Replicas", dataset_id, n_replicas))
+        cur.close()
 
     ############################################################################
     #                                                                          #
