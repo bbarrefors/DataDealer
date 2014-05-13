@@ -403,6 +403,8 @@ class DynDTA:
             used_space = used_space / 10**12
             cur.execute("SELECT SizeTb FROM Quotas WHERE SiteName=%s and GroupName=%s", (site, "AnalysisOps"))
             site_quota = cur.fetchone()
+            if not site_quota:
+                continue
             site_quota = int(site_quota[0])
             rank = (0.95*site_quota) - used_space
             if (rank >= 30):
@@ -450,29 +452,29 @@ class DynDTA:
         Add new replicas entry in the db
         """
         # Get all datasets from phedex
-        check, datasets = self.phedex_api.blockReplicas(group="AnalysisOps", show_dataset="y")
+        check, response = self.phedex_api.blockReplicas(group="AnalysisOps", show_dataset="y")
         data = response.get('phedex').get('dataset')
         datasets = []
         for d in data:
             datasets.append(d.get('name'))
         cur = self.mit_db.cursor();
         for dataset in datasets:
-            n_replicas = nReplicas(dataset)
+            n_replicas = self.nReplicas(dataset)
             cur.execute("SELECT DatasetId FROM Datasets WHERE Dataset=%s", (dataset,))
             dataset_id = cur.fetchone()
             if not dataset_id:
-                cur.execute("INSERT INTO Datasets (%s) VALUES (%s)", ("Dataset", dataset))
+                cur.execute("INSERT INTO Datasets (Dataset) VALUES (%s)", (dataset))
                 cur.execute("SELECT DatasetId FROM Datasets WHERE Dataset=%s", (dataset,))
                 dataset_id = cur.fetchone()
             dataset_id = int(dataset_id[0])
             cur.execute("SELECT Replicas FROM Replicas WHERE DatasetId=%s", (dataset_id,))
             replicas = cur.fetchone()
             if (not replicas):
-                cur.execute("INSERT INTO Replicas (%s, %s) VALUES (%s, %s)", ("DatasetId", "Replicas", dataset_id, n_replicas))
+                cur.execute("INSERT INTO Replicas (DatasetId, Replicas) VALUES (%s, %s)", (dataset_id, n_replicas))
             else:
                 replicas = int(replicas[0])
                 if not (replicas == n_replicas):
-                    cur.execute("INSERT INTO Replicas (%s, %s) VALUES (%s, %s)", ("DatasetId", "Replicas", dataset_id, n_replicas))
+                    cur.execute("INSERT INTO Replicas (DatasetId, Replicas) VALUES (%s, %s)", (dataset_id, n_replicas))
         cur.close()
 
     ############################################################################
