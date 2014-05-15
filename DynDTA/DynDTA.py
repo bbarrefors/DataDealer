@@ -22,6 +22,8 @@ import MySQLdb as msdb
 import MySQLdb.converters
 
 from operator import itemgetter
+from email.mime.text import MIMEText
+from subprocess import Popen, PIPE
 
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
@@ -126,7 +128,7 @@ class DynDTA:
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
         for rank in sorted_ranking:
             self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
-            if rank[1] < 200:
+            if rank[1] < 300:
                 del datasets[rank[0]]
         sorted_ranking.reverse()
         text = "The 50 most accessed datasets in the last 24h\n\n"
@@ -135,10 +137,10 @@ class DynDTA:
         for rank in sorted_ranking:
             if i >= 50:
                 break
-            text = text + str(p_rank[rank[0]][0]) + "\t" + str(p_rank[rank[0]][1]) + "\t" + str(p_rank[rank[0]][2]) + "\t" + str(p_rank[rank[0]][3]) + "\t" + rank[0] + "\n"
+            text = text + str(int(p_rank[rank[0]][0])) + "\t" + str(p_rank[rank[0]][1]) + "\t\t" + str(p_rank[rank[0]][2]) + "\t\t" + str(p_rank[rank[0]][3]) + "\t\t" + rank[0] + "\n"
             i += 1
         msg = MIMEText(text)
-        msg['Subject'] = "%s 50 most popular datasets in the last 24h" % (str(datetime.datetime.now().strftime("%s/%m-%Y")),)
+        msg['Subject'] = "%s | The 50 most popular datasets in the last 24h" % (str(datetime.datetime.now().strftime("%d/%m-%Y")),)
         msg['From'] = "bbarrefo@cse.unl.edu"
         #msg['To'] = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
         msg['To'] = "bbarrefo@cse.unl.edu"
@@ -188,9 +190,9 @@ class DynDTA:
             for dataset in sets:
                 if not test:
                     # Print to log
-                    comment = comment + str(p_rank[rank[0]][0]) + "\t" + str(p_rank[rank[0]][1]) + "\t" + str(p_rank[rank[0]][2]) + "\t" + str(p_rank[rank[0]][3]) + "\t" + rank[0] + "\n"
-                    self.logger.log("Subscription", str(site)
-                                    + " : " + str(dataset))
+
+                    self.logger.log("Subscription", str(site))
+                    comment = comment + str(int(p_rank[rank[0]][0])) + "\t" + str(p_rank[rank[0]][1]) + "\t\t" + str(p_rank[rank[0]][2]) + "\t\t" + str(p_rank[rank[0]][3]) + "\t\t" + rank[0] + "\n"                                    + " : " + str(dataset))
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
                                                             comments=comment)
