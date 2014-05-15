@@ -105,6 +105,7 @@ class DynDTA:
             if dataset.get('COLLNAME') in candidates:
                 accesses[dataset.get('COLLNAME')] = dataset.get('NACC')
         datasets = dict()
+        p_rank = dict()
         n_access_t = 1
         n_access_2t = 1
         n_replicas = 1
@@ -120,12 +121,29 @@ class DynDTA:
             rank = (math.log10(n_access_t)*max(2*n_access_t
                     - n_access_2t, 1))/(size_TB*(n_replicas**2))
             datasets[dataset] = rank
+            p_rank[dataset] = (rank, n_replicas, n_access_t, 2*n_access_t - n_access_2t)
         # Do weighted random selection
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
         for rank in sorted_ranking:
             self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
             if rank[1] < 200:
                 del datasets[rank[0]]
+        sorted_ranking.reverse()
+        text = "The 50 most accessed datasets in the last 24h\n\n"
+        i = 0
+        text = text + "Rank\t" + "Replicas\t" + "number_acc\t" + "delta_acc\t" + "Dataset\n"
+        for rank in sorted_ranking:
+            if i >= 50:
+                break
+            text = text + str(p_rank[rank[1]][0]) + "\t" + str(p_rank[rank[1]][1]) + "\t" + str(p_rank[rank[1]][2]) + "\t" + str(p_rank[rank[1]][3]) + "\t" + rank[1] + "\n"
+            i += 1
+        msg = MIMEText(text)
+        msg['Subject'] = "%s 50 most popular datasets in the last 24h" % (str(datetime.datetime.now().strftime("%s/%m-%Y")),)
+        msg['From'] = "bbarrefo@cse.unl.edu"
+        #msg['To'] = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
+        msg['To'] = "bbarrefo@cse.unl.edu"
+        p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
+        p.communicate(msg.as_string())
         subscriptions = dict()
         for site in sites:
             subscriptions[site] = []

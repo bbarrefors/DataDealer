@@ -105,7 +105,7 @@ class DynDTAListener():
             for dataset in set_count:
                 if i <= 100:
                     text = text + str(i) + ". " + str(dataset[1]) + "\t" + str(dataset[0]) + "\n"
-                # Get previous entry is exist
+                # Get previous entry if exist
                 try:
                     old_data = graph_data[str(dataset[1])]
                 except KeyError:
