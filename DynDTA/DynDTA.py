@@ -135,7 +135,7 @@ class DynDTA:
         for rank in sorted_ranking:
             if i >= 50:
                 break
-            text = text + str(p_rank[rank[1]][0]) + "\t" + str(p_rank[rank[1]][1]) + "\t" + str(p_rank[rank[1]][2]) + "\t" + str(p_rank[rank[1]][3]) + "\t" + rank[1] + "\n"
+            text = text + str(p_rank[rank[0]][0]) + "\t" + str(p_rank[rank[0]][1]) + "\t" + str(p_rank[rank[0]][2]) + "\t" + str(p_rank[rank[0]][3]) + "\t" + rank[0] + "\n"
             i += 1
         msg = MIMEText(text)
         msg['Subject'] = "%s 50 most popular datasets in the last 24h" % (str(datetime.datetime.now().strftime("%s/%m-%Y")),)
@@ -184,14 +184,16 @@ class DynDTA:
             check, data = self.phedex_api.xmlData(datasets=sets)
             if check:
                 continue
+            comment = "Dynamic Data Transfer\n" + "Rank\t" + "Replicas\t" + "number_acc\t" + "delta_acc\t" + "Dataset\n"
             for dataset in sets:
                 if not test:
                     # Print to log
+                    comment = comment + str(p_rank[rank[0]][0]) + "\t" + str(p_rank[rank[0]][1]) + "\t" + str(p_rank[rank[0]][2]) + "\t" + str(p_rank[rank[0]][3]) + "\t" + rank[0] + "\n"
                     self.logger.log("Subscription", str(site)
                                     + " : " + str(dataset))
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
-                                                            comments='Dynamic Data Transfer Agent')
+                                                            comments=comment)
         self.mit_db.close()
         return 0
 
