@@ -131,21 +131,6 @@ class DynDTA:
             if rank[1] < 300:
                 del datasets[rank[0]]
         sorted_ranking.reverse()
-        text = "The 50 most accessed datasets in the last 24h\n\n"
-        i = 0
-        text = text + "Rank\t" + "Replicas\t" + "number_acc\t" + "delta_acc\t" + "Dataset\n"
-        for rank in sorted_ranking:
-            if i >= 50:
-                break
-            text = text + str(int(p_rank[rank[0]][0])) + "\t" + str(p_rank[rank[0]][1]) + "\t\t" + str(p_rank[rank[0]][2]) + "\t\t" + str(p_rank[rank[0]][3]) + "\t\t" + rank[0] + "\n"
-            i += 1
-        msg = MIMEText(text)
-        msg['Subject'] = "%s | The 50 most popular datasets in the last 24h" % (str(datetime.datetime.now().strftime("%d/%m-%Y")),)
-        msg['From'] = "bbarrefo@cse.unl.edu"
-        #msg['To'] = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
-        msg['To'] = "bbarrefo@cse.unl.edu"
-        p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
-        p.communicate(msg.as_string())
         subscriptions = dict()
         for site in sites:
             subscriptions[site] = []
@@ -180,22 +165,27 @@ class DynDTA:
             budget -= size_TB
         # Get blocks to subscribe
         # Subscribe sets
+        text = "Site \t\t Dataset\n"
         for site, sets in subscriptions.iteritems():
             if not sets:
                 continue
             check, data = self.phedex_api.xmlData(datasets=sets)
             if check:
                 continue
-            comment = "Dynamic Data Transfer\n" + "Rank\t" + "Replicas\t" + "number_acc\t" + "delta_acc\t" + "Dataset\n"
             for dataset in sets:
                 if not test:
                     # Print to log
-
-                    self.logger.log("Subscription", str(site))
-                    comment = comment + str(int(p_rank[rank[0]][0])) + "\t" + str(p_rank[rank[0]][1]) + "\t\t" + str(p_rank[rank[0]][2]) + "\t\t" + str(p_rank[rank[0]][3]) + "\t\t" + rank[0] + "\n"                                    + " : " + str(dataset))
+                    text = text + "%s \t %s" % (site, dataset)
+                    self.logger.log("Subscription", str(site) + " : " + str(dataset))
             if not test:
-                check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y',
-                                                            comments=comment)
+                check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments="Dynamic data placement")
+        msg = MIMEText(text)
+        msg['Subject'] = "%s | Dynamic Data Placement Subscriptions" % (str(datetime.datetime.now().strftime("%d/%m-%Y")),)
+        #msg['From'] = "bbarrefo@cse.unl.edu"
+        msg['To'] = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
+        msg['To'] = "bbarrefo@cse.unl.edu"
+        p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
+        p.communicate(msg.as_string())
         self.mit_db.close()
         return 0
 
