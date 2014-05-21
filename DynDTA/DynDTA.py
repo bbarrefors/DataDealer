@@ -72,7 +72,7 @@ class DynDTA:
         # Renew SSO Cookie for Popularity DB calls
         self.pop_db_api.renewSSOCookie()
         # Rank sites based on current available space
-        sites = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT",
+        available = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT",
                  "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech",
                  "T2_AT_Vienna", "T2_BR_SPRACE", "T2_CH_CSCS", "T2_DE_DESY",
                  "T2_ES_IFCA", "T2_FR_IPHC", "T2_FR_GRIF_LLR", "T2_IT_Pisa",
@@ -86,6 +86,8 @@ class DynDTA:
                  "T2_RU_IHEP", "T2_UA_KIPT", "T2_US_Vanderbilt", "T2_UK_SGrid_RALPP",
                  "T2_HU_Budapest", "T2_PT_NCG_Lisbon", "T2_RU_ITEP",
                  "T2_TR_METU", "T2_TW_Taiwan", "T2_US_UCSD"]
+        exclude = ["T2_IN_TIFR"]
+        sites = [site for site in available if site not in exclude]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
         budget = min(10.0, max_budget)
@@ -181,9 +183,9 @@ class DynDTA:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments="Dynamic data placement")
         msg = MIMEText(text)
         msg['Subject'] = "%s | Dynamic Data Placement Subscriptions" % (str(datetime.datetime.now().strftime("%d/%m-%Y")),)
-        #msg['From'] = "bbarrefo@cse.unl.edu"
+        msg['From'] = "bbarrefo@cse.unl.edu"
         msg['To'] = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
-        msg['To'] = "bbarrefo@cse.unl.edu"
+        #msg['To'] = "bbarrefo@cse.unl.edu"
         p = Popen(["/usr/sbin/sendmail", "-toi"], stdin=PIPE)
         p.communicate(msg.as_string())
         self.mit_db.close()
