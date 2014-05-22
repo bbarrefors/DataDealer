@@ -177,7 +177,7 @@ class DynDTA:
             for dataset in sets:
                 if not test:
                     # Print to log
-                    text = text + "%s \t %s" % (site, dataset)
+                    text = text + "%s \t\t %s\n" % (site, dataset)
                     self.logger.log("Subscription", str(site) + " : " + str(dataset))
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments="Dynamic data placement")
