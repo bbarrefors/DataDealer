@@ -167,7 +167,7 @@ class DynDTA:
             budget -= size_TB
         # Get blocks to subscribe
         # Subscribe sets
-        text = "Site \t\t Dataset\n"
+        text = "Site \t\t\t Size \t\t Dataset\n"
         for site, sets in subscriptions.iteritems():
             if not sets:
                 continue
@@ -177,7 +177,8 @@ class DynDTA:
             for dataset in sets:
                 if not test:
                     # Print to log
-                    text = text + "%s \t %s" % (site, dataset)
+                    size_TB = self.size(dataset)
+                    text = text + "%s \t %sTB \t %s\n" % (site, size_TB, dataset)
                     self.logger.log("Subscription", str(site) + " : " + str(dataset))
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments="Dynamic data placement")
