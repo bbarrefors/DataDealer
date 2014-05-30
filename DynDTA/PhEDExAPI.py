@@ -614,6 +614,37 @@ class PhEDExAPI:
             data = response
         return 0, data
 
+
+    ############################################################################
+    #                                                                          #
+    #                         R E Q U E S T   L I S T                          #
+    #                                                                          #
+    ############################################################################
+
+    def requestList(self, request='', type='', approval='', decision='', group='',
+                    requested_by='', node='', create_since='', create_until='',
+                    decide_since='', decide_until='', dataset='', block=''
+                    decided_by='', format='json', instance='prod'):
+        """
+
+        """
+        name = "delete"
+
+        values = { 'request' : request, 'type' : type, 'approval' : approval,
+                   'decision' : decision, 'group' : group, 'requested_by' : requested_by,
+                   'node' : node, 'create_since' : create_since, 'create_until' : create_until,
+                   'decide_since' : decide_since, 'decide_until' : decide_until, 'dataset' : dataset,
+                   'block' : block, 'decided_by' : decided_by}
+
+        request_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/requestList" % (format, instance))
+        check, response = self.phedexCall(update_url, values)
+        if check:
+            # An error occurred
+            self.logger.error(name, "UpdateRequest call failed")
+            # @TODO : Print out better logging, url + values
+            return 1, "Error"
+        return 0, response
+
 ################################################################################
 #                                                                              #
 #                H T T P S   G R I D   A U T H   H A N D L E R                 #
@@ -662,7 +693,7 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, data = phedex_api.deleteRequests(node="T2_US_Nebraska", approval="pending", requested_by="Carl Lundstedt", instance="dev")
+    check, data = phedex_api.requestList(type='xfer', approval='mixed', group='AnalysisOps', requested_by="Bjorn Peter Barrefors", instance="dev")
     
     if check:
         print "Error"
@@ -671,5 +702,5 @@ if __name__ == '__main__':
         requests = data.get('phedex').get('request')
         for request in requests:
             rid = request.get('id')
-            phedex_api.updateRequest(node='T2_US_Nebraska', decision='disapprove', request=rid, comments='Cleaning up old requests', instance="dev")
+            print rid
     sys.exit(0)

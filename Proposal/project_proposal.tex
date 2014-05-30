@@ -4,6 +4,9 @@
 \usepackage{url}
 \usepackage{helvet}
 \usepackage{bold-extra}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amssymb,amsmath}
 
 \title{\textbf{\fontfamily{\sfdefault}\selectfont DynDTA: Proposal for a Dynamic Data Transfer Agent for the CMS Experiment}}
 \author{Bj\"{o}rn Barrefors\\
@@ -17,7 +20,7 @@
 
 \begin{abstract}
 
-	The CMS experiment is a world-wide physics collaboration storing around O(50PB) of data on more than 50 sites across 4 continents. Manage all this data manually to make sure the correct data is available at the right time and freeing up space as datasets are no longer needed can be a challenge. We therefore suggest an automated and intelligent data transfer agent to keep track of dataset activities, making decisions on when and where to replicate datasets and when to remove them when no longer needed. Our suggested solution is to treat this as a "catching heavy-hitters on a sliding window" problem [Braverman et. al].
+	The CMS experiment is a world-wide physics collaboration storing around O(50PB) of data on more than 50 sites across 4 continents. Manage all this data manually to make sure the correct data is available at the right time and freeing up space as datasets are no longer needed can be a challenge. We therefore suggest an automated and intelligent data transfer agent to keep track of dataset activities, making decisions on when and where to replicate datasets and when to remove them when no longer needed. Our suggested solution is to calculate a frequency vector based on number of accesses per replica and even out the differences by adding and removing replicas.
 
 \end{abstract}
 
@@ -29,47 +32,113 @@
 
 \section{\textsc{Related Work}}
 
-A similar project was done for the ATLAS experiment [PanDA] which is one of the other major experiments at CERN. Similarly to our dynamic data placement their goal was to improve the efficiency of storage and reduce queue time. PanDA was developed as a dynamic data manager to integrate their data distribution with the global job scheduler. PanDA uses a fairly aggressive algorithm to quickly react on jobs in the global queue and was developed based on ATLAS's requirements and data popularity distribution. Several lessons can be learned from the development of PanDA, one of the things they did well was to analyze data popularity for use in the dynamic data manager. Another was to closely integrate the data manger with their job scheduler for fast reaction both in terms of acknowledging increase in popularity of datasets and to quickly adjust the scheduler to system changes. Furthermore even though ATLAS have noticed improvements since the deployment of ATLAS there have also been significant increase in network traffic. In our project we want to improve on PanDA's idea with even better data popularity projection and decrease in popularity without putting too much pressure on the network infrastructure.
+A similar project was done for the ATLAS experiment [PanDA] which is one of the other major experiments at CERN. Similarly to our dynamic data placement their goal was to improve the efficiency of storage and reduce queue time. PanDA was developed as a dynamic data manager to integrate their data distribution with the global job scheduler. PanDA uses a fairly aggressive algorithm to quickly react on jobs in the global queue and was developed based on ATLAS's requirements and data popularity distribution. Several lessons can be learned from the development of PanDA, one of the things they did well was to analyze data popularity for use in the dynamic data manager. Another was to closely integrate the data manger with their job scheduler for fast reaction both in terms of acknowledging increase in popularity of datasets and to quickly adjust the scheduler to system changes. Even though ATLAS have noticed improvements since the deployment of ATLAS there have also been significant increase in network traffic. Furthermore their algorithm is still relatively novice and greedy as it focus a lot on the current state of the queue and less on creating a balanced system.
 
 
-\section{\textsc{Goals}}
+\section{\textsc{Data management algorithm}}
 
-  The ultimate goals for a dynamic data transfer agent is to decrease queuing times of CMS jobs while improving storage and CPU utilization, these are hard to measure goals so we have come up with other more specific and measurable goals to better test successfulness.
+  \subsection{Dataset Popularity}
+    Creating a balanced system is of importance as it will both decrease the amount of data which just takes up space without being accessed and decrease the number of accesses on particular data which could cause overload on either network or CPU's. We have come up with a balance equation which can be continiously optimized to keep the system balanced. Using the standard deviation of all datasets ratio between number of accesses and number of replicas we can get a good measurement of the system balance. Combining equation \ref{eq:delta_t} and \ref{eq:std_dev} achieves this. Notice that the size of each dataset is added in to balance the equation based on dataset size. Here $n\_access$ is the number of accesses during a time period $t$, $size\_GB$ is the size of the dataset, and $n\_replicas$ is the number of replicas for the dataset. $\mathcal{N}$ is the set of all datasets.
 
-\begin{itemize}
+    \begin{equation}\label{eq:delta_t}
+      \delta = \int_0^t \! \frac{n\_accesses}{size\_GB*n\_replicas} \, \mathrm{d}t
+    \end{equation}
 
-  \item Minimize the fluctuation of users or accesses per replicas for each dataset. We need to define a popularity model for datasets which would decide whether to use number of users or accesses. We express this as minimizing the following equation:
-		\begin{displaymath}
-		  \Delta = \int_0^t \! \left|\frac{n\_users}{n\_replicas}\right| \, \mathrm{d}t
-		\end{displaymath}
+    \begin{equation}\label{eq:std_dev}
+      \sigma = \sqrt{\frac{\sum\limits_{d \in \mathcal{D}} (\delta_d - \overline{\delta})^2}{|\mathcal{D}| - 1}}
+    \end{equation}
 
-    The optimal value for $\Delta$ will have to be found using heuristics.
+    The goal is to minimize equation \ref{eq:std_dev}, using a variation of frequency vectors we propose to use algorithm \ref{alg:data_sel}. Because the algorithm need to differentiate between increasingly popular and decreasingly popular datasets we introduce $\delta_f$ as the change in frequency in equation \ref{eq:delta_f}, $\delta_f < 0$ means the dataset have more then average replicas per GB and $\delta_f > 0$ means the dataset have less then average replicas per GB. The closer to $0$ the better. The algorithm uses exponential weight to avoid temporary spikes or drops in usage to trigger a subscription or deletion. We use a time window of $w$ days, each day with a $\delta_f$, where days further away are given an inverse exponential weight. We also define $\delta_{f+}$, $\delta_{f-}$, and $available\_space$ in equations \ref{eq:delta_fp}, \ref{eq:delta_fm}, and \ref{eq:avail}.
 
-    \item Minimize the median waiting time if there are sufficient available CPU's anywhere in the system. We want to place data in such a manner that the system is utilized as much as possible at all times. We are also interested in the median and not average as users will always be able to do weird things which affect the system but cannot be accounted for, such as submitting 10000 jobs to an unpopular dataset which only exists at a site which is currently fully utilized. A case which would be almost impossible to catch before it happens. We express this as minimizing the following equation:
-  \begin{displaymath}
-    Q_t = \frac{\sum\limits_{d \in {\cal D}} \frac{\sum\limits_{j_d \in {\cal J}_d} qt}{|{\cal J}_d|}}{|{\cal D}|}
-  \end{displaymath}
-  Where ${\cal D}$ is the set of all datasets, ${\cal J}_d$ is the set of all jobs for dataset $d$, and $qt$ is the queue time of job $j_d$ while there was sufficient amount of CPU's available in the system. Where an optimal value for $Q_t$ would be $0$. Such a value would be virtually impossible to achieve, an acceptable value will have to be defined.
+    \begin{equation}\label{eq:delta_f}
+      \delta_f = \delta - \overline{\delta}
+    \end{equation}
 
-\end{itemize}
+    \begin{equation}\label{eq:delta_fp}
+      \delta_{f+} = \int_0^t \! \frac{n\_accesses}{size\_GB*(n\_replicas+1)} \, \mathrm{d}t
+    \end{equation}
 
+    \begin{equation}\label{eq:delta_fm}
+      \delta_{f-} = \int_0^t \! \frac{n\_accesses}{size\_GB*(n\_replicas-1)} \, \mathrm{d}t
+    \end{equation}
 
-\section{\textsc{Methods}}
+    \begin{equation}\label{eq:avail}
+      available\_space = total\_space*0.95 - used\_space
+    \end{equation}
 
-  \subsection{Popularity Model}
-    Making predictions about popularity demands a good understanding of what popularity is and what components describes it. We currently have three years worth of data about dataset usage available in the Popularity Database [Reference]. We will use this data to find a popularity model and decide which parameters are of interest for selecting both datasets and sites. The result is to be used for a more accurate data selection algorithm for both replication and deletion.
-
-
-  \subsection{Catching Heavy Hitters}
-    To achieve the above goals we want to recognize as datasets are becoming popular at an early stage. Such a problem can be expressed as a "catching heavy-hitters" problem. Example of such a problem is to find the most popular queries on Google during a day/week/month/year etc [reference]. Companies like Google often deal with massive amounts of data making streaming algorithms popular to analyze data, we will not be dealing with data on that scale and does therefore not need to use an approximation algorithm but the general process is the same. Finding heavy hitters in a data stream is based on the ability to find the Euclidean distance between two frequency vectors [reference]. Using two same sized sliding windows positioned at different times we can build a frequency vector for each where each element represent the popularity of a dataset, this could be number of accesses, number of users, CPU hours, etc during the time window. Heavy hitters can be found by calculating the Euclidean distance between the vectors and pinpoint the element(s) which is causing the distance. Depending on the magnitude of change a dataset can then be flagged as having a sudden increase in popularity or decrease in popularity. Using real world heuristics is suggested to determine the optimal time window and minimum change to be considered a heavy-hitter for both increase and decrease in popularity.
+    \begin{algorithm} 
+      \caption{Dataset selection} \label{alg:data_sel}
+      \footnotesize
+      \begin{algorithmic}[1]
+        \REQUIRE $\mathcal{D}$, the set of all datasets in AnalysisOps. Assume function size() exists for both dataset and set of datasets and returns total size in GB of dataset(s). Algorithm returns $\mathcal{S}$, the set of datasets to subscribe, and $\mathcal{R}$, the datasets to remove.
+        \STATE $\mathcal{F} = \varnothing$
+        \FORALL{$d \in \mathcal{D}$} \label{for1}
+          \STATE{$\delta_f = 0$
+            \FOR{$1$ \TO $w$} \label{for2}
+              \STATE{Get $\delta_f$ for the day, multiply by exponential weight and add to total $\delta_f$}
+            \ENDFOR
+            \STATE Add touple $(d, \delta_f)$ to {\cal F}
+          }
+        \ENDFOR
+        \STATE $\mathcal{S} = \varnothing$
+        \STATE $\mathcal{R} = \varnothing$
+        \LOOP \label{loop1}
+          \STATE{Pop dataset $s$ with highest $\delta_f$ such that $\delta_f > 0$ \AND $\delta_{f+} > \overline{\delta_f}$.
+            \IF{\NOT s} \label{if1}
+              \STATE{Break loop}
+            \ENDIF
+            \IF{$\mathcal{S}$.size() + $s$.size() $>$ budget} \label{if2}
+              \STATE{Break loop}
+            \ENDIF
+            \STATE $\mathcal{S} = \mathcal{S} \cup \{s\}$
+            \WHILE{$(\mathcal{R}\mathrm{.size() + available\_size)} < \mathcal{S}\mathrm{.size()}$} \label{while1}
+              \STATE{Pop dataset $r$ with lowest $\delta_f$ such that $\delta_f < 0$ \AND $\delta_{f-} < \overline{\delta_f}$.
+                \IF{\NOT r} \label{if3}
+                  \STATE{Break loop}
+                \ENDIF
+                \STATE $\mathcal{R} = \mathcal{R} \cup \{r\}$
+              }
+            \ENDWHILE
+            \IF{$(\mathcal{R}\mathrm{.size()} + available_space) < \mathcal{S}\mathrm{.size()}$} \label{if4}
+              \STATE{$\mathcal{S} = \mathcal{S} \setminus \{s\}$; Break loop} 
+            \ENDIF
+          }
+        \ENDLOOP
+        \RETURN $\mathcal{S}, \mathcal{R}$
+      \end{algorithmic}
+    \end{algorithm}
 
   \subsection{Site Selection}
-    Once a heavy-hitter has been found the agent will need to find either a target site or site to remove from depending on increase or decrease in popularity. Such an algorithm will need to have knowledge about the current state of the system, including site utilization, calculated replica popularity of datasets at site, network infrastructure, and available storage. I suggest that each site keeps a database with this information which is updated daily. When a site is to be selected the central agent will query all sites about their current state getting back a value which represents how fit the site is to receive a dataset of popularity magnitude calculated at the previous stage, or in the case of removal the need to free up resources, a selection of site is then based on the values returned from each site.
+    Site selection is decided based on average available CPU. Since the dataset replicas deleted should have very low current usage we can use the state before current changes to make decisions. Available CPU is calculated using equation \ref{eq:avail_cpu} where $\alpha$ is the sum of all CPU hours from the top three days during the last three weeks and $\beta$ is the number of CPU hours used yesterday.
+
+    \begin{equation}\label{eq:avail_cpu}
+      available\_cpu = \frac{\alpha}{3} - \beta
+    \end{equation}
+
+    Sites with the most avaialable CPU hours will be selected for new replicas. Of datasets selected for deletion the replica with the least number of accesses will be chosen for deletion. More restrictions is needed to avoid oversubscription to one site, using simulation to better understand effects of the currently proposed algorithm will be of great importance and is described in the following section.
 
 
-  \subsection{Scheduler Integration}
+\section{\textsc{Simulation and Testing}}
+  \subsection{Simulation}
+    It is important to understand the effects of these algorithms and find thresholds for when to subscribe and delete datasets before deploying them in a real system. A simulation testbed needs to be deployed to observe behaviours such as disk churn, network traffic, and performance. Evaluating results from a testbed will show flaws and strengths in the different parts of the dynamic data manager.
 
-    To fully utilize a dynamic data management system it is important to have a tight coupling with the job schedulers. This will both provide instant popularity information about datasets for the agent and make it possible for the scheduler to quickly react to changes in data allocation. This functionality will become available with CRAB3 [reference].
+  \subsection{Testing}
+    This section describes measurements used to evaluate the dynamic data manager.
+    \begin{itemize}
+      \item Number of unused datasets. A balanced system should decrease the number of unused replicas, if a replica is not used it should be deleted. If this number doesn't go down then there is an issue with the dynamic data manager.
+
+      \item Minimize the median waiting time if there are sufficient available CPU's anywhere in the system. We want to place data in such a manner that the system is utilized as much as possible at all times. We are also interested in the median and not average as users will always be able to do weird things which affect the system but cannot be accounted for, such as submitting 10000 jobs to an unpopular dataset which only exists at a site which is currently fully utilized. A case which would be almost impossible to catch before it happens. The measurement of this test is expressed in equation \ref{eq:wait}.
+
+      \begin{equation}\label{eq:wait}
+        Q_t = \frac{\sum\limits_{d \in {\cal D}} \frac{\sum\limits_{j_d \in {\cal J}_d} qt}{|{\cal J}_d|}}{|{\cal D}|}
+      \end{equation}
+
+      Where ${\cal D}$ is the set of all datasets, ${\cal J}_d$ is the set of all jobs for dataset $d$, and $qt$ is the queue time of job $j_d$ while there was sufficient amount of CPU's available in the system. Where an optimal value for $Q_t$ would be $0$. Such a value would be virtually impossible to achieve, an acceptable value will have to be defined.
+    \end{itemize}
+
+
+\section{\textsc{Scheduler Integration}}
+  To fully utilize a dynamic data management system it is important to have a tight coupling with the job schedulers. This will both provide instant popularity information about datasets for the agent and make it possible for the scheduler to quickly react to changes in data allocation. This functionality will become available with CRAB3.
 
 \bibliographystyle{plain}
 \bibliography{project_proposal.bib}
