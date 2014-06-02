@@ -621,7 +621,7 @@ class PhEDExAPI:
     #                                                                          #
     ############################################################################
 
-    def requestList(self, request='', type='', approval='', decision='', group='',
+    def requestList(self, request='', type_='', approval='', decision='', group='',
                     requested_by='', node='', create_since='', create_until='',
                     decide_since='', decide_until='', dataset='', block=''
                     decided_by='', format='json', instance='prod'):
@@ -630,7 +630,7 @@ class PhEDExAPI:
         """
         name = "delete"
 
-        values = { 'request' : request, 'type' : type, 'approval' : approval,
+        values = { 'request' : request, 'type' : type_, 'approval' : approval,
                    'decision' : decision, 'group' : group, 'requested_by' : requested_by,
                    'node' : node, 'create_since' : create_since, 'create_until' : create_until,
                    'decide_since' : decide_since, 'decide_until' : decide_until, 'dataset' : dataset,
