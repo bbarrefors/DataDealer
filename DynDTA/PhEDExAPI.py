@@ -693,7 +693,7 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, data = phedex_api.requestList(type='xfer', approval='mixed', group='AnalysisOps', requested_by="Bjorn Peter Barrefors", instance="dev")
+    check, data = phedex_api.requestList(type='xfer', approval='mixed', group='AnalysisOps', create_since='2013-11-01', create_until='2014-06-01', requested_by="Bjorn Peter Barrefors", instance="dev")
     
     if check:
         print "Error"
