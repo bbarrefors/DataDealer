@@ -23,7 +23,7 @@ import MySQLdb.converters
 
 from operator import itemgetter
 from email.mime.text import MIMEText
-from subprocess import Popen, PIPE
+from subprocess import call, Popen, PIPE
 
 from DynDTALogger import DynDTALogger
 from PhEDExAPI import PhEDExAPI
@@ -71,22 +71,23 @@ class DynDTA:
         """
         # Renew SSO Cookie for Popularity DB calls
         self.pop_db_api.renewSSOCookie()
+        call(["grid-proxy-init", "-valid", "24:00"])
         # Rank sites based on current available space
         available = ["T2_US_Nebraska", "T2_US_MIT", "T2_DE_RWTH", "T2_ES_CIEMAT",
-                 "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech",
-                 "T2_AT_Vienna", "T2_BR_SPRACE", "T2_CH_CSCS", "T2_DE_DESY",
-                 "T2_ES_IFCA", "T2_FR_IPHC", "T2_FR_GRIF_LLR", "T2_IT_Pisa",
-                 "T2_IT_Bari", "T2_IT_Rome", "T2_RU_JINR", "T2_UK_London_IC",
-                 "T2_US_Purdue", "T2_BE_IIHE", "T2_BE_UCL", "T2_CN_Beijing",
-                 "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", "T2_FR_GRIF_IRFU",
-                 "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU", "T2_RU_IHEP",
-                 "T2_UA_KIPT", "T2_UK_London_Brunel", "T2_BE_IIHE", "T2_BE_UCL",
-                 "T2_CN_Beijing", "T2_FI_HIP", "T2_FR_CCIN2P3",
-                 "T2_FR_GRIF_IRFU", "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU",
-                 "T2_RU_IHEP", "T2_UA_KIPT", "T2_US_Vanderbilt", "T2_UK_SGrid_RALPP",
-                 "T2_HU_Budapest", "T2_PT_NCG_Lisbon", "T2_RU_ITEP",
-                 "T2_TR_METU", "T2_TW_Taiwan", "T2_US_UCSD"]
-        exclude = ["T2_IN_TIFR"]
+                     "T2_US_Wisconsin", "T2_US_Florida", "T2_US_Caltech",
+                     "T2_AT_Vienna", "T2_BR_SPRACE", "T2_CH_CSCS", "T2_DE_DESY",
+                     "T2_ES_IFCA", "T2_FR_IPHC", "T2_FR_GRIF_LLR", "T2_IT_Pisa",
+                     "T2_IT_Bari", "T2_IT_Rome", "T2_RU_JINR", "T2_UK_London_IC",
+                     "T2_US_Purdue", "T2_BE_IIHE", "T2_BE_UCL", "T2_CN_Beijing",
+                     "T2_EE_Estonia", "T2_FI_HIP", "T2_FR_CCIN2P3", "T2_FR_GRIF_IRFU",
+                     "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU", "T2_RU_IHEP",
+                     "T2_UA_KIPT", "T2_UK_London_Brunel", "T2_BE_IIHE", "T2_BE_UCL",
+                     "T2_CN_Beijing", "T2_FI_HIP", "T2_FR_CCIN2P3",
+                     "T2_FR_GRIF_IRFU", "T2_IN_TIFR", "T2_IT_Legnaro", "T2_KR_KNU",
+                     "T2_RU_IHEP", "T2_UA_KIPT", "T2_US_Vanderbilt", "T2_UK_SGrid_RALPP",
+                     "T2_HU_Budapest", "T2_PT_NCG_Lisbon", "T2_RU_ITEP",
+                     "T2_TR_METU", "T2_TW_Taiwan", "T2_US_UCSD"]
+        exclude = ["T2_IN_TIFR", "T2_CN_Beijing"]
         sites = [site for site in available if site not in exclude]
         site_rank, max_budget = self.siteRanking(sites)
         # Restart daily budget in TB
@@ -130,7 +131,7 @@ class DynDTA:
         sorted_ranking = sorted(datasets.iteritems(), key=itemgetter(1))
         for rank in sorted_ranking:
             self.logger.log("Ranking", str(rank[1]) + "\t" + str(rank[0]))
-            if rank[1] < 300:
+            if rank[1] < 200:
                 del datasets[rank[0]]
         sorted_ranking.reverse()
         subscriptions = dict()
@@ -168,6 +169,7 @@ class DynDTA:
         # Get blocks to subscribe
         # Subscribe sets
         text = "Site \t\t\t Size \t\t Dataset\n"
+        tot_size = 0
         for site, sets in subscriptions.iteritems():
             if not sets:
                 continue
@@ -178,12 +180,13 @@ class DynDTA:
                 if not test:
                     # Print to log
                     size_TB = self.size(dataset)
-                    text = text + "%s \t %sTB \t %s\n" % (site, size_TB, dataset)
+                    tot_size += size_TB
+                    text = text + "%s \t %.2f TB \t %s\n" % (site, size_TB, dataset)
                     self.logger.log("Subscription", str(site) + " : " + str(dataset))
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments="Dynamic data placement")
         msg = MIMEText(text)
-        msg['Subject'] = "%s | Dynamic Data Placement Subscriptions" % (str(datetime.datetime.now().strftime("%d/%m-%Y")),)
+        msg['Subject'] = "%s | %.2f TB | Dynamic Data Placement Subscriptions" % (str(datetime.datetime.now().strftime("%d/%m/%Y")), tot_size)
         msg['From'] = "bbarrefo@cse.unl.edu"
         msg['To'] = "bbarrefo@cse.unl.edu,bbockelm@cse.unl.edu"
         #msg['To'] = "bbarrefo@cse.unl.edu"
