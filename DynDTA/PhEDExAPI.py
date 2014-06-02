@@ -623,7 +623,7 @@ class PhEDExAPI:
 
     def requestList(self, request='', type_='', approval='', decision='', group='',
                     requested_by='', node='', create_since='', create_until='',
-                    decide_since='', decide_until='', dataset='', block=''
+                    decide_since='', decide_until='', dataset='', block='',
                     decided_by='', format='json', instance='prod'):
         """
 
@@ -637,13 +637,19 @@ class PhEDExAPI:
                    'block' : block, 'decided_by' : decided_by}
 
         request_url = urllib.basejoin(self.PHEDEX_BASE, "%s/%s/requestList" % (format, instance))
-        check, response = self.phedexCall(update_url, values)
+        check, response = self.phedexCall(request_url, values)
         if check:
             # An error occurred
             self.logger.error(name, "UpdateRequest call failed")
             # @TODO : Print out better logging, url + values
             return 1, "Error"
-        return 0, response
+        if format == "json":
+            data = json.load(response)
+            if not data:
+                return 1, "No json data available"
+        else:
+            data = response
+        return 0, data
 
 ################################################################################
 #                                                                              #
@@ -693,7 +699,7 @@ if __name__ == '__main__':
     For testing purpose only
     """
     phedex_api = PhEDExAPI()
-    check, data = phedex_api.requestList(type='xfer', approval='mixed', group='AnalysisOps', create_since='2013-11-01', create_until='2014-06-01', requested_by="Bjorn Peter Barrefors", instance="dev")
+    check, data = phedex_api.requestList(type_='xfer', approval='mixed', group='AnalysisOps', create_since='2013-11-01', create_until='2014-06-01', requested_by='Bjorn Peter Barrefors', instance='prod')
     
     if check:
         print "Error"
