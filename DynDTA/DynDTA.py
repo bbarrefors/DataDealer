@@ -174,14 +174,9 @@ class DynDTA:
             check, data = self.phedex_api.xmlData(datasets=sets)
             if check:
                 continue
-            for dataset in sets:
-                if not test:
-                    # Print to log
-                    size_TB = self.size(dataset)
-                    text = text + "%s \t %sTB \t %s\n" % (site, size_TB, dataset)
-                    self.logger.log("Subscription", str(site) + " : " + str(dataset))
             if not test:
                 check, response = self.phedex_api.subscribe(node=site, data=data, request_only='y', comments="Dynamic data placement")
+                text += logging(response, site, sets, p_rank)
         msg = MIMEText(text)
         msg['Subject'] = "%s | Dynamic Data Placement Subscriptions" % (str(datetime.datetime.now().strftime("%d/%m-%Y")),)
         msg['From'] = "bbarrefo@cse.unl.edu"
@@ -517,6 +512,50 @@ class DynDTA:
         # Connect to DB
         self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
         return 0
+
+
+    ############################################################################
+    #                                                                          #
+    #                       U P D A T E   R E P L I C A                        #
+    #                                                                          #
+    ############################################################################
+    def updateReplicas(self):
+        """
+        addReplica
+
+        Add new replicas entry in the db
+        """
+        # Get all datasets from phedex
+        check, response = self.phedex_api.blockReplicas(group="AnalysisOps", show_dataset="y")
+        data = response.get('phedex').get('dataset')
+        datasets = []
+        for d in data:
+            datasets.append(d.get('name'))
+        cur = self.mit_db.cursor();
+        for dataset in datasets:
+            n_replicas = self.nReplicas(dataset)
+            cur.execute("SELECT DatasetId FROM Datasets WHERE Dataset=%s", (dataset,))
+            dataset_id = cur.fetchone()
+            if not dataset_id:
+                cur.execute("INSERT INTO Datasets (Dataset) VALUES (%s)", (dataset))
+                cur.execute("SELECT DatasetId FROM Datasets WHERE Dataset=%s", (dataset,))
+                dataset_id = cur.fetchone()
+            dataset_id = int(dataset_id[0])
+            cur.execute("SELECT Replicas FROM Replicas WHERE DatasetId=%s", (dataset_id,))
+            replicas = cur.fetchone()
+            if (not replicas):
+                cur.execute("INSERT INTO Replicas (DatasetId, Replicas) VALUES (%s, %s)", (dataset_id, n_replicas))
+            else:
+                replicas = int(replicas[0])
+                if not (replicas == n_replicas):
+                    cur.execute("INSERT INTO Replicas (DatasetId, Replicas) VALUES (%s, %s)", (dataset_id, n_replicas))
+        cur.close()
+            for dataset in sets:
+                # Print to log
+                size_TB = self.size(dataset)
+                text = text + "%s \t %sTB \t %s\n" % (site, size_TB, dataset)
+                self.logger.log("Subscription", str(site) + " : " + str(dataset))
+
 
 ################################################################################
 #                                                                              #
