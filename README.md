@@ -1,6 +1,4 @@
-cmsdata
+Data Dealer Agent for the CMS Experiment
 ================
 
-Dynamic Data Management
-
-The project contains two projects
+The CMS Data Dealer
