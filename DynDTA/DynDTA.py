@@ -504,7 +504,7 @@ class DynDTA:
         Connect to the MySQL DB at MIT
         """
         # Get server, username, and password from file
-        db_file = open('/home/bockelman/barrefors/db/login')
+        db_file = open('/Users/darkzone/Certs/login')
         host = db_file.readline().strip()
         db = db_file.readline().strip()
         user = db_file.readline().strip()
@@ -515,7 +515,11 @@ class DynDTA:
         user = base64.b64decode(user)
         passwd = base64.b64decode(passwd)
         # Connect to DB
-        self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
+        print host
+        print db
+        print user
+        print passwd
+        #self.mit_db = msdb.connect(host=host, user=user, passwd=passwd, db=db)
         return 0
 
 ################################################################################
@@ -534,5 +538,5 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         test = int(sys.argv[1])
     agent = DynDTA()
-    sys.exit(agent.agent(test=test))
-    #sys.exit(agent.connectDB())
+    #sys.exit(agent.agent(test=test))
+    sys.exit(agent.connectDB())
